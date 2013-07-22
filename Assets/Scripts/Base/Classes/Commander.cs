@@ -45,7 +45,7 @@ public class Commander : Leader
 					if(hitUnit != null)
 					{
 						int id = hitUnit.GetID();
-						if(!selectedUnits.Contains(id) && hitUnit.Select())
+						if(unitID.ContainsKey(id) && !selectedUnits.Contains(id) && hitUnit.Select())
 							selectedUnits.Add(hitUnit.GetID());
 					}
 				}
