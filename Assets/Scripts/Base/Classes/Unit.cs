@@ -83,4 +83,13 @@ public class Unit : MonoBehaviour
 		this.leader = leader;
 		leader.RegisterUnit(this);
 	}
+	
+	public bool Select()
+	{
+		if(!isSelectable)
+			return false;
+		Material toonShader = renderer.material;
+		toonShader.SetColor("_OutlineColor",Color.green);
+		return true;
+	}
 }
