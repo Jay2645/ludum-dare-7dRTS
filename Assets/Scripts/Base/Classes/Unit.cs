@@ -10,6 +10,19 @@ public class Unit : MonoBehaviour
 	protected GameObject smokeTrail = null;
 	public static GameObject smokeTrailPrefab = null;
 	public static GameObject dustPrefab = null;
+	public const string[] names = 
+	{
+		"Buzz Harrington",
+		"Luke Marigold",
+		"Chris Wong",
+		"David Rogers",
+		"Will Atkins",
+		"Michael Dyer",
+		"Dan Randall",
+		"Bruce Hunt",
+		"Ken Clark"
+	};
+	protected string uName = "";
 	
 	void Awake()
 	{
@@ -64,6 +77,11 @@ public class Unit : MonoBehaviour
 	{
 		id = currentID;
 		currentID++;
+		if(uName == "")
+		{
+			uName = names[Mathf.RoundToInt(Random.Range(0,names.Length))];
+			gameObject.name = uName;
+		}
 	}
 	
 	public bool IsSelectable()

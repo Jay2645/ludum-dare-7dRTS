@@ -14,7 +14,11 @@ public class Commander : Leader
 		CreateID();
 		RegisterUnit(this);
 		if(isPlayer && player == null)
+		{
 			player = this;
+			uName = "You";
+			gameObject.name = "Player";
+		}
 		if(unitPrefab == null)
 			unitPrefab = Resources.Load ("Prefabs/Unit") as GameObject;
 		while(unitsToGenerate > 0)
