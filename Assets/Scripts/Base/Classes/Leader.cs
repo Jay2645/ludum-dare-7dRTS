@@ -6,6 +6,7 @@ public class Leader : Unit
 {
 	protected Dictionary<int,Unit> unitID = new Dictionary<int, Unit>();
 	protected static Dictionary<int, Leader> leaderLookup = new Dictionary<int, Leader>();
+	protected List<int> selectedUnits = new List<int>();
 	
 	public void RegisterUnit(Unit unit)
 	{
@@ -25,6 +26,7 @@ public class Leader : Unit
 		{
 			unitID.Remove(id);
 			leaderLookup.Remove(id);
+			selectedUnits.Remove(id);
 		}
 	}
 }

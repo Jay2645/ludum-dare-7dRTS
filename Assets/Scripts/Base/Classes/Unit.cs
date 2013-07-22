@@ -88,8 +88,19 @@ public class Unit : MonoBehaviour
 	{
 		if(!isSelectable)
 			return false;
-		Material toonShader = renderer.material;
-		toonShader.SetColor("_OutlineColor",Color.green);
+		renderer.material.SetColor("_OutlineColor",Color.green);
 		return true;
+	}
+	
+	public void Deselect()
+	{
+		if(!isSelectable)
+			return;
+		renderer.material.SetColor("_OutlineColor",Color.black);
+	}
+	
+	protected void OnDie()
+	{
+		leader.RemoveUnit(id);
 	}
 }

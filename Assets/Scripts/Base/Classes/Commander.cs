@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Commander : Leader
 {
@@ -27,6 +28,40 @@ public class Commander : Leader
 	{
 		isSelectable = false;
 		leader = this;
+	}
+	
+	void Update()
+	{
+		if(Input.GetButton("Select"))
+		{
+			float selectRadius = 0.45f;
+			while(selectRadius < 0.56f)
+			{
+				Ray selectRay = Camera.main.ViewportPointToRay(new Vector3(selectRadius, selectRadius, 0));
+				RaycastHit hit;
+				if (Physics.Raycast(selectRay, out hit,Mathf.Infinity))
+				{
+					Unit hitUnit = hit.transform.GetComponentInChildren<Unit>();
+					if(hitUnit != null)
+					{
+						int id = hitUnit.GetID();
+						if(!selectedUnits.Contains(id) && hitUnit.Select())
+							selectedUnits.Add(hitUnit.GetID());
+					}
+				}
+				Debug.DrawRay(selectRay.origin,selectRay.direction);
+				selectRadius += 0.01f;
+			}
+		}
+		else if(Input.GetButtonDown("Deselect"))
+		{
+			int[] ids = selectedUnits.ToArray();
+			foreach(int id in ids)
+			{
+				unitID[id].Deselect();
+			}
+			selectedUnits.Clear();
+		}
 	}
 	
 	public void GenerateUnit(GameObject unit)
