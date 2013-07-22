@@ -2,6 +2,14 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+public enum Order
+{
+	Move,
+	Attack,
+	Defend,
+	Stop
+}
+
 public class Commander : Leader
 {
 	public bool isPlayer = false;
@@ -65,6 +73,31 @@ public class Commander : Leader
 				unitID[id].Deselect();
 			}
 			selectedUnits.Clear();
+		}
+		else if(Input.GetButtonDown("Order"))
+		{
+			Ray selectRay = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+			RaycastHit hit;
+			if (Physics.Raycast(selectRay, out hit,Mathf.Infinity))
+			{
+				Unit hitUnit = hit.transform.GetComponentInChildren<Unit>();
+				if(hitUnit != null)
+				{
+					int id = hitUnit.GetID();
+					if(unitID.ContainsKey(id))
+					{
+						GiveOrder (Order.Defend, hit.transform);
+					}
+					else
+					{
+						GiveOrder (Order.Attack, hit.transform);
+					}
+				}
+				else
+				{
+					GiveOrder(Order.Move,hit.point);
+				}
+			}
 		}
 	}
 	

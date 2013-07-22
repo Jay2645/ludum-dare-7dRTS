@@ -114,10 +114,17 @@ public class Unit : MonoBehaviour
 		renderer.material.color = teamColor;
 	}
 	
+	public void RecieveOrder(Order order, Transform target)
+	{
+		
+	}
+	
 	public bool Select()
 	{
 		if(!isSelectable)
 			return false;
+		if(commander != Commander.player)
+			return true;
 		renderer.material.SetColor("_OutlineColor",Color.green);
 		return true;
 	}

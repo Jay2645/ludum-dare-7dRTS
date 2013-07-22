@@ -7,6 +7,7 @@ public class Leader : Unit
 	protected Dictionary<int,Unit> unitID = new Dictionary<int, Unit>();
 	protected static Dictionary<int, Leader> leaderLookup = new Dictionary<int, Leader>();
 	protected List<int> selectedUnits = new List<int>();
+	protected GameObject orderTarget = null;
 	
 	public void RegisterUnit(Unit unit)
 	{
@@ -27,6 +28,25 @@ public class Leader : Unit
 			unitID.Remove(id);
 			leaderLookup.Remove(id);
 			selectedUnits.Remove(id);
+		}
+	}
+	
+	public void GiveOrder(Order order, Vector3 targetPos)
+	{
+		if(orderTarget != null)
+			DestroyImmediate(orderTarget);
+		orderTarget = new GameObject("Order Target");
+		orderTarget.transform.position = targetPos;
+		GiveOrder(order,orderTarget.transform);
+		Destroy(orderTarget,7.0f);
+	}
+	
+	public void GiveOrder(Order order, Transform target)
+	{
+		int[] ids = selectedUnits.ToArray();
+		foreach(int id in ids)
+		{
+			unitID[id].RecieveOrder(order,target);
 		}
 	}
 }

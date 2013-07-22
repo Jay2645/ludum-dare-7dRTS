@@ -15,7 +15,7 @@ public class ObjectLabel : MonoBehaviour
 	Transform camTransform;
  	private PhysicalText text = null;
 	private Transform textTransform = null;
-	void Start () 
+	void Awake () 
     {
 	    thisTransform = transform;
 	    if (useMainCamera)
@@ -51,7 +51,8 @@ public class ObjectLabel : MonoBehaviour
 	public void SetLabelText(string newText)
 	{
 		label = newText;
-		text.textString = label;
+		if(text != null)
+			text.textString = label;
 	}
 	
 	void OnDisable()
