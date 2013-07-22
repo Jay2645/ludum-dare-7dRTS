@@ -7,6 +7,7 @@ public class Unit : MonoBehaviour
 	protected int id = -1;
 	private static int currentID = 0;
 	protected Leader leader = null;
+	protected Commander commander = null;
 	protected GameObject smokeTrail = null;
 	public static GameObject smokeTrailPrefab = null;
 	public static GameObject dustPrefab = null;
@@ -23,6 +24,8 @@ public class Unit : MonoBehaviour
 		"Ken Clark"
 	};
 	protected string uName = "";
+	public Color teamColor = Color.white;
+	public ObjectLabel label = null;
 	
 	void Awake()
 	{
@@ -35,6 +38,7 @@ public class Unit : MonoBehaviour
 		{
 			InitSmokeParticles();
 		}
+		renderer.material.color = teamColor;
 	}
 	
 	protected void InitSmokeParticles()
@@ -81,6 +85,8 @@ public class Unit : MonoBehaviour
 		{
 			uName = names[Mathf.RoundToInt(Random.Range(0,names.Length))];
 			gameObject.name = uName;
+			if(label != null)
+				label.SetLabelText(uName);
 		}
 	}
 	
@@ -99,7 +105,13 @@ public class Unit : MonoBehaviour
 	public virtual void RegisterLeader(Leader leader)
 	{
 		this.leader = leader;
+		if(leader is Commander)
+			commander = (Commander)leader;
+		if(commander != Commander.player)
+			Destroy(label);
+		teamColor = leader.teamColor;
 		leader.RegisterUnit(this);
+		renderer.material.color = teamColor;
 	}
 	
 	public bool Select()

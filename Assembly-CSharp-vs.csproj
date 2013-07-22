@@ -48,6 +48,8 @@
      <Compile Include="Assets\Scripts\Base\Classes\Leader.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Unit.cs" />
      <Compile Include="Assets\Scripts\GUI\MakeButton.cs" />
+     <Compile Include="Assets\Scripts\GUI\MessageList.cs" />
+     <Compile Include="Assets\Scripts\GUI\ObjectLabel.cs" />
      <Compile Include="Assets\Scripts\GUI\PhysicalText.cs" />
      <Compile Include="Assets\Scripts\Import\ExternalDL.cs" />
      <Compile Include="Assets\Scripts\Import\PhotoshopGUIMaker.cs" />
@@ -55,14 +57,19 @@
      <None Include="Assets\Standard Assets\Projectors\Guidelines.txt" />
      <None Include="Assets\Standard Assets\Toon Shading\Sources\Shaders\Toony-Basic.shader" />
      <None Include="Assets\Standard Assets\Projectors\Sources\Shaders\Projector Multiply.shader" />
+     <None Include="Assets\Shaders\Transparent ZWrite.shader" />
      <None Include="Assets\Standard Assets\Particles\Sources\Shaders\Particle Alpha Blend (Queue +100).shader" />
      <None Include="Assets\Standard Assets\Skyboxes\_skybox info.txt" />
      <None Include="Assets\Standard Assets\Toon Shading\Sources\Shaders\Toony-BasicOutline.shader" />
+     <None Include="Assets\Shaders\Toony-BasicOutlineTransparent.shader" />
+     <None Include="Assets\Shaders\DoubleSided.shader" />
      <None Include="Assets\Standard Assets\Projectors\Sources\Shaders\Projector Light.shader" />
      <None Include="Assets\Standard Assets\Water (Basic)\Sources\Shaders\FX-Water Simple.shader" />
      <None Include="Assets\RAIN\releasenotes.txt" />
      <None Include="Assets\Standard Assets\Toon Shading\Sources\Shaders\Toony-LightedOutline.shader" />
      <None Include="Assets\Standard Assets\Toon Shading\Sources\Shaders\Toony-Lighted.shader" />
+     <None Include="Assets\Shaders\Toony-BasicTransparent.shader" />
+     <None Include="Assets\Shaders\3DText.shader" />
      <None Include="Assets\RAIN\Editor\ScriptTemplates\BehaviorTreeTemplate.xml" />
  <Reference Include="Assembly-UnityScript-firstpass">
  <HintPath>Library\ScriptAssemblies\Assembly-UnityScript-firstpass.dll</HintPath>

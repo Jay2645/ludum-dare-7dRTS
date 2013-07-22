@@ -149,7 +149,7 @@ public class PhysicalText
 				mesh = text.GetComponent<TextMesh>();
 			if(mesh == null)
 				mesh = text.AddComponent<TextMesh>();
-			text.transform.localScale = new Vector3(0.0005f,0.0005f,0.0005f);
+			text.transform.localScale = new Vector3(0.25f,0.25f,0.25f);
 			if(font != null)
 			{
 				MakeFontMaterial(mesh.font);
@@ -180,7 +180,7 @@ public class PhysicalText
 		{
 			if(newFont == null || newFont.name == "Arial")
 			{
-				newFont = Resources.Load("Fonts/Ornate") as Font;
+				newFont = Resources.Load("Fonts/arial") as Font;
 			}
 			mat.mainTexture = newFont.material.mainTexture;
 			newFont.material = mat;
