@@ -10,7 +10,7 @@ public class Unit : MonoBehaviour
 	protected GameObject smokeTrail = null;
 	public static GameObject smokeTrailPrefab = null;
 	public static GameObject dustPrefab = null;
-	public const string[] names = 
+	public static string[] names = 
 	{
 		"Buzz Harrington",
 		"Luke Marigold",
