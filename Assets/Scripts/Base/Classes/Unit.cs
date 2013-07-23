@@ -186,6 +186,13 @@ public class Unit : MonoBehaviour
 		return true;
 	}
 	
+	public void IsLookedAt(bool lookedAt)
+	{
+		if(label == null)
+			return;
+		label.isLookedAt = lookedAt;
+	}
+	
 	public void Deselect()
 	{
 		if(!isSelectable)

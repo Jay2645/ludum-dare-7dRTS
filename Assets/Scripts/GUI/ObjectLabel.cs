@@ -6,23 +6,22 @@ public class ObjectLabel : MonoBehaviour
 	public string label = "";
 	public Transform target;  // Object that this label should follow
 	public Vector3 offset = Vector3.up;    // Units in world space to offset; 1 unit above object by default
-	public bool clampToScreen = false;  // If true, label will be visible even if object is off screen
-	public float clampBorderSize = 0.05f;  // How much viewport space to leave at the borders when a label is being clamped
-	public bool useMainCamera = true;   // Use the camera tagged MainCamera
-	public Camera cameraToUse ;   // Only use this if useMainCamera is false
-	Camera cam ;
+	public Camera cameraToUse;
 	Transform thisTransform;
 	Transform camTransform;
  	private PhysicalText text = null;
 	private Transform textTransform = null;
+	private float _yScale = 0.0f;
+	private float _xScale = 0.0f;
+	private float _zScale = 0.0f;
+	public bool isLookedAt = false;
+	
 	void Awake () 
     {
 	    thisTransform = transform;
-	    if (useMainCamera)
-	        cam = Camera.main;
-	    else
-	        cam = cameraToUse;
-	    camTransform = cam.transform;
+	    if (cameraToUse == null)
+	        cameraToUse = Camera.main;
+	    camTransform = cameraToUse.transform;
 		if(target == null)
 			target = thisTransform;
 		if(target != thisTransform)
@@ -40,10 +39,32 @@ public class ObjectLabel : MonoBehaviour
 		textTransform = text.text.transform;
 		textTransform.position = target.position + offset;
 		textTransform.parent = target;
+		target.localScale = Vector3.zero;
 	}
 	
 	void Update()
 	{
+		if(!isLookedAt)
+		{
+			if(_yScale > 0)
+			{
+				_xScale = Mathf.Lerp(_xScale,0,Time.deltaTime * 5);
+				_yScale = Mathf.Lerp(_yScale,0,Time.deltaTime * 5);
+				_zScale = Mathf.Lerp(_zScale,0,Time.deltaTime * 5);
+			}
+			else
+			{
+				target.localScale = Vector3.zero;
+				return;
+			}
+		}
+		else if (_yScale < 1)
+		{
+			_xScale = Mathf.Lerp(_xScale,1,Time.deltaTime * 5);
+			_yScale = Mathf.Lerp(_yScale,1,Time.deltaTime * 5);
+			_zScale = Mathf.Lerp(_zScale,1,Time.deltaTime * 5);
+		}
+		target.localScale = new Vector3(_xScale,_yScale,_zScale);
 		textTransform.LookAt(camTransform);
 		textTransform.Rotate(0,180,0);
 	}

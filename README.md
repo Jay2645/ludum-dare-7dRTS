@@ -1,4 +1,4 @@
-Ludum Dare #44: 7dRTS
+Mini Ludum Dare #44: 7dRTS
 ================
 
 A repository for [Mini Ludum Dare #44: 7 day RTS!][1] 
@@ -25,7 +25,7 @@ After a moment, the play and pause icons should turn bright blue, indicating tha
   [2]: http://unity3d.com/unity/download/
 
 
-Copyright
+License
 ------------------------------------------------------------------------
 
 MIT License
