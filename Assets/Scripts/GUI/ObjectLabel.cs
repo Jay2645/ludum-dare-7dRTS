@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections;
- 
+
 public class ObjectLabel : MonoBehaviour 
 {
 	public string label = "";

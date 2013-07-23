@@ -69,7 +69,7 @@ public class MessageList : MonoBehaviour
 		{
 			if(currentMessages[i] == null)
 			{
-				_messages.RemoveAt(i);
+				_messages.TrimExcess();
 				continue;
 			}
 			currentMessages[i].transform.position += new Vector3 (0, _directionFactor * (lineSize / Screen.height), 0);
@@ -79,6 +79,5 @@ public class MessageList : MonoBehaviour
 		newMessage.text = messageText;
 		newMessage.gameObject.layer = layerTag;
 		_messages.Add (newMessage);
-		Destroy(newMessage.gameObject,10.0f);
 	}
 }

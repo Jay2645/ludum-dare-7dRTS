@@ -26,12 +26,22 @@ public class Unit : MonoBehaviour
 	protected string uName = "";
 	public Color teamColor = Color.white;
 	public ObjectLabel label = null;
-	protected Order currentOrder = Order.Stop;
+	protected Order currentOrder = Order.stop;
 	protected Transform moveTarget = null;
+	public int health = 100;
+	public Weapon weapon = null;
 	
 	void Awake()
 	{
 		CreateID();
+		if(weapon != null)
+		{
+			weapon = Instantiate(weapon) as Weapon;
+			weapon.transform.parent = transform;
+			weapon.transform.localPosition =  new Vector3(-0.35f,0.075f,0.75f);
+			weapon.transform.localRotation = Quaternion.Euler(90,0,0);
+			weapon.owner = this;
+		}
 	}
 	
 	void Start()
@@ -77,6 +87,13 @@ public class Unit : MonoBehaviour
 	void Update()
 	{
 		RemoveSmokeTrail();
+		CheckHealth();
+	}
+	
+	protected void CheckHealth()
+	{
+		if(health <= 0)
+			OnDie();
 	}
 	
 	protected void CreateID()
@@ -118,18 +135,21 @@ public class Unit : MonoBehaviour
 	
 	public void RecieveOrder(Order order, Transform target)
 	{
-		if(target == transform && order != Order.Stop)
+		if(target == transform && order != Order.stop)
 			return;
 		target = ((GameObject)Instantiate(target.gameObject,target.position,target.rotation)).transform;
 		Vector3 targetLocation = target.position;
 		targetLocation.x += Random.Range(-3,3);
 		targetLocation.z += Random.Range(-3,3);
 		target.position = targetLocation;
-		if(order == Order.Stop || Vector3.Distance(target.position,transform.position) < 1.5f)
+		if(order == Order.stop || Vector3.Distance(target.position,transform.position) < 1.5f)
 		{
-			currentOrder = Order.Stop;
-			DestroyImmediate(moveTarget.gameObject);
-			moveTarget = null;
+			if(order != Order.defend)
+			{
+				currentOrder = Order.stop;
+				DestroyImmediate(moveTarget.gameObject);
+				moveTarget = null;
+			}
 			return;
 		}
 		currentOrder = order;
@@ -150,7 +170,7 @@ public class Unit : MonoBehaviour
 		if(Vector3.Distance(moveTarget.position,transform.position) < 1.5f)
 		{
 			DestroyImmediate(moveTarget.gameObject);
-			currentOrder = Order.Stop;
+			currentOrder = Order.stop;
 			moveTarget = null;
 		}
 		return moveTarget;
@@ -175,6 +195,8 @@ public class Unit : MonoBehaviour
 	
 	protected void OnDie()
 	{
-		leader.RemoveUnit(id);
+		if(leader != null)
+			leader.RemoveUnit(id);
+		Destroy(gameObject);
 	}
 }

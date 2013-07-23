@@ -4,10 +4,10 @@ using System.Collections.Generic;
 
 public enum Order
 {
-	Move,
-	Attack,
-	Defend,
-	Stop
+	move,
+	attack,
+	defend,
+	stop
 }
 
 public class Commander : Leader
@@ -26,6 +26,23 @@ public class Commander : Leader
 			player = this;
 			uName = "You";
 			gameObject.name = "Player";
+			if(weapon != null)
+			{
+				weapon = Instantiate(weapon) as Weapon;
+				weapon.transform.parent = Camera.main.transform;
+				weapon.transform.localPosition = new Vector3(0.25f, -0.2f, 0.25f);
+			}
+		}
+		else if (weapon != null)
+		{
+			weapon = Instantiate(weapon) as Weapon;
+			weapon.transform.parent = transform;
+			weapon.transform.localPosition = new Vector3(-0.35f,0.075f,0.75f);
+		}
+		if(weapon != null)
+		{
+			weapon.transform.localRotation = Quaternion.Euler(90,0,0);
+			weapon.owner = this;
 		}
 		if(unitPrefab == null)
 			unitPrefab = Resources.Load ("Prefabs/Unit") as GameObject;
@@ -86,16 +103,16 @@ public class Commander : Leader
 					int id = hitUnit.GetID();
 					if(unitID.ContainsKey(id))
 					{
-						GiveOrder (Order.Defend, hit.transform);
+						GiveOrder (Order.defend, hit.transform);
 					}
 					else
 					{
-						GiveOrder (Order.Attack, hit.transform);
+						GiveOrder (Order.attack, hit.transform);
 					}
 				}
 				else
 				{
-					GiveOrder(Order.Move,hit.point);
+					GiveOrder(Order.move,hit.point);
 				}
 			}
 		}

@@ -1,13 +1,17 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Base\Classes\Leader.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\GUI\MessageList.cs">
     <Files>
-      <File FileName="Assets\Scripts\Base\Classes\Unit.cs" Line="127" Column="16" />
-      <File FileName="Assets\Scripts\Base\Classes\Commander.cs" Line="18" Column="45" />
-      <File FileName="Assets\Scripts\Base\Classes\Leader.cs" Line="37" Column="34" />
-      <File FileName="Assets\Scripts\GUI\MessageList.cs" Line="47" Column="9" />
-      <File FileName="Assets\Scripts\GUI\ObjectLabel.cs" Line="18" Column="12" />
-      <File FileName="Assets\Scripts\GUI\PhysicalText.cs" Line="152" Column="61" />
+      <File FileName="Assets\AI\Actions\UnitCheckOrders.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Base\Classes\Unit.cs" Line="31" Column="26" />
+      <File FileName="Assets\Scripts\Base\Classes\Commander.cs" Line="47" Column="32" />
+      <File FileName="Assets\Scripts\Base\Classes\Leader.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\GUI\MessageList.cs" Line="3" Column="30" />
+      <File FileName="Assets\Scripts\GUI\ObjectLabel.cs" Line="3" Column="1" />
+      <File FileName="Assets\Scripts\GUI\PhysicalText.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Weapon\Rocket.cs" Line="5" Column="1" />
+      <File FileName="Assets\Scripts\Weapon\Weapon.cs" Line="62" Column="3" />
+      <File FileName="Assets\Scripts\Weapon\Projectile.cs" Line="29" Column="4" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

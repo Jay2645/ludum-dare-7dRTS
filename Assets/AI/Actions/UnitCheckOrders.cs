@@ -22,7 +22,7 @@ public class UnitCheckOrders : RAIN.Action.Action
 
     public override RAIN.Action.Action.ActionResult Execute(RAIN.Core.Agent agent, float deltaTime)
     {
-		if(unit.GetOrder() == Order.Stop)
+		if(unit.GetOrder() == Order.stop)
 		{
 			agent.actionContext.SetContextItem<int>("hasOrders",0);
 			agent.MoveTo(agent.Avatar.transform.position,0.0f);
