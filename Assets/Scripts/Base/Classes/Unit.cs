@@ -1,6 +1,12 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// A Unit is the main object of the game. Anything which can be selected and recieve orders is considered a Unit.
+/// Units have a unique ID and a name so the player can tell them apart.
+/// They currently fall from the sky upon spawn, akin to ODSTs from the Halo series.
+/// Units can be promoted or demoted to Leader class by a Commander; however, there is only one Commander which can be active at any given time.
+/// </summary>
 public class Unit : MonoBehaviour 
 {
 	protected bool isSelectable = true;
