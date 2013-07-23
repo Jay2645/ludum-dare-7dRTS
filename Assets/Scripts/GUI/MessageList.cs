@@ -64,25 +64,21 @@ public class MessageList : MonoBehaviour
 /// </summary>
 	public void AddMessage (string messageText)
 	{
-		// Iterate though the messages, removing any that don't exist anymore, and moving the rest
-		for (int i = 0; i < _messages.Count; i++) {
-			// If this message is null, remove it, drop back the index count, and jump back to the begining of the loop
-			if (_messages [i] == null) {
-				_messages.RemoveAt (i);
-				i--;
+		GUIText[] currentMessages = _messages.ToArray();
+		for(int i = 0; i < currentMessages.Length; i++)
+		{
+			if(currentMessages[i] == null)
+			{
+				_messages.RemoveAt(i);
 				continue;
 			}
-			
-			_messages [i].transform.position += new Vector3 (0, _directionFactor * (lineSize / Screen.height), 0);
+			currentMessages[i].transform.position += new Vector3 (0, _directionFactor * (lineSize / Screen.height), 0);
 		}
-		//  All the existing messages have been moved, making room for the new one.
-		//  Instantiate a new message from the prefab, set it's text value, and add it to the
-		//  array of messages.
-		
 		GUIText newMessage;
 		newMessage = Instantiate (messagePrefab, new Vector3 (startingPos.x / Screen.width, startingPos.y / Screen.height, startingPos.z), transform.rotation) as GUIText;
 		newMessage.text = messageText;
 		newMessage.gameObject.layer = layerTag;
 		_messages.Add (newMessage);
+		Destroy(newMessage.gameObject,10.0f);
 	}
 }

@@ -26,6 +26,8 @@ public class Unit : MonoBehaviour
 	protected string uName = "";
 	public Color teamColor = Color.white;
 	public ObjectLabel label = null;
+	protected Order currentOrder = Order.Stop;
+	protected Transform moveTarget = null;
 	
 	void Awake()
 	{
@@ -116,7 +118,42 @@ public class Unit : MonoBehaviour
 	
 	public void RecieveOrder(Order order, Transform target)
 	{
-		
+		if(target == transform && order != Order.Stop)
+			return;
+		target = ((GameObject)Instantiate(target.gameObject,target.position,target.rotation)).transform;
+		Vector3 targetLocation = target.position;
+		targetLocation.x += Random.Range(-3,3);
+		targetLocation.z += Random.Range(-3,3);
+		target.position = targetLocation;
+		if(order == Order.Stop || Vector3.Distance(target.position,transform.position) < 1.5f)
+		{
+			currentOrder = Order.Stop;
+			DestroyImmediate(moveTarget.gameObject);
+			moveTarget = null;
+			return;
+		}
+		currentOrder = order;
+		moveTarget = target;
+		if(leader == (Leader)Commander.player)
+			MessageList.Instance.AddMessage(uName+", acknowledging "+order.ToString()+" order.");
+	}
+	
+	public Order GetOrder()
+	{
+		return currentOrder;
+	}
+	
+	public Transform GetMoveTarget()
+	{
+		if(moveTarget == null)
+			return null;
+		if(Vector3.Distance(moveTarget.position,transform.position) < 1.5f)
+		{
+			DestroyImmediate(moveTarget.gameObject);
+			currentOrder = Order.Stop;
+			moveTarget = null;
+		}
+		return moveTarget;
 	}
 	
 	public bool Select()

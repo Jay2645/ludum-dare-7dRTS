@@ -101,16 +101,16 @@ public class PhysicalText
 	{
 		get
 		{
-			if(mat == null)
+			if(mesh == null)
 				return buttonNormalColor;
-			return mat.color;
+			return mesh.color;
 		}
 		set
 		{
-			if(mat == null)
+			if(mesh == null)
 				buttonNormalColor = value;
 			else
-				mat.color = value;
+				mesh.color = value;
 		}
 	}
 	public Material mat;
@@ -149,15 +149,17 @@ public class PhysicalText
 				mesh = text.GetComponent<TextMesh>();
 			if(mesh == null)
 				mesh = text.AddComponent<TextMesh>();
-			text.transform.localScale = new Vector3(0.25f,0.25f,0.25f);
-			if(font != null)
+			text.transform.localScale = new Vector3(0.025f,0.025f,0.025f);
+			mesh.font = Resources.Load("Fonts/arial") as Font;
+			render.material = font.material;
+			/*if(font != null)
 			{
 				MakeFontMaterial(mesh.font);
-			}
+			}*/
 			mesh.richText = true;
 			mesh.text = textString;
 		}
-		MakeButton(makeButton);
+		//MakeButton(makeButton);
 	}
 	
 	private void MakeTextureMaterial()

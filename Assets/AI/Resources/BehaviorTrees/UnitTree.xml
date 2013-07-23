@@ -1,0 +1,1 @@
+<behaviortree name="UnitTree" precondition="" repeatuntil="" debug="False"><sequencer name="root" precondition="" repeatuntil="" debug="False"><action name="checkOrders" precondition="" repeatuntil="" debug="False" classname="UnitCheckOrders" /></sequencer><variable name="hasOrders" initialvalue="0" /></behaviortree>
