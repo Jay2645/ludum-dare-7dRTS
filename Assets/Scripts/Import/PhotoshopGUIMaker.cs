@@ -4,6 +4,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
+/// <summary>
+/// Struct representing one layer from Photoshop.
+/// </summary>
 public struct PhotoshopLayer
 {
 	public Texture texture;
@@ -19,7 +22,9 @@ public struct PhotoshopLayer
 	public Camera guiCamera;
 }
 
-
+/// <summary>
+/// Takes a .csv file and a folder full of exported layers from Photoshop and arranges them into a 2.5D GUI that Unity plays nice with.
+/// </summary>
 public class PhotoshopGUIMaker : MonoBehaviour {
 	
 	public Camera guiCamera;

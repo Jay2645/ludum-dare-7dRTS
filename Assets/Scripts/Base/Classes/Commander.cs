@@ -2,6 +2,9 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+/// <summary>
+/// All possible orders that can be given to units.
+/// </summary>
 public enum Order
 {
 	move,
@@ -10,6 +13,11 @@ public enum Order
 	stop
 }
 
+/// <summary>
+/// Commander is the class that the player defaults to.
+/// It is capable of promoting and demoting units, and all units answer to it.
+/// There should only ever be one commander per team.
+/// </summary>
 public class Commander : Leader
 {
 	public bool isPlayer = false;

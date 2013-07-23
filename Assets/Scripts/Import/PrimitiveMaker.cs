@@ -1,6 +1,10 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// Creates a simple 2-triangle quad.
+/// This is now deprecated, as Unity 4.2 added this functionality (finally).
+/// </summary>
 public class PrimitiveMaker {
 	
 	private static int planeID = 0;

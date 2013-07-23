@@ -1,6 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// The projectile class.
+/// Moves at a constant rate, destroys itself upon hitting something.
+/// Different types of projectiles should inherit from this class to do unique things (such as blowing up and causing splash damage).
+/// </summary>
 [RequireComponent (typeof (Rigidbody))]
 [RequireComponent (typeof (ConstantForce))]
 public class Projectile : MonoBehaviour {

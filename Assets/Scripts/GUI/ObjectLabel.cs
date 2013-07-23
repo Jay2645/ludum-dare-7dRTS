@@ -1,6 +1,10 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// Places a label above a unit's head.
+/// From the Unity Wiki.
+/// </summary>
 public class ObjectLabel : MonoBehaviour 
 {
 	public string label = "";

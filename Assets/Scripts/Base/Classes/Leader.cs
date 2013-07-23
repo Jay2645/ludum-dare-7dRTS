@@ -2,6 +2,12 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+/// <summary>
+/// A leader micromanages a small group of units.
+/// While a Commander has to manage many units, a Leader only has to manage units assigned to them.
+/// An effective Commander will promote some of their units to Leaders, then distribute the remaining units among the leaders.
+/// This way, a Commander just needs to order around the Leaders, and the Leaders will worry about micromanaging their own troops.
+/// </summary>
 public class Leader : Unit 
 {
 	protected Dictionary<int,Unit> unitID = new Dictionary<int, Unit>();

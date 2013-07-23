@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// Gives button functionality to a PhysicalText object.
+/// </summary>
 public class MakeButton : MonoBehaviour {
 	
 	public BoxCollider col;

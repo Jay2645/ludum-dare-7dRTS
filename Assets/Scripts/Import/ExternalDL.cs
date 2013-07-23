@@ -4,6 +4,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
+/// <summary>
+/// Imports .OBJ and image files from external directories at runtime.
+/// </summary>
 public class ExternalDL : MonoBehaviour {
 	
 	public Texture2D ImportTexture(string url)

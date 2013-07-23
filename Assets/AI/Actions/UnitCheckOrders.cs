@@ -4,6 +4,11 @@ using System.Collections.Generic;
 using RAIN.Core;
 using RAIN.Action;
 
+/// <summary>
+/// RAIN behavior tree for basic units.
+/// Makes units check to see if their commander has given them any orders.
+/// If so, they move to assigned location.
+/// </summary>
 public class UnitCheckOrders : RAIN.Action.Action
 {
     public UnitCheckOrders()

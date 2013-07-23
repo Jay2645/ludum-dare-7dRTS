@@ -1,6 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// A generic weapon class.
+/// All weapons must inherit from this class and override critical functions.
+/// </summary>
 public class Weapon : MonoBehaviour 
 {
 	public bool fireOnce = true;

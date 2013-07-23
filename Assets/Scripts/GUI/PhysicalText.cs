@@ -1,6 +1,11 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// A 2.5D representation of text in physical space.
+/// Unity does not play well with GUI, so this is a fast-and-easy workaround which makes us render the GUI in the real world.
+/// This class can handle both strings and Textures.
+/// </summary>
 public class PhysicalText
 {
 	public PhysicalText (Vector3 position)
