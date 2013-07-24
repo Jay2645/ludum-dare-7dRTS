@@ -11,6 +11,7 @@ public class Weapon : MonoBehaviour
 	public float timeBetweenShots = 1.5f;
 	public int ammo = 2000;
 	public int damage = 25;
+	public string weaponName = "Gun";
 	
 	protected float lastShotTime = 0;
 	public Projectile projectile = null;

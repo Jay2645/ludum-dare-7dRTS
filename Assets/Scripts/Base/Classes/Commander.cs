@@ -70,11 +70,14 @@ public class Commander : Leader
 	
 	void Update()
 	{
+		CheckHealth();
 		if(!isPlayer)
 			return;
+		// Everything below here only works on the player.
 		HashSet<int> visibleUnits = new HashSet<int>();
 		Unit hitUnit = null;
 		int id = -1;
+		// First, check to see what units are in the middle portion of our screen:
 		float selectRadius = 0.45f;
 		while(selectRadius < 0.56f)
 		{
@@ -96,6 +99,7 @@ public class Commander : Leader
 			Debug.DrawRay(selectRay.origin,selectRay.direction);
 			selectRadius += 0.01f;
 		}
+		// Remove all the units which we are still looking at, leaving us with a list of units we were looking at, but are no longer doing so.
 		if(lookingAt.Count > 0)
 		{
 			lookingAt.ExceptWith(visibleUnits);
@@ -105,21 +109,41 @@ public class Commander : Leader
 				lookingAt.CopyTo(notLookingAt);
 				foreach(int i in notLookingAt)
 				{
-					unitID[i].IsLookedAt(false);
+					if(unitID.ContainsKey(i))
+						unitID[i].IsLookedAt(false);
 				}
 			}
 		}
 		lookingAt = visibleUnits;
+		// Selecting a unit:
 		if(Input.GetButton("Select"))
 		{
 			int[] delectableSelectables = new int[lookingAt.Count];
 			lookingAt.CopyTo(delectableSelectables);
-			foreach(int i in delectableSelectables)
+			if(Input.GetButtonDown("Select") && Input.GetButton("Upgrade"))
 			{
-				if(!selectedUnits.Contains(i) && unitID.ContainsKey(i) && unitID[i].Select())
-					selectedUnits.Add(i);
+				foreach(int i in delectableSelectables)
+				{
+					if(unitID.ContainsKey(i))
+					{
+						Unit unit = unitID[i];
+						if(unit is Leader)
+							((Leader)unit).DowngradeUnit();
+						else
+							unit.UpgradeUnit(this);
+					}
+				}
+			}
+			else
+			{
+				foreach(int i in delectableSelectables)
+				{
+					if(!selectedUnits.Contains(i) && unitID.ContainsKey(i) && unitID[i].Select())
+						selectedUnits.Add(i);
+				}
 			}
 		}
+		// Deselecting a unit:
 		else if(Input.GetButtonDown("Deselect"))
 		{
 			int[] ids = selectedUnits.ToArray();
@@ -129,6 +153,7 @@ public class Commander : Leader
 			}
 			selectedUnits.Clear();
 		}
+		// Giving orders:
 		else if(Input.GetButtonDown("Order"))
 		{
 			Ray selectRay = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
@@ -174,5 +199,15 @@ public class Commander : Leader
 	public override void RegisterLeader (Leader leader)
 	{
 		this.leader = this;
+	}
+	
+	protected override string GetClass ()
+	{
+		return "Commander";
+	}
+	
+	public override Commander GetCommander()
+	{
+		return this;
 	}
 }

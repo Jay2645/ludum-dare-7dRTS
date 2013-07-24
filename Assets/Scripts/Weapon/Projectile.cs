@@ -13,11 +13,12 @@ public class Projectile : MonoBehaviour {
 	public int damage = 25;
 	public float speed = 25.0f;
 	public Unit owner;
+	private const float PROJECTILE_DESTROY_TIME = 30.0f;
 	
 	void Start()
 	{
-		//Physics.IgnoreLayerCollision(LayerMask.NameToLayer("Default"),LayerMask.NameToLayer("Ignore Raycast"));
-		Destroy (gameObject,30.0f);
+		// Destroys the projectile if we can safely assume it won't hit anything.
+		Destroy (gameObject,PROJECTILE_DESTROY_TIME);
 	}
 	
 	void OnCollisionEnter(Collision collision)
@@ -25,6 +26,13 @@ public class Projectile : MonoBehaviour {
 		DamageGameObject(collision.gameObject);
 	}
 	
+	/// <summary>
+	/// Checks to see if this projectile hit a unit. If it did and the unit is not us, remove some health from that unit.
+	/// After it is done, destroys the projectile.
+	/// </summary>
+	/// <param name='collide'>
+	/// The GameObject we collided with.
+	/// </param>
 	private void DamageGameObject(GameObject collide)
 	{
 		Unit unit = collide.GetComponentInChildren<Unit>();

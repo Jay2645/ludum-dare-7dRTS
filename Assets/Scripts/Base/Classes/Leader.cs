@@ -14,6 +14,7 @@ public class Leader : Unit
 	protected static Dictionary<int, Leader> leaderLookup = new Dictionary<int, Leader>();
 	protected List<int> selectedUnits = new List<int>();
 	protected GameObject orderTarget = null;
+	protected Commander commander = null;
 	
 	public void RegisterUnit(Unit unit)
 	{
@@ -27,6 +28,24 @@ public class Leader : Unit
 		Debug.Log("Registered ID number "+id);
 	}
 	
+	/// <summary>
+	/// Registers the commander. Also makes sure that the leader is correct.
+	/// </summary>
+	/// <param name='commander'>
+	/// The commander to register.
+	/// </param>
+	public void RegisterCommander(Commander commander)
+	{
+		this.commander = commander;
+		RegisterLeader(this);
+		commander.RegisterUnit(this);
+	}
+	
+	public override void RegisterLeader (Leader leader)
+	{
+		this.leader = commander;
+	}
+	
 	public void RemoveUnit(int id)
 	{
 		if(unitID.ContainsKey(id))
@@ -35,6 +54,28 @@ public class Leader : Unit
 			leaderLookup.Remove(id);
 			selectedUnits.Remove(id);
 		}
+	}
+	
+	public void ReplaceUnit(int id, Unit newUnit)
+	{
+		if(unitID.ContainsKey(id))
+		{
+			unitID.Remove(id);
+			if(leaderLookup.ContainsKey(id))
+			{
+				leaderLookup.Remove(id);
+			}
+		}
+		RegisterUnit(newUnit);
+	}
+	
+	public void DowngradeUnit()
+	{
+		Unit downgrade = gameObject.AddComponent<Unit>();
+		leader = (Leader)commander;
+		downgrade.CloneUnit(this);
+		MessageList.Instance.AddMessage(uName+", acknowledging demotion to Unit.");
+		Destroy(this);
 	}
 	
 	public void GiveOrder(Order order, Vector3 targetPos)
@@ -54,5 +95,15 @@ public class Leader : Unit
 		{
 			unitID[id].RecieveOrder(order,target);
 		}
+	}
+	
+	protected override string GetClass ()
+	{
+		return "Leader";
+	}
+	
+	public virtual Commander GetCommander()
+	{
+		return commander;
 	}
 }

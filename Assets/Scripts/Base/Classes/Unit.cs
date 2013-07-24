@@ -10,13 +10,16 @@ using System.Collections;
 public class Unit : MonoBehaviour 
 {
 	protected bool isSelectable = true;
+	protected bool isSelected = false;
 	protected int id = -1;
 	private static int currentID = 0;
 	protected Leader leader = null;
-	protected Commander commander = null;
 	protected GameObject smokeTrail = null;
 	public static GameObject smokeTrailPrefab = null;
 	public static GameObject dustPrefab = null;
+	public static GameObject movePrefab = null;
+	public static GameObject attackPrefab = null;
+	public static GameObject defendPrefab = null;
 	public static string[] names = 
 	{
 		"Buzz Harrington",
@@ -34,6 +37,7 @@ public class Unit : MonoBehaviour
 	public ObjectLabel label = null;
 	protected Order currentOrder = Order.stop;
 	protected Transform moveTarget = null;
+	protected GameObject moveEffect = null;
 	public int health = 100;
 	public Weapon weapon = null;
 	
@@ -69,6 +73,18 @@ public class Unit : MonoBehaviour
 		{
 			dustPrefab = Resources.Load("Particles/Dust Storm") as GameObject;
 		}
+		if(movePrefab == null)
+		{
+			movePrefab = Resources.Load("Prefabs/MoveTarget") as GameObject;
+		}
+		if(defendPrefab == null)
+		{
+			defendPrefab = Resources.Load("Prefabs/DefendTarget") as GameObject;
+		}
+		if(attackPrefab == null)
+		{
+			attackPrefab = Resources.Load("Prefabs/AttackTarget") as GameObject;
+		}
 		smokeTrail = Instantiate(smokeTrailPrefab) as GameObject;
 		smokeTrail.transform.position = transform.position;
 		smokeTrail.transform.parent = transform;
@@ -94,6 +110,40 @@ public class Unit : MonoBehaviour
 	{
 		RemoveSmokeTrail();
 		CheckHealth();
+	}
+	
+	protected void CreateSelected()
+	{	
+		if(isSelected && currentOrder != Order.stop && moveTarget != null)
+		{
+			if(moveEffect == null)
+			{
+				if(currentOrder == Order.move)
+				{
+					moveEffect = (GameObject)Instantiate(movePrefab);
+				}
+				else if(currentOrder == Order.defend)
+				{
+					moveEffect = (GameObject)Instantiate(defendPrefab);
+				}
+				else if(currentOrder == Order.attack)
+				{
+					moveEffect = (GameObject)Instantiate(attackPrefab);
+				}
+				if(moveEffect != null)
+				{
+					moveEffect.transform.parent = moveTarget;
+					moveEffect.transform.localPosition = Vector3.zero;
+				}
+			}
+		}
+		else
+		{
+			if(moveEffect == null)
+				return;
+			Destroy(moveEffect);
+			moveEffect = null;
+		}
 	}
 	
 	protected void CheckHealth()
@@ -130,9 +180,7 @@ public class Unit : MonoBehaviour
 	public virtual void RegisterLeader(Leader leader)
 	{
 		this.leader = leader;
-		if(leader is Commander)
-			commander = (Commander)leader;
-		if(commander != Commander.player)
+		if(leader.GetCommander() != Commander.player)
 			Destroy(label);
 		teamColor = leader.teamColor;
 		leader.RegisterUnit(this);
@@ -143,6 +191,11 @@ public class Unit : MonoBehaviour
 	{
 		if(target == transform && order != Order.stop)
 			return;
+		if(moveTarget != null)
+		{
+			DestroyImmediate(moveTarget.gameObject);
+			moveTarget = null;
+		}
 		target = ((GameObject)Instantiate(target.gameObject,target.position,target.rotation)).transform;
 		Vector3 targetLocation = target.position;
 		targetLocation.x += Random.Range(-3,3);
@@ -160,6 +213,8 @@ public class Unit : MonoBehaviour
 		}
 		currentOrder = order;
 		moveTarget = target;
+		CreateSelected();
+		// This is a quick-and-dirty way for players to see that the unit has recieved orders correctly.
 		if(leader == (Leader)Commander.player)
 			MessageList.Instance.AddMessage(uName+", acknowledging "+order.ToString()+" order.");
 	}
@@ -185,9 +240,14 @@ public class Unit : MonoBehaviour
 	public bool Select()
 	{
 		if(!isSelectable)
+		{
+			isSelected = false;
 			return false;
-		if(commander != Commander.player)
+		}
+		isSelected = true;
+		if(leader != (Leader)Commander.player)
 			return true;
+		CreateSelected();
 		renderer.material.SetColor("_OutlineColor",Color.green);
 		return true;
 	}
@@ -197,12 +257,36 @@ public class Unit : MonoBehaviour
 		if(label == null)
 			return;
 		label.isLookedAt = lookedAt;
+		if(lookedAt)
+			label.SetLabelText(GenerateLabel());
+	}
+	
+	public string GenerateLabel()
+	{
+		string labelS = uName+"\n";
+		labelS = labelS + GetClass()+"\n";
+		labelS = labelS + "Weapon: ";
+		if(weapon == null)
+			labelS = labelS + "None\n";
+		else
+			labelS = labelS + weapon.weaponName+"\n";
+		labelS = labelS + "Health: "+health+" / 100";
+		return labelS;
+	}
+	
+	protected virtual string GetClass()
+	{
+		return "Unit";
 	}
 	
 	public void Deselect()
 	{
 		if(!isSelectable)
 			return;
+		isSelected = false;
+		if(leader.GetCommander() != Commander.player)
+			return;
+		CreateSelected();
 		renderer.material.SetColor("_OutlineColor",Color.black);
 	}
 	
@@ -211,5 +295,30 @@ public class Unit : MonoBehaviour
 		if(leader != null)
 			leader.RemoveUnit(id);
 		Destroy(gameObject);
+	}
+	
+	public void UpgradeUnit(Commander commander)
+	{
+		Leader upgrade = gameObject.AddComponent<Leader>();
+		upgrade.CloneUnit(this);
+		upgrade.RegisterCommander(commander);
+		MessageList.Instance.AddMessage(uName+", acknowledging promotion to Leader.");
+		Destroy(this);
+	}
+	
+	public void CloneUnit(Unit oldClone)
+	{
+		isSelectable = oldClone.isSelectable;
+		id = oldClone.id;
+		leader = oldClone.leader;
+		uName = oldClone.uName;
+		smokeTrail = oldClone.smokeTrail;
+		teamColor = oldClone.teamColor;
+		label = oldClone.label;
+		currentOrder = oldClone.currentOrder;
+		moveTarget = oldClone.moveTarget;
+		health = oldClone.health;
+		weapon = oldClone.weapon;
+		leader.ReplaceUnit(id, this);
 	}
 }
