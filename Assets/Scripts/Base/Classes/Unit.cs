@@ -276,7 +276,7 @@ public class Unit : MonoBehaviour
 	
 	protected virtual string GetClass()
 	{
-		return "Unit";
+		return "Grunt";
 	}
 	
 	public void Deselect()

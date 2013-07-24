@@ -74,7 +74,7 @@ public class Leader : Unit
 		Unit downgrade = gameObject.AddComponent<Unit>();
 		leader = (Leader)commander;
 		downgrade.CloneUnit(this);
-		MessageList.Instance.AddMessage(uName+", acknowledging demotion to Unit.");
+		MessageList.Instance.AddMessage(uName+", acknowledging demotion to grunt.");
 		Destroy(this);
 	}
 	
