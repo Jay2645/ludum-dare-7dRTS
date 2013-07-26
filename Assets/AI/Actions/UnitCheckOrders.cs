@@ -19,6 +19,8 @@ public class UnitCheckOrders : RAIN.Action.Action
 	private Unit unit;
 	private int unitType = -1;
 	private int isPlayer = -1;
+	private string friend = "";
+	private string enemy = "";
 	
     public override RAIN.Action.Action.ActionResult Start(RAIN.Core.Agent agent, float deltaTime)
     {
@@ -28,6 +30,15 @@ public class UnitCheckOrders : RAIN.Action.Action
 			unitType = agent.actionContext.GetContextItem<int>("unitType");
 		if(isPlayer == -1)
 			isPlayer = agent.actionContext.GetContextItem<int>("isPlayer");
+		if(friend == "")
+			friend = agent.Avatar.tag;
+		if(enemy == "")
+		{
+			if(friend == "Blue")
+				enemy = "Red";
+			else if(friend == "Red")
+				enemy = "Blue";
+		}
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 
@@ -47,6 +58,8 @@ public class UnitCheckOrders : RAIN.Action.Action
 				unitType = 1;
 			agent.actionContext.SetContextItem<int>("unitType",unitType);
 			agent.actionContext.SetContextItem<int>("isPlayer",isPlayer);
+			agent.actionContext.SetContextItem<string>("friend",friend);
+			agent.actionContext.SetContextItem<string>("enemy",enemy);
 		}
 		if(isPlayer == 1)
 			return RAIN.Action.Action.ActionResult.SUCCESS;

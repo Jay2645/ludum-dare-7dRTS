@@ -106,6 +106,13 @@ public class Unit : MonoBehaviour
 			child.gameObject.SetActive(true);
 		}
 		
+		if(gameObject.GetComponent<RAIN.Ontology.Decoration>() == null)
+		{
+			RAIN.Ontology.Decoration decoration = gameObject.AddComponent<RAIN.Ontology.Decoration>();
+			RAIN.Ontology.Aspect aspect = new RAIN.Ontology.Aspect(gameObject.tag,new RAIN.Ontology.Sensation("sight"));
+			decoration.aspect = aspect;
+		}
+		
 		health = _maxHealth;
 		
 		// Reset all variables to their initial state.
@@ -326,10 +333,11 @@ public class Unit : MonoBehaviour
 		}
 		if(target.GetComponent<Unit>() != null)
 		{
-			target = ((GameObject)Instantiate(new GameObject())).transform;
-			target.gameObject.name = "Dummy Game Object";
-			target.parent = target;
-			target.localPosition = Vector3.zero;
+			Transform newTarget = ((GameObject)Instantiate(new GameObject())).transform;
+			newTarget.gameObject.name = "Dummy Game Object";
+			newTarget.parent = target;
+			newTarget.localPosition = Vector3.zero;
+			target = newTarget;
 		}
 		target = ((GameObject)Instantiate(target.gameObject,target.position,target.rotation)).transform;
 		Vector3 targetLocation = target.position;
@@ -491,6 +499,7 @@ public class Unit : MonoBehaviour
 		moveTarget = oldClone.moveTarget;
 		health = oldClone.health;
 		weapon = oldClone.weapon;
+		weapon.owner = this;
 		leader.ReplaceUnit(id, this);
 	}
 }

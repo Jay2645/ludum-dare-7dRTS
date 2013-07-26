@@ -9,7 +9,7 @@ public class Weapon : MonoBehaviour
 {
 	public bool fireOnce = true;
 	public float timeBetweenShots = 1.5f;
-	public int ammo = 2000;
+	public int ammo = 800;
 	public int clip = 40;
 	public int damage = 25;
 	public float reloadTime = 1.5f;
@@ -26,6 +26,8 @@ public class Weapon : MonoBehaviour
 	protected bool reloading = false;
 	protected int _maxClipSize;
 	protected int _maxAmmoCount;
+	public AudioClip fire = null;
+	public AudioClip reload = null;
 	
 	void Awake()
 	{
@@ -39,12 +41,18 @@ public class Weapon : MonoBehaviour
 	
 	void Update()
 	{
-		if(clip <= 0 && !reloading)
+		if(owner == null)
+			rigidbody.isKinematic = false;
+		else
+			rigidbody.isKinematic = true;
+		if(light.enabled && Random.value * 3 < 1)
+			light.enabled = false;
+		if(ammo > 0 && clip <= 0 && !reloading)
 		{
 			Reload();
 			return;
 		}
-		if(reloading)
+		if(reloading || ammo == 0)
 			return;
 		if(owner == (Unit)Commander.player)
 		{
@@ -85,6 +93,19 @@ public class Weapon : MonoBehaviour
 		}
 		clip--;
 		ammo--;
+		if(audio != null && fire != null)
+		{
+			audio.PlayOneShot(fire);
+		}
+		if(particleSystem != null)
+		{
+			particleSystem.Play();
+		}
+		if(light != null)
+		{
+			light.intensity = Random.Range(0.0f, 3.5f);
+			light.enabled = true;
+		}
 	}
 	
 	/// <summary>
@@ -109,10 +130,10 @@ public class Weapon : MonoBehaviour
 		Debug.DrawRay(transform.position + transform.up,shotDirection, Color.blue);
 		if (Physics.Raycast(directionRay, out hit,Mathf.Infinity))
 		{
-			if(Random.value * 2 <= 1)
+			if(Random.value * (4 / 3) <= 1)
 			{
 				GameObject tracerInstance = Instantiate(tracer) as GameObject;
-				tracerInstance.transform.position = transform.position;
+				tracerInstance.transform.position = transform.position + (transform.up * 0.45f);
 				tracerInstance.GetComponent<Tracer>().MoveForward(shotDirection);
 			}
 			Unit hitUnit = hit.transform.root.gameObject.GetComponentInChildren<Unit>();
@@ -134,14 +155,21 @@ public class Weapon : MonoBehaviour
 	protected void Reload()
 	{
 		reloading = true;
+		if(audio != null && reload != null)
+		{
+			audio.PlayOneShot(reload);
+		}
 		Invoke ("DoneReloading",reloadTime);
 	}
 	
 	protected void DoneReloading()
 	{
 		int clipDelta = _maxClipSize - clip;
-		ammo -= clipDelta;
-		clip = _maxClipSize;
+		if(ammo > clipDelta)
+			ammo -= clipDelta;
+		else
+			ammo = 0;
+		clip = Mathf.Min(_maxClipSize,ammo);
 		reloading = false;
 	}
 	

@@ -44,6 +44,7 @@
 	</Reference>
   </ItemGroup>
   <ItemGroup>
+     <Compile Include="Assets\AI\Actions\DetectEnemy.cs" />
      <Compile Include="Assets\AI\Actions\UnitCheckOrders.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Commander.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Leader.cs" />
