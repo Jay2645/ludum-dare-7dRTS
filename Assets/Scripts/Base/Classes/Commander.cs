@@ -29,7 +29,7 @@ public class Commander : Leader
 	protected static int nextTeamID = 0;
 	public Camera mapCamera;
 	public Vector3[] spawnPoints;
-	public float spawnTime = 16.0f;
+	public float spawnTime = 8.0f;
 	private float _spawnTime;
 	
 	/// <summary>

@@ -426,6 +426,8 @@ public class Unit : MonoBehaviour
 	
 	protected void OnDie()
 	{
+		if(!IsAlive())
+			return;
 		if(leader != null)
 			leader.RemoveUnit(id);
 		gameObject.SetActive(false);
@@ -444,6 +446,7 @@ public class Unit : MonoBehaviour
 		}
 		// Reset spawn point.
 		spawnPoint = Vector3.zero;
+		Invoke("Spawn",GetCommander().GetTimeToRespawn());
 	}
 	
 	public bool IsAlive()
