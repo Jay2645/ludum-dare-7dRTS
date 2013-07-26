@@ -39,6 +39,8 @@ public class Commander : Leader
 	protected override void ClassSetup ()
 	{
 		_spawnTime = spawnTime;
+		if(defendObjective != null)
+			defendObjective.SetOwner(this);
 	}
 	
 	/// <summary>
@@ -68,10 +70,6 @@ public class Commander : Leader
 		{
 			mapCamera = (Instantiate(mapCamera.gameObject) as GameObject).camera;
 			mapCamera.name = "Commander "+teamID+"'s map camera.";
-		}
-		if(defendObjective != null)
-		{
-			defendObjective.SetOwner(this);
 		}
 	}
 	
@@ -358,11 +356,12 @@ public class Commander : Leader
 	public void GenerateUnit(GameObject unit)
 	{
 		GameObject unitInstance = Instantiate(unit) as GameObject;
+		unitInstance.tag = gameObject.tag;
 		Unit unitScript = unitInstance.GetComponent<Unit>();
 		if(unitScript == null)
 			unitScript = unitInstance.AddComponent<Unit>();
 		unitScript.RegisterLeader(this);
-		unitInstance.transform.position = transform.position + new Vector3(Random.Range(-10.0F, 10.0F), 1001, Random.Range(-10.0F, 10.0F));
+		unitInstance.transform.position = GetSpawnPoint();
 	}
 	
 	public bool IsEnemy(Unit unit)

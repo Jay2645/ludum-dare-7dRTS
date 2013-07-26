@@ -60,6 +60,7 @@
      <Compile Include="Assets\Scripts\Import\PrimitiveMaker.cs" />
      <Compile Include="Assets\Scripts\Weapon\Projectile.cs" />
      <Compile Include="Assets\Scripts\Weapon\Rocket.cs" />
+     <Compile Include="Assets\Scripts\Weapon\Tracer.cs" />
      <Compile Include="Assets\Scripts\Weapon\Weapon.cs" />
      <None Include="Assets\Standard Assets\Projectors\Guidelines.txt" />
      <None Include="Assets\Standard Assets\Toon Shading\Sources\Shaders\Toony-Basic.shader" />

@@ -21,11 +21,11 @@ public class ObjectLabel : MonoBehaviour
 	public bool isLookedAt = false;
 	
 	void OnEnable () 
-    {
-	    thisTransform = transform;
-	    if (cameraToUse == null)
-	        cameraToUse = Camera.main;
-	    camTransform = cameraToUse.transform;
+	{
+		thisTransform = transform;
+		if (cameraToUse == null)
+			cameraToUse = Camera.main;
+		camTransform = cameraToUse.transform;
 		if(target == null)
 			target = thisTransform;
 		if(target != thisTransform)
@@ -41,8 +41,8 @@ public class ObjectLabel : MonoBehaviour
 		}
 		text.textString = label;
 		textTransform = text.text.transform;
-		textTransform.position = target.position + offset;
 		textTransform.parent = target;
+		textTransform.localPosition = offset;
 		target.localScale = Vector3.zero;
 	}
 	

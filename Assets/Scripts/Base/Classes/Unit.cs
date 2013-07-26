@@ -59,6 +59,7 @@ public class Unit : MonoBehaviour
 	protected Weapon _initialWeapon;
 	public Objective defendObjective;
 	public Objective attackObjective;
+	public Objective currentObjective;
 	public Vector3 spawnPoint = Vector3.one;
 	
 	void Awake()
@@ -430,6 +431,9 @@ public class Unit : MonoBehaviour
 			return;
 		if(leader != null)
 			leader.RemoveUnit(id);
+		if(currentObjective != null)
+			currentObjective.RemovePlayer(this);
+		IsLookedAt(false);
 		gameObject.SetActive(false);
 		if(leader != null)
 			leader.RemoveUnit(id);
@@ -439,14 +443,15 @@ public class Unit : MonoBehaviour
 		Destroy (moveEffect);
 		if(moveTarget != null)
 			Destroy (moveTarget.gameObject);
-		IsLookedAt(false);
 		foreach(Transform child in transform)
 		{
 			child.gameObject.SetActive(false);
 		}
 		// Reset spawn point.
 		spawnPoint = Vector3.zero;
-		Invoke("Spawn",GetCommander().GetTimeToRespawn());
+		Commander commander = GetCommander();
+		if(commander != null)
+			Invoke("Spawn",commander.GetTimeToRespawn());
 	}
 	
 	public bool IsAlive()

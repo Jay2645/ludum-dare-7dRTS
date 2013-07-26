@@ -3,21 +3,38 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class Objective : MonoBehaviour {
-	protected Commander owner = null;
-	protected List<Unit> contestants = new List<Unit>();
+	public Commander owner = null;
+	protected List<Unit> defendingContestants = new List<Unit>();
+	protected List<Unit> attackingContestants = new List<Unit>();
+	protected Vector3 initialPosition;
+	protected Quaternion initialRotation;
+	
+	void Awake()
+	{
+		initialPosition = transform.position;
+		initialRotation = transform.rotation;
+	}
 	
 	public void SetOwner(Commander newOwner)
 	{
+		if(owner == newOwner)
+			return;
+		List<Unit> oldDefenders = defendingContestants;
+		defendingContestants = attackingContestants;
+		attackingContestants = oldDefenders;
 		owner = newOwner;
 		gameObject.renderer.material.color = newOwner.teamColor;
 	}
 	
 	void OnTriggerEnter(Collider other)
 	{
-		Unit unitEntered = other.transform.root.gameObject.GetComponentInChildren<Unit>();
+		Unit unitEntered = gameObject.GetComponent<Unit>();
 		if(unitEntered == null)
 			return;
-		contestants.Add(unitEntered);
+		if(OwnsObjective(unitEntered))
+			defendingContestants.Add(unitEntered);
+		else
+			attackingContestants.Add(unitEntered);
 		OnContestantEnter(unitEntered);
 	}
 	
@@ -45,6 +62,14 @@ public class Objective : MonoBehaviour {
 	/// </param>
 	protected bool OwnsObjective(Unit query)
 	{
-		return query.GetCommander().GetTeamID() == owner.GetTeamID();
+		return owner != null && query.GetCommander().GetTeamID() == owner.GetTeamID();
+	}
+	
+	public virtual void RemovePlayer(Unit player)
+	{
+		if(attackingContestants.Contains(player))
+			attackingContestants.Remove(player);
+		else if(defendingContestants.Contains(player))
+			attackingContestants.Remove(player);
 	}
 }
