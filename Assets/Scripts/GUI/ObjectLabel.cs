@@ -20,7 +20,7 @@ public class ObjectLabel : MonoBehaviour
 	private float _zScale = 0.0f;
 	public bool isLookedAt = false;
 	
-	void Awake () 
+	void OnEnable () 
     {
 	    thisTransform = transform;
 	    if (cameraToUse == null)

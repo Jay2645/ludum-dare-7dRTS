@@ -97,6 +97,20 @@ public class Leader : Unit
 		}
 	}
 	
+	protected Objective GetAttackObjective()
+	{
+		if(attackObjective == null)
+			attackObjective = commander.attackObjective;
+		return attackObjective;
+	}
+	
+	protected Objective GetDefendObjective()
+	{
+		if(defendObjective == null)
+			defendObjective = commander.defendObjective;
+		return defendObjective;
+	}
+	
 	protected override string GetClass ()
 	{
 		return "Leader";
@@ -109,7 +123,7 @@ public class Leader : Unit
 		return commander.GetTeamID();
 	}
 	
-	public virtual Commander GetCommander()
+	public override Commander GetCommander()
 	{
 		return commander;
 	}

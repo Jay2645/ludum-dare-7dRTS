@@ -16,6 +16,8 @@ public class Weapon : MonoBehaviour
 	protected float lastShotTime = 0;
 	public Projectile projectile = null;
 	public Unit owner = null;
+	public Vector3 unitPosition = new Vector3(-0.35f,0.075f,0.75f);
+	public Vector3 playerPosition = new Vector3(0.35f, -0.2f, 0.45f);
 	
 	void Update()
 	{
@@ -83,5 +85,17 @@ public class Weapon : MonoBehaviour
 			}
 		}
 		Debug.DrawRay(selectRay.origin,selectRay.direction);
+	}
+	
+	public virtual Vector3 GetLocation()
+	{
+		if(owner != null && owner is Commander && ((Commander)owner).isPlayer)
+		{
+			return playerPosition;
+		}
+		else
+		{
+			return unitPosition;
+		}
 	}
 }

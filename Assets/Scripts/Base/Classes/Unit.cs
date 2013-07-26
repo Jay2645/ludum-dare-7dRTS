@@ -20,17 +20,32 @@ public class Unit : MonoBehaviour
 	public static GameObject movePrefab = null;
 	public static GameObject attackPrefab = null;
 	public static GameObject defendPrefab = null;
-	public static string[] names = 
+	public static string[] firstNames = 
 	{
-		"Buzz Harrington",
-		"Luke Marigold",
-		"Chris Wong",
-		"David Rogers",
-		"Will Atkins",
-		"Michael Dyer",
-		"Dan Randall",
-		"Bruce Hunt",
-		"Ken Clark"
+		"Buzz",
+		"Luke",
+		"Chris",
+		"David",
+		"Will",
+		"Michael",
+		"Dan",
+		"Bruce",
+		"Ken",
+		"Jeff",
+		"Edward",
+		"Jaime"
+	};
+	public static string[] lastNames = 
+	{
+		"Harrington",
+		"Marigold",
+		"Wong",
+		"Rogers",
+		"Atkins",
+		"Dyer",
+		"Randall",
+		"Hunt",
+		"Clark"
 	};
 	protected string uName = "";
 	public Color teamColor = Color.white;
@@ -39,28 +54,121 @@ public class Unit : MonoBehaviour
 	protected Transform moveTarget = null;
 	protected GameObject moveEffect = null;
 	public int health = 100;
+	protected int _maxHealth;
 	public Weapon weapon = null;
+	protected Weapon _initialWeapon;
+	public Objective defendObjective;
+	public Objective attackObjective;
+	public Vector3 spawnPoint = Vector3.one;
 	
 	void Awake()
+	{
+		UnitSetup();
+		ClassSetup();
+	}
+	
+	/// <summary>
+	/// Sets up the Unit. This will only be called once.
+	/// </summary>
+	protected void UnitSetup()
 	{
 		CreateID();
 		if(weapon != null)
 		{
-			weapon = Instantiate(weapon) as Weapon;
-			weapon.transform.parent = transform;
-			weapon.transform.localPosition =  new Vector3(-0.35f,0.075f,0.75f);
-			weapon.transform.localRotation = Quaternion.Euler(90,0,0);
-			weapon.owner = this;
+			_initialWeapon = weapon;
 		}
+		_maxHealth = health;
+	}
+	
+	/// <summary>
+	/// Sets up whatever class this is. This will only be called once.
+	/// </summary>
+	protected virtual void ClassSetup()
+	{
+		
 	}
 	
 	void Start()
+	{
+		Spawn();
+	}
+	
+	/// <summary>
+	/// Spawns this Unit. This will be called every time the Unit dies and respawns.
+	/// </summary>
+	protected void Spawn()
+	{
+		// Make the GameObject visible.
+		gameObject.SetActive(true);
+		foreach(Transform child in transform)
+		{
+			child.gameObject.SetActive(true);
+		}
+		
+		health = _maxHealth;
+		
+		// Reset all variables to their initial state.
+		currentOrder = Order.stop;
+		if(moveTarget != null)
+		{
+			DestroyImmediate(moveTarget.gameObject);
+			moveTarget = null;
+		}
+		if(moveEffect != null)
+		{
+			DestroyImmediate(moveEffect);
+			moveEffect = null;
+		}
+		
+		if(_initialWeapon != null)
+		{
+			CreateWeapon(_initialWeapon);
+		}
+		
+		if(leader != null)
+			leader.RegisterUnit(this);
+		
+		// Call class-specific spawn code.
+		ClassSpawn();
+		
+		// Makes sure the GameObject is the right color.
+		if(renderer != null)
+			renderer.material.color = teamColor;
+		
+		// Move it to the spawn point.
+		if(spawnPoint == Vector3.zero)
+		{
+			Commander commander = GetCommander();
+			if(commander != null)
+			{
+				spawnPoint = commander.GetSpawnPoint();
+				transform.position = spawnPoint;
+			}
+		}
+	}
+	
+	/// <summary>
+	/// Creates things that should happen when this class spawns. This will be called every time this Unit dies and respawns.
+	/// </summary>
+	protected virtual void ClassSpawn()
 	{
 		if(transform.position.y > 100)
 		{
 			InitSmokeParticles();
 		}
-		renderer.material.color = teamColor;
+	}
+	
+	protected virtual void CreateWeapon(Weapon weapon)
+	{
+		if(this.weapon != null && weapon.gameObject.activeInHierarchy)
+		{
+			this.weapon.transform.parent = null;
+		}
+		this.weapon = Instantiate(weapon) as Weapon;
+		this.weapon.owner = this;
+		this.weapon.transform.parent = transform;
+		this.weapon.transform.localPosition = this.weapon.GetLocation();
+		this.weapon.transform.localRotation = Quaternion.Euler(90,0,0);
 	}
 	
 	protected void InitSmokeParticles()
@@ -108,8 +216,20 @@ public class Unit : MonoBehaviour
 	
 	void Update()
 	{
-		RemoveSmokeTrail();
+		if(!IsAlive())
+			return;
+		UnitUpdate();
+		ClassUpdate();
+	}
+	
+	protected void UnitUpdate()
+	{
 		CheckHealth();
+	}
+	
+	protected virtual void ClassUpdate()
+	{
+		RemoveSmokeTrail();
 	}
 	
 	protected void CreateSelected()
@@ -158,7 +278,7 @@ public class Unit : MonoBehaviour
 		currentID++;
 		if(uName == "")
 		{
-			uName = names[Mathf.RoundToInt(Random.Range(0,names.Length))];
+			uName = firstNames[Mathf.RoundToInt(Random.Range(0,firstNames.Length))]+ " " + lastNames[Mathf.RoundToInt(Random.Range(0,lastNames.Length))];
 			gameObject.name = uName;
 			if(label != null)
 				label.SetLabelText(uName);
@@ -253,7 +373,7 @@ public class Unit : MonoBehaviour
 	
 	public bool Select()
 	{
-		if(!isSelectable)
+		if(!isSelectable || !IsAlive())
 		{
 			isSelected = false;
 			return false;
@@ -295,7 +415,7 @@ public class Unit : MonoBehaviour
 	
 	public void Deselect()
 	{
-		if(!isSelectable)
+		if(!isSelectable || !IsAlive())
 			return;
 		isSelected = false;
 		if(leader.GetCommander() != Commander.player)
@@ -308,7 +428,30 @@ public class Unit : MonoBehaviour
 	{
 		if(leader != null)
 			leader.RemoveUnit(id);
-		Destroy(gameObject);
+		gameObject.SetActive(false);
+		if(leader != null)
+			leader.RemoveUnit(id);
+		if(weapon != null)
+			Destroy(weapon.gameObject);
+		Deselect();
+		Destroy (moveEffect);
+		if(moveTarget != null)
+			Destroy (moveTarget.gameObject);
+		IsLookedAt(false);
+		foreach(Transform child in transform)
+		{
+			child.gameObject.SetActive(false);
+		}
+		// Reset spawn point.
+		spawnPoint = Vector3.zero;
+	}
+	
+	public bool IsAlive()
+	{
+		bool isAlive = gameObject.activeInHierarchy;
+		if(isAlive && weapon == null && health <= 0) // Useful for debugging; automatically spawns the GameObject if we re-enable it from the inspector.
+			Spawn();
+		return isAlive;
 	}
 	
 	public void UpgradeUnit(Commander commander)
@@ -318,6 +461,13 @@ public class Unit : MonoBehaviour
 		upgrade.RegisterCommander(commander);
 		MessageList.Instance.AddMessage(uName+", acknowledging promotion to Leader.");
 		Destroy(this);
+	}
+	
+	public virtual Commander GetCommander()
+	{
+		if(leader == null) // Haven't set anything up yet.
+			return null;
+		return leader.GetCommander();
 	}
 	
 	public void CloneUnit(Unit oldClone)
