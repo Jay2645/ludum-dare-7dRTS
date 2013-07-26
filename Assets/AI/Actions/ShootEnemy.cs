@@ -36,19 +36,14 @@ public class ShootEnemy : RAIN.Action.Action
 		if(weapon.range < Vector3.Distance(enemy.transform.position,agent.Avatar.transform.position))
 			return RAIN.Action.Action.ActionResult.FAILURE;
 		float accuracy = weapon.GetAccuracy();
-		Debug.Log ("Accuracy: "+accuracy.ToString());
+		if(agent.LookAt(enemy.transform.position,deltaTime))
+			weapon.Shoot();
 		if(accuracy > 0.85f)
 		{
-			if(agent.LookAt(enemy.transform.position,deltaTime))
-			{
-				weapon.Shoot();
-				return RAIN.Action.Action.ActionResult.SUCCESS;
-			}
+			return RAIN.Action.Action.ActionResult.SUCCESS;
 		}
 		else
 		{
-			if(agent.LookAt(enemy.transform.position,deltaTime))
-				weapon.Shoot();
 			if(agent.MoveTo(enemy.transform.position,deltaTime))
 			{
 				return RAIN.Action.Action.ActionResult.SUCCESS;

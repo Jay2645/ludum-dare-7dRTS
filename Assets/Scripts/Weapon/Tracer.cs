@@ -3,8 +3,8 @@ using System.Collections;
 
 [RequireComponent (typeof (ConstantForce))]
 public class Tracer : MonoBehaviour {
-	private const float TRACER_MOVE_SPEED = 125.0f;
-	private const float DESTROY_TRACER_TIME = 3.0f;
+	private const float TRACER_MOVE_SPEED = 500.0f;
+	private const float DESTROY_TRACER_TIME = 0.5f;
 	
 	void Awake()
 	{

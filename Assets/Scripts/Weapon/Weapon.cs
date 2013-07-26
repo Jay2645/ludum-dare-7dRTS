@@ -97,7 +97,7 @@ public class Weapon : MonoBehaviour
 	{
 		if(reloading || ammo <= 0 || lastShotTime > 0 && Time.time - lastShotTime < timeBetweenShots)
 			return;
-		shotsFired++;
+		_shotsFired++;
 		lastShotTime = Time.time;
 		if(projectile == null)
 		{
@@ -171,9 +171,7 @@ public class Weapon : MonoBehaviour
 		float accuracy = 0.00f;
 		if(shotsFired == 0)
 			return accuracy;
-		accuracy = (float)shotsFired / (float)projectileHits;
-		if(accuracy == Mathf.Infinity)
-			return 0.00f;
+		accuracy = (float)projectileHits / (float)shotsFired;
 		return accuracy;
 	}
 	
