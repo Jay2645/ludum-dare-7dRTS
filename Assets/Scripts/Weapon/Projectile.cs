@@ -40,6 +40,7 @@ public class Projectile : MonoBehaviour {
 			return;
 		if(unit != null)
 		{
+			owner.weapon.AddHit();
 			unit.health -= damage;
 		}
 		Destroy (gameObject);

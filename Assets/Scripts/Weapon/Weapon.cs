@@ -29,6 +29,12 @@ public class Weapon : MonoBehaviour
 	public AudioClip fire = null;
 	public AudioClip reload = null;
 	
+	protected int projectileHits = 0;
+	protected int _projectileHits;
+	protected int shotsFired = 0;
+	protected int _shotsFired;
+	protected float timer = 0.00f;
+	
 	void Awake()
 	{
 		if(tracer == null)
@@ -41,6 +47,14 @@ public class Weapon : MonoBehaviour
 	
 	void Update()
 	{
+		if(timer >= 1 && _shotsFired > 0)
+		{
+			projectileHits = _projectileHits;
+			shotsFired = _shotsFired;
+			timer = 0;
+			_projectileHits = 0;
+			_shotsFired = 0;
+		}
 		if(owner == null)
 			rigidbody.isKinematic = false;
 		else
@@ -73,6 +87,7 @@ public class Weapon : MonoBehaviour
 			if(Input.GetButtonDown("Reload") && !Input.GetButton("Fire1"))
 				Reload();
 		}
+		timer += Time.deltaTime;
 	}
 	
 	/// <summary>
@@ -82,6 +97,7 @@ public class Weapon : MonoBehaviour
 	{
 		if(reloading || ammo <= 0 || lastShotTime > 0 && Time.time - lastShotTime < timeBetweenShots)
 			return;
+		shotsFired++;
 		lastShotTime = Time.time;
 		if(projectile == null)
 		{
@@ -139,9 +155,26 @@ public class Weapon : MonoBehaviour
 			Unit hitUnit = hit.transform.root.gameObject.GetComponentInChildren<Unit>();
 			if(hitUnit != null)
 			{
+				_projectileHits++;
 				hitUnit.health -= damage;
 			}
 		}
+	}
+	
+	public void AddHit()
+	{
+		_projectileHits++;
+	}
+	
+	public float GetAccuracy()
+	{
+		float accuracy = 0.00f;
+		if(shotsFired == 0)
+			return accuracy;
+		accuracy = (float)shotsFired / (float)projectileHits;
+		if(accuracy == Mathf.Infinity)
+			return 0.00f;
+		return accuracy;
 	}
 	
 	protected Vector3 ShootError()

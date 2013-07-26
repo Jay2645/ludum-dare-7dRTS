@@ -108,6 +108,7 @@ public class Unit : MonoBehaviour
 		
 		if(gameObject.GetComponent<RAIN.Ontology.Decoration>() == null)
 		{
+			gameObject.AddComponent<RAIN.Ontology.Entity>();
 			RAIN.Ontology.Decoration decoration = gameObject.AddComponent<RAIN.Ontology.Decoration>();
 			RAIN.Ontology.Aspect aspect = new RAIN.Ontology.Aspect(gameObject.tag,new RAIN.Ontology.Sensation("sight"));
 			decoration.aspect = aspect;
@@ -468,6 +469,15 @@ public class Unit : MonoBehaviour
 		if(isAlive && weapon == null && health <= 0) // Useful for debugging; automatically spawns the GameObject if we re-enable it from the inspector.
 			Spawn();
 		return isAlive;
+	}
+	
+	public float GetHealthPercent()
+	{
+		float _health = 0.00f;
+		if(!IsAlive())
+			return _health;
+		_health = (float)health / (float)_maxHealth;
+		return health;
 	}
 	
 	public void UpgradeUnit(Commander commander)

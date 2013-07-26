@@ -66,18 +66,18 @@ public class UnitCheckOrders : RAIN.Action.Action
 		if(unit.GetOrder() == Order.stop)
 		{
 			agent.actionContext.SetContextItem<int>("hasOrders",0);
-			agent.MoveTo(agent.Avatar.transform.position,0.0f);
+			agent.MoveTo(agent.Avatar.transform.position,deltaTime);
 			return RAIN.Action.Action.ActionResult.FAILURE;
 		}
 		Transform target = unit.GetMoveTarget();
 		if(target == null)
 		{
 			agent.actionContext.SetContextItem<int>("hasOrders",0);
-			agent.MoveTo(agent.Avatar.transform.position,0.0f);
+			agent.MoveTo(agent.Avatar.transform.position,deltaTime);
 			return RAIN.Action.Action.ActionResult.FAILURE;
 		}
 		agent.actionContext.SetContextItem<int>("hasOrders",1);
-		if(agent.MoveTo(target.position,0.5f))
+		if(agent.MoveTo(target.position,deltaTime))
 			return RAIN.Action.Action.ActionResult.SUCCESS;
 		return RAIN.Action.Action.ActionResult.RUNNING;
 	}
