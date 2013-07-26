@@ -114,8 +114,6 @@ public class Unit : MonoBehaviour
 			decoration.aspect = aspect;
 		}
 		
-		health = _maxHealth;
-		
 		// Reset all variables to their initial state.
 		currentOrder = Order.stop;
 		if(moveTarget != null)
@@ -128,7 +126,7 @@ public class Unit : MonoBehaviour
 			DestroyImmediate(moveEffect);
 			moveEffect = null;
 		}
-		
+		health = _maxHealth;
 		if(_initialWeapon != null)
 		{
 			CreateWeapon(_initialWeapon);
