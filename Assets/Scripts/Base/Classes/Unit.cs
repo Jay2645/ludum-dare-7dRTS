@@ -152,7 +152,7 @@ public class Unit : MonoBehaviour
 			OnDie();
 	}
 	
-	protected void CreateID()
+	protected virtual void CreateID()
 	{
 		id = currentID;
 		currentID++;
@@ -177,6 +177,13 @@ public class Unit : MonoBehaviour
 		return id;
 	}
 	
+	public virtual int GetTeamID()
+	{
+		if(leader == null)
+			return -1;
+		return leader.GetCommander().GetTeamID();
+	}
+	
 	public virtual void RegisterLeader(Leader leader)
 	{
 		this.leader = leader;
@@ -195,6 +202,13 @@ public class Unit : MonoBehaviour
 		{
 			DestroyImmediate(moveTarget.gameObject);
 			moveTarget = null;
+		}
+		if(target.GetComponent<Unit>() != null)
+		{
+			target = ((GameObject)Instantiate(new GameObject())).transform;
+			target.gameObject.name = "Dummy Game Object";
+			target.parent = target;
+			target.localPosition = Vector3.zero;
 		}
 		target = ((GameObject)Instantiate(target.gameObject,target.position,target.rotation)).transform;
 		Vector3 targetLocation = target.position;

@@ -17,16 +17,39 @@ public class UnitCheckOrders : RAIN.Action.Action
     }
 	
 	private Unit unit;
-
+	private int unitType = -1;
+	private int isPlayer = -1;
+	
     public override RAIN.Action.Action.ActionResult Start(RAIN.Core.Agent agent, float deltaTime)
     {
 		if(unit == null)
 			unit = agent.Avatar.GetComponentInChildren<Unit>();
+		if(unitType == -1)
+			unitType = agent.actionContext.GetContextItem<int>("unitType");
+		if(isPlayer == -1)
+			isPlayer = agent.actionContext.GetContextItem<int>("isPlayer");
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 
     public override RAIN.Action.Action.ActionResult Execute(RAIN.Core.Agent agent, float deltaTime)
     {
+		if(unitType == 0)
+		{
+			if(unit is Commander)
+			{
+				if(((Commander)unit).isPlayer)
+					isPlayer = 1;
+				unitType = 3;
+			}
+			else if(unit is Leader)
+				unitType = 2;
+			else
+				unitType = 1;
+			agent.actionContext.SetContextItem<int>("unitType",unitType);
+			agent.actionContext.SetContextItem<int>("isPlayer",isPlayer);
+		}
+		if(isPlayer == 1)
+			return RAIN.Action.Action.ActionResult.SUCCESS;
 		if(unit.GetOrder() == Order.stop)
 		{
 			agent.actionContext.SetContextItem<int>("hasOrders",0);

@@ -44,11 +44,12 @@
 	</Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\AI\Actions\FollowOrders.cs" />
      <Compile Include="Assets\AI\Actions\UnitCheckOrders.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Commander.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Leader.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Unit.cs" />
+     <Compile Include="Assets\Scripts\Base\Objectives\Flag.cs" />
+     <Compile Include="Assets\Scripts\Base\Objectives\Objective.cs" />
      <Compile Include="Assets\Scripts\GUI\MakeButton.cs" />
      <Compile Include="Assets\Scripts\GUI\MessageList.cs" />
      <Compile Include="Assets\Scripts\GUI\ObjectLabel.cs" />

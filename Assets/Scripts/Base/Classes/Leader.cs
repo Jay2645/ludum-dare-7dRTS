@@ -102,6 +102,13 @@ public class Leader : Unit
 		return "Leader";
 	}
 	
+	public override int GetTeamID ()
+	{
+		if(commander == null)
+			return -1;
+		return commander.GetTeamID();
+	}
+	
 	public virtual Commander GetCommander()
 	{
 		return commander;

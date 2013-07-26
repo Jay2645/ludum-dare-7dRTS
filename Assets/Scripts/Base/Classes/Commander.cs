@@ -24,7 +24,10 @@ public class Commander : Leader
 	public int unitsToGenerate = 0;
 	public static Commander player = null;
 	public static GameObject unitPrefab = null;
-	private HashSet<int> lookingAt = new HashSet<int>();
+	protected HashSet<int> lookingAt = new HashSet<int>();
+	protected int teamID = -1;
+	protected static int nextTeamID = 0;
+	public Camera mapCamera;
 	
 	void Awake()
 	{
@@ -59,6 +62,11 @@ public class Commander : Leader
 		{
 			GenerateUnit(unitPrefab);
 			unitsToGenerate--;
+		}
+		if(mapCamera != null)
+		{
+			mapCamera = (Instantiate(mapCamera.gameObject) as GameObject).camera;
+			mapCamera.name = "Commander "+teamID+"'s map camera.";
 		}
 	}
 	
@@ -179,6 +187,20 @@ public class Commander : Leader
 				}
 			}
 		}
+	}
+	
+	protected override void CreateID ()
+	{
+		teamID = nextTeamID;
+		nextTeamID++;
+		base.CreateID ();
+	}
+	
+	public override int GetTeamID ()
+	{
+		if(teamID == -1)
+			CreateID();
+		return teamID;
 	}
 	
 	public void GenerateUnit(GameObject unit)
