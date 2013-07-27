@@ -15,6 +15,13 @@ public class Leader : Unit
 	protected List<int> selectedUnits = new List<int>();
 	protected GameObject orderTarget = null;
 	protected Commander commander = null;
+	protected float TEMP_GAMEOBJECT_REMOVE_TIME = 7.0f;
+	
+	protected override void ClassSpawn ()
+	{
+		if(smokeTrail != null)
+			Destroy(smokeTrail);
+	}
 	
 	public void RegisterUnit(Unit unit)
 	{
@@ -24,7 +31,12 @@ public class Leader : Unit
 		if(leaderLookup.ContainsKey(id))
 			leaderLookup[id].RemoveUnit(id);
 		unitID.Add(id,unit);
+		commander.AddUnit(unit);
 		leaderLookup.Add(id,this);
+		if(currentOrder != Order.stop)
+		{
+			GiveOrder(currentOrder,moveTarget,unit);
+		}
 		Debug.Log("Registered ID number "+id);
 	}
 	
@@ -46,17 +58,7 @@ public class Leader : Unit
 		this.leader = commander;
 	}
 	
-	public void RemoveUnit(int id)
-	{
-		if(unitID.ContainsKey(id))
-		{
-			unitID.Remove(id);
-			leaderLookup.Remove(id);
-			selectedUnits.Remove(id);
-		}
-	}
-	
-	public void ReplaceUnit(int id, Unit newUnit)
+	public virtual void RemoveUnit(int id)
 	{
 		if(unitID.ContainsKey(id))
 		{
@@ -65,12 +67,33 @@ public class Leader : Unit
 			{
 				leaderLookup.Remove(id);
 			}
+			selectedUnits.Remove(id);
 		}
+	}
+	
+	public void ReplaceUnit(int id, Unit newUnit)
+	{
+		bool isSelected = selectedUnits.Contains(id);
+		RemoveUnit(id);
+		if(isSelected)
+			selectedUnits.Add(id);
 		RegisterUnit(newUnit);
+	}
+	
+	public override void RecieveOrder (Order order, Transform target, Leader giver)
+	{
+		Debug.Log ("Recieved order from "+giver+": "+order.ToString()+" "+target.position);
+		base.RecieveOrder (order, target, giver);
+		GiveOrder(order,target);
 	}
 	
 	public void DowngradeUnit()
 	{
+		selectedUnits.Clear();
+		foreach(KeyValuePair<int, Unit> kvp in unitID)
+		{
+			kvp.Value.RegisterLeader(commander);
+		}
 		Unit downgrade = gameObject.AddComponent<Unit>();
 		leader = (Leader)commander;
 		downgrade.CloneUnit(this);
@@ -85,7 +108,7 @@ public class Leader : Unit
 		orderTarget = new GameObject("Order Target");
 		orderTarget.transform.position = targetPos;
 		GiveOrder(order,orderTarget.transform);
-		Destroy(orderTarget,7.0f);
+		Destroy(orderTarget,TEMP_GAMEOBJECT_REMOVE_TIME);
 	}
 	
 	public void GiveOrder(Order order, Transform target)
@@ -93,8 +116,17 @@ public class Leader : Unit
 		int[] ids = selectedUnits.ToArray();
 		foreach(int id in ids)
 		{
-			unitID[id].RecieveOrder(order,target);
+			GiveOrder(order,target,unitID[id]);
 		}
+	}
+	
+	public void GiveOrder(Order order, Transform target, Unit unit)
+	{
+		bool isCommander = this is Commander;
+		// Only give orders to a unit if it doesn't already have orders from someone who outranks us.
+		if(!isCommander && unit.GetOrder() != Order.stop && unit.GetLastOrderer() is Commander)
+			return;
+		unit.RecieveOrder(order,target,this);
 	}
 	
 	protected Objective GetAttackObjective()
@@ -121,6 +153,24 @@ public class Leader : Unit
 		if(commander == null)
 			return -1;
 		return commander.GetTeamID();
+	}
+	
+	/// <summary>
+	/// Gets the squad member count.
+	/// </summary>
+	/// <returns>
+	/// The squad member count. Note that this does NOT include us.
+	/// </returns>
+	public int GetSquadMemberCount()
+	{
+		return unitID.Count;
+	}
+	
+	public Unit[] GetSquadMembers()
+	{
+		Unit[] unitArray = new Unit[unitID.Count];
+		unitID.Values.CopyTo(unitArray,0);
+		return unitArray;
 	}
 	
 	public override Commander GetCommander()

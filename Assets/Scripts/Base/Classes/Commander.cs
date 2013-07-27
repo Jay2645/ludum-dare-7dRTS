@@ -30,7 +30,10 @@ public class Commander : Leader
 	public Camera mapCamera;
 	public Vector3[] spawnPoints;
 	public float spawnTime = 8.0f;
-	private float _spawnTime;
+	protected float _spawnTime;
+	protected List<Leader> leaders = new List<Leader>();
+	public Objective[] objectives;
+	protected Dictionary<int,Unit> allUnits = new Dictionary<int, Unit>();
 	
 	/// <summary>
 	/// Called once, at the beginning of the game.
@@ -41,6 +44,7 @@ public class Commander : Leader
 		_spawnTime = spawnTime;
 		if(defendObjective != null)
 			defendObjective.SetOwner(this);
+		commander = this;
 	}
 	
 	/// <summary>
@@ -240,21 +244,31 @@ public class Commander : Leader
 	}
 	
 	/// <summary>
-	/// Upgrades a unit by its ID.
+	/// Upgrades/Demotes a Unit by its ID.
 	/// </summary>
+	/// <returns>
+	/// A list of all our Leaders.
+	/// </returns>
 	/// <param name='selected'>
-	/// The Unit ID to upgrade.
+	/// The Unit to promote or demote.
 	/// </param>
-	public void UpgradeUnits(int selected)
+	public Leader[] UpgradeUnits(int selected)
 	{
 		if(unitID.ContainsKey(selected))
 		{
 			Unit unit = unitID[selected];
 			if(unit is Leader)
-				((Leader)unit).DowngradeUnit();
+			{
+				Leader leader = (Leader)unit;
+				leaders.Remove(leader);
+				leader.DowngradeUnit();
+			}
 			else
-				unit.UpgradeUnit(this);
+			{
+				leaders.Add(unit.UpgradeUnit(this));
+			}
 		}
+		return GetLeaders();
 	}
 	
 	/// <summary>
@@ -304,15 +318,72 @@ public class Commander : Leader
 	
 	protected override void CreateWeapon(Weapon weapon)
 	{
-		if(this.weapon != null && weapon.gameObject.activeInHierarchy)
+		if(isPlayer)
 		{
-			this.weapon.transform.parent = null;
+			if(this.weapon != null && weapon.gameObject.activeInHierarchy)
+			{
+				this.weapon.transform.parent = null;
+			}
+			this.weapon = Instantiate(weapon) as Weapon;
+			this.weapon.owner = this;
+			this.weapon.transform.parent = Camera.main.transform;
+			this.weapon.transform.localPosition = this.weapon.GetLocation();
+			this.weapon.transform.localRotation = Quaternion.Euler(90,0,0);
 		}
-		this.weapon = Instantiate(weapon) as Weapon;
-		this.weapon.owner = this;
-		this.weapon.transform.parent = Camera.main.transform;
-		this.weapon.transform.localPosition = this.weapon.GetLocation();
-		this.weapon.transform.localRotation = Quaternion.Euler(90,0,0);
+		else
+		{
+			base.CreateWeapon(weapon);
+		}
+	}
+	
+	public void AddUnit(Unit unit)
+	{
+		int id = unit.GetID();
+		if(allUnits.ContainsKey(id))
+		{
+			allUnits[id] = unit;
+		}
+		else
+		{
+			allUnits.Add(id,unit);
+		}
+	}
+	
+	public override void RemoveUnit (int id)
+	{
+		base.RemoveUnit (id);
+		if(allUnits.ContainsKey(id))
+			allUnits.Remove(id);
+	}
+	
+	public int GetUnitCount()
+	{
+		return allUnits.Count;
+	}
+	
+	public Unit[] GetAllUnits()
+	{
+		Unit[] units = new Unit[allUnits.Count];
+		allUnits.Values.CopyTo(units,0);
+		return units;
+	}
+	
+	public Unit[] GetNonAssignedUnits()
+	{
+		List<Unit> unitList = new List<Unit>();
+		foreach(KeyValuePair<int, Unit> kvp in unitID)
+		{
+			Unit uValue = kvp.Value;
+			if(uValue is Commander || uValue is Leader)
+				continue;
+			unitList.Add(uValue);
+		}
+		return unitList.ToArray();
+	}
+	
+	public void SetObjectives(Objective[] objectives)
+	{
+		this.objectives = objectives;
 	}
 	
 	public void SetRespawnTime(float newTime)
@@ -343,7 +414,13 @@ public class Commander : Leader
 	{
 		teamID = nextTeamID;
 		nextTeamID++;
+		uName = gameObject.name;
 		base.CreateID ();
+	}
+	
+	public Leader[] GetLeaders()
+	{
+		return leaders.ToArray();
 	}
 	
 	public override int GetTeamID ()

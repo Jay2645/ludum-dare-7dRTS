@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 public class Objective : MonoBehaviour {
 	public Commander owner = null;
+	public int captureIndex = 0; // Must be 0 in order for a unit to capture it.
 	protected List<Unit> defendingContestants = new List<Unit>();
 	protected List<Unit> attackingContestants = new List<Unit>();
 	protected Vector3 initialPosition;
@@ -28,7 +29,9 @@ public class Objective : MonoBehaviour {
 	
 	void OnTriggerEnter(Collider other)
 	{
-		Unit unitEntered = gameObject.GetComponent<Unit>();
+		if(captureIndex != 0)
+			return;
+		Unit unitEntered = other.gameObject.GetComponent<Unit>();
 		if(unitEntered == null)
 			return;
 		if(OwnsObjective(unitEntered))
@@ -71,5 +74,10 @@ public class Objective : MonoBehaviour {
 			attackingContestants.Remove(player);
 		else if(defendingContestants.Contains(player))
 			attackingContestants.Remove(player);
+	}
+	
+	public virtual void OnCaptured(Unit capturer)
+	{
+		SetOwner(capturer.GetCommander());
 	}
 }

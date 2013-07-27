@@ -50,11 +50,11 @@ public class ObjectLabel : MonoBehaviour
 	{
 		if(!isLookedAt)
 		{
-			if(_yScale > 0)
+			if(_yScale > 0.001f)
 			{
-				_xScale = Mathf.Lerp(_xScale,0,Time.deltaTime * 5);
-				_yScale = Mathf.Lerp(_yScale,0,Time.deltaTime * 5);
-				_zScale = Mathf.Lerp(_zScale,0,Time.deltaTime * 5);
+				_xScale = Mathf.Lerp(_xScale,0.001f,Time.deltaTime * 5);
+				_yScale = Mathf.Lerp(_yScale,0.001f,Time.deltaTime * 5);
+				_zScale = Mathf.Lerp(_zScale,0.001f,Time.deltaTime * 5);
 			}
 			else
 			{

@@ -44,9 +44,16 @@
 	</Reference>
   </ItemGroup>
   <ItemGroup>
+     <Compile Include="Assets\AI\Actions\AdvanceSquadOnAttackObjective.cs" />
+     <Compile Include="Assets\AI\Actions\AdvanceSquadOnDefendObjective.cs" />
+     <Compile Include="Assets\AI\Actions\CheckSquadHealth.cs" />
+     <Compile Include="Assets\AI\Actions\CheckSquadStatus.cs" />
+     <Compile Include="Assets\AI\Actions\DelegateSquadsToObjective.cs" />
      <Compile Include="Assets\AI\Actions\DetectEnemy.cs" />
      <Compile Include="Assets\AI\Actions\ShootEnemy.cs" />
+     <Compile Include="Assets\AI\Actions\SquadAttackEnemy.cs" />
      <Compile Include="Assets\AI\Actions\UnitCheckOrders.cs" />
+     <Compile Include="Assets\AI\Actions\UnitLowOnHealth.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Commander.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Leader.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Unit.cs" />

@@ -50,7 +50,8 @@ public class Unit : MonoBehaviour
 	protected string uName = "";
 	public Color teamColor = Color.white;
 	public ObjectLabel label = null;
-	protected Order currentOrder = Order.stop;
+	public Order currentOrder = Order.stop;
+	protected Leader lastOrderer = null;
 	protected Transform moveTarget = null;
 	protected GameObject moveEffect = null;
 	public int health = 100;
@@ -61,6 +62,7 @@ public class Unit : MonoBehaviour
 	public Objective attackObjective;
 	public Objective currentObjective;
 	public Vector3 spawnPoint = Vector3.one;
+	protected bool skipSpawn = false;
 	
 	void Awake()
 	{
@@ -99,6 +101,12 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected void Spawn()
 	{
+		// Sometimes (especially when we get promoted) we run into a bug where all our variables are reset when they shouldn't be.
+		if(skipSpawn)
+		{
+			skipSpawn = false;
+			return;
+		}
 		// Make the GameObject visible.
 		gameObject.SetActive(true);
 		foreach(Transform child in transform)
@@ -115,6 +123,7 @@ public class Unit : MonoBehaviour
 		}
 		
 		// Reset all variables to their initial state.
+		Debug.Log ("Resetting variables on "+this);
 		currentOrder = Order.stop;
 		if(moveTarget != null)
 		{
@@ -316,21 +325,32 @@ public class Unit : MonoBehaviour
 		this.leader = leader;
 		if(leader.GetCommander() != Commander.player)
 			Destroy(label);
+		Deselect();
+		currentOrder = Order.stop;
+		if(moveTarget != null)
+			DestroyImmediate(moveTarget.gameObject);
+		lastOrderer = null;
+		float distanceFromLeader = Vector3.Distance(transform.position,leader.transform.position);
+		if(distanceFromLeader >= 50.0f)
+		{
+			RecieveOrder(Order.move,leader.transform,null);
+		}
 		teamColor = leader.teamColor;
 		leader.RegisterUnit(this);
 		renderer.material.color = teamColor;
 	}
 	
-	public void RecieveOrder(Order order, Transform target)
+	public virtual void RecieveOrder(Order order, Transform target, Leader giver)
 	{
 		if(target == transform && order != Order.stop)
 			return;
+		Debug.Log (this+" has recieved "+order);
 		if(moveTarget != null)
 		{
 			DestroyImmediate(moveTarget.gameObject);
 			moveTarget = null;
 		}
-		if(target.GetComponent<Unit>() != null)
+		if(target.GetComponent<Unit>() != null || target.GetComponent<Objective>() != null)
 		{
 			Transform newTarget = ((GameObject)Instantiate(new GameObject())).transform;
 			newTarget.gameObject.name = "Dummy Game Object";
@@ -343,7 +363,7 @@ public class Unit : MonoBehaviour
 		targetLocation.x += Random.Range(-3,3);
 		targetLocation.z += Random.Range(-3,3);
 		target.position = targetLocation;
-		if(order == Order.stop || Vector3.Distance(target.position,transform.position) < 1.5f)
+		if(order == Order.stop || Vector3.Distance(target.position,transform.position) < 5.0f)
 		{
 			if(order != Order.defend)
 			{
@@ -353,11 +373,12 @@ public class Unit : MonoBehaviour
 			}
 			return;
 		}
+		lastOrderer = giver;
 		currentOrder = order;
 		moveTarget = target;
 		CreateSelected();
 		// This is a quick-and-dirty way for players to see that the unit has recieved orders correctly.
-		if(leader == (Leader)Commander.player)
+		//if(leader == (Leader)Commander.player)
 			MessageList.Instance.AddMessage(uName+", acknowledging "+order.ToString()+" order.");
 	}
 	
@@ -366,11 +387,16 @@ public class Unit : MonoBehaviour
 		return currentOrder;
 	}
 	
+	public Leader GetLastOrderer()
+	{
+		return lastOrderer;
+	}
+	
 	public Transform GetMoveTarget()
 	{
 		if(moveTarget == null)
 			return null;
-		if(Vector3.Distance(moveTarget.position,transform.position) < 1.5f)
+		if(Vector3.Distance(moveTarget.position,transform.position) < 5.0f)
 		{
 			DestroyImmediate(moveTarget.gameObject);
 			currentOrder = Order.stop;
@@ -463,7 +489,7 @@ public class Unit : MonoBehaviour
 	
 	public bool IsAlive()
 	{
-		bool isAlive = gameObject.activeInHierarchy;
+		bool isAlive = gameObject != null && gameObject.activeInHierarchy;
 		if(isAlive && weapon == null && health <= 0) // Useful for debugging; automatically spawns the GameObject if we re-enable it from the inspector.
 			Spawn();
 		return isAlive;
@@ -478,13 +504,14 @@ public class Unit : MonoBehaviour
 		return health;
 	}
 	
-	public void UpgradeUnit(Commander commander)
+	public Leader UpgradeUnit(Commander commander)
 	{
 		Leader upgrade = gameObject.AddComponent<Leader>();
 		upgrade.CloneUnit(this);
 		upgrade.RegisterCommander(commander);
 		MessageList.Instance.AddMessage(uName+", acknowledging promotion to Leader.");
-		Destroy(this);
+		Destroy(this); // This script will not be destroyed until the end of this frame.
+		return upgrade;
 	}
 	
 	public virtual Commander GetCommander()
@@ -492,6 +519,11 @@ public class Unit : MonoBehaviour
 		if(leader == null) // Haven't set anything up yet.
 			return null;
 		return leader.GetCommander();
+	}
+	
+	protected void AllowSpawn()
+	{
+		skipSpawn = false;
 	}
 	
 	public void CloneUnit(Unit oldClone)
@@ -509,5 +541,7 @@ public class Unit : MonoBehaviour
 		weapon = oldClone.weapon;
 		weapon.owner = this;
 		leader.ReplaceUnit(id, this);
+		skipSpawn = true;
+		Invoke("AllowSpawn",5.0f);
 	}
 }

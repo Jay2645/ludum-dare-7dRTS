@@ -14,11 +14,22 @@ public class Projectile : MonoBehaviour {
 	public float speed = 25.0f;
 	public Unit owner;
 	private const float PROJECTILE_DESTROY_TIME = 30.0f;
+	private const float PROJECTILE_MAX_TRAVEL_DISTANCE = 1500.0f;
 	
 	void Start()
 	{
 		// Destroys the projectile if we can safely assume it won't hit anything.
 		Destroy (gameObject,PROJECTILE_DESTROY_TIME);
+	}
+	
+	void Update()
+	{
+		if(	Mathf.Abs(transform.position.x) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
+			Mathf.Abs(transform.position.y) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
+			Mathf.Abs(transform.position.z) > PROJECTILE_MAX_TRAVEL_DISTANCE)
+		{
+			DestroyImmediate(gameObject);
+		}
 	}
 	
 	void OnCollisionEnter(Collision collision)

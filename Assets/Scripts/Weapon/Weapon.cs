@@ -177,6 +177,8 @@ public class Weapon : MonoBehaviour
 	
 	protected Vector3 ShootError()
 	{
+		if(gameObject == null)
+			return Vector3.zero;
 		float sprayX = (1 - Random.value) * shotSpread;
 		float sprayY = 25.0f;
 		float sprayZ = (1 - Random.value) * shotSpread;
@@ -185,6 +187,8 @@ public class Weapon : MonoBehaviour
 	
 	protected void Reload()
 	{
+		if(clip == _maxClipSize || ammo == 0)
+			return;
 		reloading = true;
 		if(audio != null && reload != null)
 		{

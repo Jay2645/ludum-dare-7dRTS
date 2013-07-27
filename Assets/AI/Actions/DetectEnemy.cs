@@ -12,11 +12,13 @@ public class DetectEnemy : RAIN.Action.Action
     }
 	
 	private string enemy = "";
+	private Unit bestUnit;
 	int hasEnemy = 0;
 	
     public override RAIN.Action.Action.ActionResult Start(RAIN.Core.Agent agent, float deltaTime)
     {
 		hasEnemy = 0;
+		bestUnit = null;
 		enemy = agent.actionContext.GetContextItem<string>("enemy");
 		if(enemy == "")
 			return RAIN.Action.Action.ActionResult.FAILURE;
@@ -51,7 +53,6 @@ public class DetectEnemy : RAIN.Action.Action
 		Unit[] units = unitList.ToArray();
 		
 		// Assign a score to each enemy:
-		Unit bestUnit = null;
 		float score = Mathf.Infinity;
 		foreach(Unit unit in units)
 		{
@@ -68,7 +69,6 @@ public class DetectEnemy : RAIN.Action.Action
 		// Set the lowest-scoring unit to be our target:
 		if(bestUnit == null || !bestUnit.IsAlive())
 			return RAIN.Action.Action.ActionResult.FAILURE;
-		agent.actionContext.SetContextItem<Transform>("target",bestUnit.transform);
 		hasEnemy = 1;
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
@@ -76,6 +76,10 @@ public class DetectEnemy : RAIN.Action.Action
     public override RAIN.Action.Action.ActionResult Stop(RAIN.Core.Agent agent, float deltaTime)
     {
 		agent.actionContext.SetContextItem<int>("hasEnemy",hasEnemy);
+		if(bestUnit == null)
+			agent.actionContext.SetContextItem<Transform>("target",null);
+		else
+			agent.actionContext.SetContextItem<Transform>("target",bestUnit.transform);
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 }
