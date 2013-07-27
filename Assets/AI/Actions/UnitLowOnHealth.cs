@@ -20,7 +20,7 @@ public class UnitLowOnHealth : RAIN.Action.Action
 	
     public override RAIN.Action.Action.ActionResult Start(RAIN.Core.Agent agent, float deltaTime)
     {
-		isHealthy = 0;
+		isHealthy = 1;
 		if(unit == null)
 		{
 			unit = agent.actionContext.GetContextItem<Unit>("unit");
@@ -32,17 +32,23 @@ public class UnitLowOnHealth : RAIN.Action.Action
 
     public override RAIN.Action.Action.ActionResult Execute(RAIN.Core.Agent agent, float deltaTime)
     {
-		if(unit.GetHealthPercent() > DANGEROUS_HEALTH_PERCENT)
+		if(unit != null && unit.GetHealthPercent() < DANGEROUS_HEALTH_PERCENT)
 		{
-			isHealthy = 1;
-			return RAIN.Action.Action.ActionResult.FAILURE;
+			isHealthy = 0;
+			SetVariables(agent);
+			return RAIN.Action.Action.ActionResult.SUCCESS;
 		}
-        return RAIN.Action.Action.ActionResult.SUCCESS;
+        return RAIN.Action.Action.ActionResult.FAILURE;
     }
 
     public override RAIN.Action.Action.ActionResult Stop(RAIN.Core.Agent agent, float deltaTime)
     {
-		agent.actionContext.SetContextItem<int>("isHealthy",isHealthy);
+		SetVariables(agent);
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
+	
+	private void SetVariables(RAIN.Core.Agent agent)
+	{
+		agent.actionContext.SetContextItem<int>("isHealthy",isHealthy);
+	}
 }

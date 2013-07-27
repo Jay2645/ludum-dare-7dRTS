@@ -13,7 +13,7 @@ public class Leader : Unit
 	protected Dictionary<int,Unit> unitID = new Dictionary<int, Unit>();
 	protected static Dictionary<int, Leader> leaderLookup = new Dictionary<int, Leader>();
 	protected List<int> selectedUnits = new List<int>();
-	protected GameObject orderTarget = null;
+	protected GameObject tempOrderTarget = null;
 	protected Commander commander = null;
 	protected float TEMP_GAMEOBJECT_REMOVE_TIME = 7.0f;
 	
@@ -82,7 +82,7 @@ public class Leader : Unit
 	
 	public override void RecieveOrder (Order order, Transform target, Leader giver)
 	{
-		Debug.Log ("Recieved order from "+giver+": "+order.ToString()+" "+target.position);
+		//Debug.Log ("Recieved order from "+giver+": "+order.ToString()+" "+target.position);
 		base.RecieveOrder (order, target, giver);
 		GiveOrder(order,target);
 	}
@@ -97,34 +97,33 @@ public class Leader : Unit
 		Unit downgrade = gameObject.AddComponent<Unit>();
 		leader = (Leader)commander;
 		downgrade.CloneUnit(this);
-		MessageList.Instance.AddMessage(uName+", acknowledging demotion to grunt.");
+		if(leader == (Leader)Commander.player)
+			MessageList.Instance.AddMessage(uName+", acknowledging demotion to grunt.");
 		Destroy(this);
 	}
 	
 	public void GiveOrder(Order order, Vector3 targetPos)
 	{
-		if(orderTarget != null)
-			DestroyImmediate(orderTarget);
-		orderTarget = new GameObject("Order Target");
-		orderTarget.transform.position = targetPos;
-		GiveOrder(order,orderTarget.transform);
-		Destroy(orderTarget,TEMP_GAMEOBJECT_REMOVE_TIME);
+		if(tempOrderTarget != null)
+			DestroyImmediate(tempOrderTarget);
+		tempOrderTarget = new GameObject("Order Target");
+		tempOrderTarget.transform.position = targetPos;
+		GiveOrder(order,tempOrderTarget.transform);
+		Destroy(tempOrderTarget,TEMP_GAMEOBJECT_REMOVE_TIME);
 	}
 	
-	public void GiveOrder(Order order, Transform target)
+	public virtual void GiveOrder(Order order, Transform target)
 	{
-		int[] ids = selectedUnits.ToArray();
-		foreach(int id in ids)
+		Unit[] squad = GetSquadMembers();
+		foreach(Unit unit in squad)
 		{
-			GiveOrder(order,target,unitID[id]);
+			GiveOrder(order,target,unit);
 		}
 	}
 	
-	public void GiveOrder(Order order, Transform target, Unit unit)
+	public virtual void GiveOrder(Order order, Transform target, Unit unit)
 	{
-		bool isCommander = this is Commander;
-		// Only give orders to a unit if it doesn't already have orders from someone who outranks us.
-		if(!isCommander && unit.GetOrder() != Order.stop && unit.GetLastOrderer() is Commander)
+		if(unit.GetOrder() != Order.stop && unit.GetLastOrderer() == Commander.player)
 			return;
 		unit.RecieveOrder(order,target,this);
 	}

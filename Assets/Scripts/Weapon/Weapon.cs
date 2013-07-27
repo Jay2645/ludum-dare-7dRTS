@@ -95,6 +95,8 @@ public class Weapon : MonoBehaviour
 	/// </summary>
 	public void Shoot()
 	{
+		if(this == null || gameObject == null) // For some reason, we keep trying to shoot after we've been destroyed.
+			return;
 		if(reloading || ammo <= 0 || lastShotTime > 0 && Time.time - lastShotTime < timeBetweenShots)
 			return;
 		_shotsFired++;
@@ -177,7 +179,7 @@ public class Weapon : MonoBehaviour
 	
 	protected Vector3 ShootError()
 	{
-		if(gameObject == null)
+		if(this == null || gameObject == null) // For some reason this is firing even after the script has been destroyed?
 			return Vector3.zero;
 		float sprayX = (1 - Random.value) * shotSpread;
 		float sprayY = 25.0f;

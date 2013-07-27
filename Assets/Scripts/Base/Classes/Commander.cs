@@ -45,18 +45,6 @@ public class Commander : Leader
 		if(defendObjective != null)
 			defendObjective.SetOwner(this);
 		commander = this;
-	}
-	
-	/// <summary>
-	/// Called every time the unit respawns and one frame after the beginning of the game.
-	/// Replaces Start().
-	/// </summary>
-	protected override void ClassSpawn ()
-	{
-		spawnPoint = transform.position;
-		isSelectable = false;
-		leader = this;
-		RegisterUnit(this);
 		if(isPlayer && player == null)
 		{
 			player = this;
@@ -73,8 +61,20 @@ public class Commander : Leader
 		if(mapCamera != null)
 		{
 			mapCamera = (Instantiate(mapCamera.gameObject) as GameObject).camera;
-			mapCamera.name = "Commander "+teamID+"'s map camera.";
+			mapCamera.name = "Commander "+teamID+"'s Map Camera";
 		}
+	}
+	
+	/// <summary>
+	/// Called every time the unit respawns and one frame after the beginning of the game.
+	/// Replaces Start().
+	/// </summary>
+	protected override void ClassSpawn ()
+	{
+		spawnPoint = transform.position;
+		isSelectable = false;
+		leader = this;
+		RegisterUnit(this);
 	}
 	
 	/// <summary>
@@ -316,6 +316,31 @@ public class Commander : Leader
 		}
 	}
 	
+	public override void GiveOrder(Order order, Transform target)
+	{
+		if(isPlayer)
+		{
+			int[] ids = selectedUnits.ToArray();
+			foreach(int id in ids)
+			{
+				GiveOrder(order,target,unitID[id]);
+			}
+		}
+		else
+		{
+			Unit[] units = GetNonAssignedUnits();
+			foreach(Unit unit in units)
+			{
+				GiveOrder(order,target,unit);
+			}
+		}
+	}
+	
+	public override void GiveOrder(Order order, Transform target, Unit unit)
+	{
+		unit.RecieveOrder(order,target,this);
+	}
+	
 	protected override void CreateWeapon(Weapon weapon)
 	{
 		if(isPlayer)
@@ -420,7 +445,10 @@ public class Commander : Leader
 	
 	public Leader[] GetLeaders()
 	{
-		return leaders.ToArray();
+		List<Leader> leaderList = leaders;
+		if(GetNonAssignedUnits().Length > 0)
+			leaderList.Add(this);
+		return leaderList.ToArray();
 	}
 	
 	public override int GetTeamID ()

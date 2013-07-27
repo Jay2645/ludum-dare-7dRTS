@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 /// <summary>
 /// A Unit is the main object of the game. Anything which can be selected and recieve orders is considered a Unit.
@@ -53,6 +54,7 @@ public class Unit : MonoBehaviour
 	public Order currentOrder = Order.stop;
 	protected Leader lastOrderer = null;
 	protected Transform moveTarget = null;
+	protected Transform orderTarget = null;
 	protected GameObject moveEffect = null;
 	public int health = 100;
 	protected int _maxHealth;
@@ -129,6 +131,7 @@ public class Unit : MonoBehaviour
 		{
 			DestroyImmediate(moveTarget.gameObject);
 			moveTarget = null;
+			orderTarget = null;
 		}
 		if(moveEffect != null)
 		{
@@ -328,7 +331,11 @@ public class Unit : MonoBehaviour
 		Deselect();
 		currentOrder = Order.stop;
 		if(moveTarget != null)
+		{
 			DestroyImmediate(moveTarget.gameObject);
+			moveTarget = null;
+			orderTarget = null;
+		}
 		lastOrderer = null;
 		float distanceFromLeader = Vector3.Distance(transform.position,leader.transform.position);
 		if(distanceFromLeader >= 50.0f)
@@ -342,16 +349,30 @@ public class Unit : MonoBehaviour
 	
 	public virtual void RecieveOrder(Order order, Transform target, Leader giver)
 	{
-		if(target == transform && order != Order.stop)
+		if(target == transform && order != Order.stop || order == currentOrder && target == orderTarget)
 			return;
-		Debug.Log (this+" has recieved "+order);
+		//Debug.Log (this+" has recieved "+order);
 		if(moveTarget != null)
 		{
 			DestroyImmediate(moveTarget.gameObject);
 			moveTarget = null;
 		}
-		if(target.GetComponent<Unit>() != null || target.GetComponent<Objective>() != null)
+		lastOrderer = giver;
+		currentOrder = order;
+		if(order == Order.stop)
+			return;
+		orderTarget = target;
+		Objective objective = target.GetComponent<Objective>();
+		if(target.GetComponent<Unit>() != null || objective != null)
 		{
+			if(objective != null)
+			{
+				currentObjective = objective;
+				if(order == Order.attack)
+					attackObjective = objective;
+				else if(order == Order.defend)
+					defendObjective = objective;
+			}
 			Transform newTarget = ((GameObject)Instantiate(new GameObject())).transform;
 			newTarget.gameObject.name = "Dummy Game Object";
 			newTarget.parent = target;
@@ -363,22 +384,22 @@ public class Unit : MonoBehaviour
 		targetLocation.x += Random.Range(-3,3);
 		targetLocation.z += Random.Range(-3,3);
 		target.position = targetLocation;
-		if(order == Order.stop || Vector3.Distance(target.position,transform.position) < 5.0f)
+		target.parent = orderTarget;
+		if(Vector3.Distance(target.position,transform.position) < 5.0f)
 		{
 			if(order != Order.defend)
 			{
 				currentOrder = Order.stop;
-				DestroyImmediate(moveTarget.gameObject);
+				if(moveTarget != null || moveTarget.gameObject != null)
+					DestroyImmediate(moveTarget.gameObject);
 				moveTarget = null;
 			}
 			return;
 		}
-		lastOrderer = giver;
-		currentOrder = order;
 		moveTarget = target;
 		CreateSelected();
 		// This is a quick-and-dirty way for players to see that the unit has recieved orders correctly.
-		//if(leader == (Leader)Commander.player)
+		if(leader == (Leader)Commander.player)
 			MessageList.Instance.AddMessage(uName+", acknowledging "+order.ToString()+" order.");
 	}
 	
@@ -475,7 +496,11 @@ public class Unit : MonoBehaviour
 		Deselect();
 		Destroy (moveEffect);
 		if(moveTarget != null)
+		{
 			Destroy (moveTarget.gameObject);
+			moveTarget = null;
+			orderTarget = null;
+		}
 		foreach(Transform child in transform)
 		{
 			child.gameObject.SetActive(false);
@@ -509,7 +534,8 @@ public class Unit : MonoBehaviour
 		Leader upgrade = gameObject.AddComponent<Leader>();
 		upgrade.CloneUnit(this);
 		upgrade.RegisterCommander(commander);
-		MessageList.Instance.AddMessage(uName+", acknowledging promotion to Leader.");
+		if(leader == (Leader)Commander.player)
+			MessageList.Instance.AddMessage(uName+", acknowledging promotion to Leader.");
 		Destroy(this); // This script will not be destroyed until the end of this frame.
 		return upgrade;
 	}
@@ -519,6 +545,89 @@ public class Unit : MonoBehaviour
 		if(leader == null) // Haven't set anything up yet.
 			return null;
 		return leader.GetCommander();
+	}
+	
+	/// <summary>
+	/// Uses RAIN's detection system to find the best nearby enemy to attack.
+	/// </summary>
+	/// <returns>
+	/// The best nearby enemy capable of being attacked.
+	/// </returns>
+	/// <param name='agent'>
+	/// The RAIN agent.
+	/// </param>
+	/// <param name='enemy'>
+	/// A string representing the aspect owned by our enemy.
+	/// </param>
+	public Unit DetectEnemies(RAIN.Core.Agent agent,string enemy)
+	{
+		if(agent == null)
+			return null;
+		// Sense any nearby enemies:
+		agent.GainInterestIn(enemy);
+		agent.BeginSense();
+		agent.Sense();
+		
+		// Fetch all GameObjects sensed:
+		GameObject[] gos = new GameObject[10];
+		agent.GetAllObjectsWithAspect(enemy,out gos);
+		
+		// Narrow the list down to just our living enemies:
+		List<Unit> unitList = new List<Unit>();
+		foreach(GameObject go in gos)
+		{
+			Unit unit = go.GetComponent<Unit>();
+			if(unit == null || go.tag != enemy || !unit.IsAlive())
+				continue;
+			unitList.Add(unit);
+		}
+		if(unitList.Count == 0)
+			return null;
+		Unit[] units = unitList.ToArray();
+		Unit bestUnit = null;
+		// Assign a score to each enemy:
+		float score = Mathf.Infinity;
+		foreach(Unit unit in units)
+		{
+			if(unit == null)
+				continue;
+			float uScore = Vector3.Distance(unit.transform.position,transform.position);
+			uScore *= unit.GetHealthPercent();
+			if(bestUnit == null || uScore < score)
+			{
+				bestUnit = unit;
+				score = uScore;
+			}
+		}
+		// Set the lowest-scoring unit to be our target:
+		if(bestUnit == null || !bestUnit.IsAlive())
+			return null;
+		return bestUnit;
+	}
+	
+	public RAIN.Action.Action.ActionResult Shoot(RAIN.Core.Agent agent, float deltaTime, Unit enemy)
+	{
+		if(enemy == null || !enemy.IsAlive())
+			return RAIN.Action.Action.ActionResult.FAILURE;
+		if(weapon.ammo <= 0)
+			return RAIN.Action.Action.ActionResult.FAILURE;
+		if(weapon.range < Vector3.Distance(enemy.transform.position,agent.Avatar.transform.position))
+			return RAIN.Action.Action.ActionResult.FAILURE;
+		if(agent.LookAt(enemy.transform.position,deltaTime))
+			weapon.Shoot();
+		float accuracy = weapon.GetAccuracy();
+		if(accuracy > 0.85f)
+		{
+			return RAIN.Action.Action.ActionResult.SUCCESS;
+		}
+		else
+		{
+			if(agent.MoveTo(enemy.transform.position,deltaTime))
+			{
+				return RAIN.Action.Action.ActionResult.SUCCESS;
+			}
+		}
+		return RAIN.Action.Action.ActionResult.RUNNING;
 	}
 	
 	protected void AllowSpawn()
@@ -537,6 +646,7 @@ public class Unit : MonoBehaviour
 		label = oldClone.label;
 		currentOrder = oldClone.currentOrder;
 		moveTarget = oldClone.moveTarget;
+		orderTarget = oldClone.orderTarget;
 		health = oldClone.health;
 		weapon = oldClone.weapon;
 		weapon.owner = this;

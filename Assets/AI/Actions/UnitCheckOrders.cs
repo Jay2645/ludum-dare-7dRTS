@@ -27,7 +27,7 @@ public class UnitCheckOrders : RAIN.Action.Action
     public override RAIN.Action.Action.ActionResult Start(RAIN.Core.Agent agent, float deltaTime)
     {
 		if(unit == null)
-			unit = agent.Avatar.GetComponentInChildren<Unit>();
+			unit = agent.Avatar.GetComponent<Unit>();
 		if(isPlayer == -1)
 			isPlayer = agent.actionContext.GetContextItem<int>("isPlayer");
 		if(friend == "")
@@ -50,23 +50,19 @@ public class UnitCheckOrders : RAIN.Action.Action
 
     public override RAIN.Action.Action.ActionResult Execute(RAIN.Core.Agent agent, float deltaTime)
     {
-		if(unit is Commander)
-		{
-			if(((Commander)unit).isPlayer)
-				isPlayer = 1;
-			unitType = 3;
-		}
-		else if(unit is Leader)
-			unitType = 2;
-		else
-			unitType = 1;
+		SetVariables(agent);
 		
-		agent.actionContext.SetContextItem<int>("unitType",unitType);
-		agent.actionContext.SetContextItem<int>("isPlayer",isPlayer);
-		agent.actionContext.SetContextItem<string>("friend",friend);
-		agent.actionContext.SetContextItem<string>("enemy",enemy);
 		if(isPlayer == 1)
 			return RAIN.Action.Action.ActionResult.SUCCESS;
+		
+		Unit nearestEnemy = unit.DetectEnemies(agent,enemy);
+		if(nearestEnemy != null)
+		{
+			Action.ActionResult shootResult = unit.Shoot(agent,deltaTime,nearestEnemy);
+			if(shootResult == Action.ActionResult.SUCCESS || shootResult == Action.ActionResult.RUNNING)
+				return RAIN.Action.Action.ActionResult.RUNNING;
+		}
+		
 		if(orders == Order.stop)
 		{
 			agent.MoveTo(agent.Avatar.transform.position,deltaTime);
@@ -78,7 +74,6 @@ public class UnitCheckOrders : RAIN.Action.Action
 			agent.MoveTo(agent.Avatar.transform.position,deltaTime);
 			return RAIN.Action.Action.ActionResult.FAILURE;
 		}
-		hasOrders = 1;
 		if(agent.MoveTo(target.position,deltaTime))
 			return RAIN.Action.Action.ActionResult.SUCCESS;
 		return RAIN.Action.Action.ActionResult.RUNNING;
@@ -86,9 +81,17 @@ public class UnitCheckOrders : RAIN.Action.Action
 
     public override RAIN.Action.Action.ActionResult Stop(RAIN.Core.Agent agent, float deltaTime)
     {
+		SetVariables(agent);
+        return RAIN.Action.Action.ActionResult.SUCCESS;
+    }
+	
+	private void SetVariables(RAIN.Core.Agent agent)
+	{
+		agent.actionContext.SetContextItem<int>("isPlayer",isPlayer);
+		agent.actionContext.SetContextItem<string>("friend",friend);
+		agent.actionContext.SetContextItem<string>("enemy",enemy);
 		if(isPlayer != 1)
 		{
-			agent.actionContext.SetContextItem<int>("hasOrders",hasOrders);
 			int order = 0;
 			if(orders == Order.move)
 				order = 1;
@@ -96,9 +99,30 @@ public class UnitCheckOrders : RAIN.Action.Action
 				order = 2;
 			else if(orders == Order.defend)
 				order = 3;
+			if(order != 0)
+				hasOrders = 1;
+			else
+				hasOrders = 0;
+			agent.actionContext.SetContextItem<int>("hasOrders",hasOrders);
 			agent.actionContext.SetContextItem<int>("order",order);
 		}
 		agent.actionContext.SetContextItem<Unit>("unit",unit);
-        return RAIN.Action.Action.ActionResult.SUCCESS;
-    }
+		if(unit is Commander)
+		{
+			if(((Commander)unit).isPlayer)
+				isPlayer = 1;
+			else
+				isPlayer = 0;
+			unitType = 3;
+		}
+		else if(unit is Leader)
+		{
+			unitType = 2;
+		}
+		else
+		{
+			unitType = 1;
+		}
+		agent.actionContext.SetContextItem<int>("unitType",unitType);
+	}
 }

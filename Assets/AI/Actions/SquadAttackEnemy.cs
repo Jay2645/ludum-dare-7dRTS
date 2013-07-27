@@ -10,14 +10,28 @@ public class SquadAttackEnemy : RAIN.Action.Action
     {
         actionName = "SquadAttackEnemy";
     }
-
+	
+	Unit unitTarget = null;
+	Leader leader = null;
+	
     public override RAIN.Action.Action.ActionResult Start(RAIN.Core.Agent agent, float deltaTime)
     {
+		unitTarget = null;
+		leader = agent.Avatar.GetComponent<Leader>();
+		if(leader == null)
+			return RAIN.Action.Action.ActionResult.FAILURE;
+		Transform target = agent.actionContext.GetContextItem<Transform>("target");
+		if(target == null)
+			return RAIN.Action.Action.ActionResult.FAILURE;
+		unitTarget = target.gameObject.GetComponent<Unit>();
+		if(unitTarget == null || !unitTarget.IsAlive())
+			return RAIN.Action.Action.ActionResult.FAILURE;
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 
     public override RAIN.Action.Action.ActionResult Execute(RAIN.Core.Agent agent, float deltaTime)
     {
+		leader.RecieveOrder(Order.attack,unitTarget.transform,leader);
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 

@@ -56,7 +56,7 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		commander.SetObjectives(objectives);
 		if(defendObjectives.Length == 1)
 		{
-			Leader defenseLeader = AllocateToSingleObjective(defendObjectives[0],0.4f);
+			Leader defenseLeader = AllocateToSingleObjective(defendObjectives[0],0.2f);
 			if(defenseLeader != null)
 				defenseLeader.RecieveOrder(Order.defend,defendObjectives[0].transform,commander);
 		}
@@ -89,7 +89,7 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		}
 		if(attackObjectives.Length == 1)
 		{
-			Leader attackLeader = AllocateToSingleObjective(attackObjectives[0],0.5f);
+			Leader attackLeader = AllocateToSingleObjective(attackObjectives[0],0.7f);
 			if(attackLeader != null)
 				attackLeader.RecieveOrder(Order.attack,attackObjectives[0].transform,commander);
 		}
@@ -99,6 +99,44 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		}
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
+	
+	private void ChooseCommanderObjective()
+	{
+		if(defendObjectives.Length == 1)
+		{
+			if(commander.GetHealthPercent() <= 0.5f || attackObjectives.Length == 0)
+			{
+				Objective objective = defendObjectives[0];
+				commander.RecieveOrder(Order.defend,objective.transform,commander);
+				commander.defendObjective = objective;
+				commander.currentObjective = objective;
+			}
+		}
+		if(attackObjectives.Length == 1 && defendObjectives.Length == 0)
+		{
+			Objective objective = attackObjectives[0];
+			commander.RecieveOrder(Order.attack,objective.transform,commander);
+			commander.attackObjective = objective;
+			commander.currentObjective = objective;
+		}
+		else if(attackObjectives.Length == 1 && defendObjectives.Length == 1)
+		{
+			if(Random.value * 4 < 1)
+			{
+				Objective objective = defendObjectives[0];
+				commander.RecieveOrder(Order.defend,objective.transform,commander);
+				commander.defendObjective = objective;
+				commander.currentObjective = objective;
+			}
+			else
+			{
+				Objective objective = attackObjectives[0];
+				commander.RecieveOrder(Order.attack,objective.transform,commander);
+				commander.attackObjective = objective;
+				commander.currentObjective = objective;
+			}
+		}
+	}
 	
 	private Leader AllocateToSingleObjective(Objective objective, float allocateAmount)
 	{

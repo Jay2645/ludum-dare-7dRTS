@@ -11,45 +11,31 @@ public class ShootEnemy : RAIN.Action.Action
         actionName = "ShootEnemy";
     }
 	
-	Weapon weapon = null;
 	Unit enemy = null;
+	Unit us = null;
 	
     public override RAIN.Action.Action.ActionResult Start(RAIN.Core.Agent agent, float deltaTime)
     {
-		if(weapon == null)
-			weapon = agent.Avatar.GetComponent<Unit>().weapon;
-		if(weapon == null)
-			return RAIN.Action.Action.ActionResult.FAILURE;
 		if(enemy == null)
 			enemy = agent.actionContext.GetContextItem<Transform>("target").gameObject.GetComponent<Unit>();
 		if(enemy == null)
 			return RAIN.Action.Action.ActionResult.FAILURE;
+		if(us == null)
+		{
+			us = agent.actionContext.GetContextItem<Unit>("unit");
+			if(us == null)
+			{
+				us = agent.Avatar.GetComponent<Unit>();
+				if(us == null)
+					return RAIN.Action.Action.ActionResult.FAILURE;
+			}
+		}
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 
     public override RAIN.Action.Action.ActionResult Execute(RAIN.Core.Agent agent, float deltaTime)
     {
-		if(!enemy.IsAlive())
-			return RAIN.Action.Action.ActionResult.FAILURE;
-		if(weapon.ammo <= 0)
-			return RAIN.Action.Action.ActionResult.FAILURE;
-		if(weapon.range < Vector3.Distance(enemy.transform.position,agent.Avatar.transform.position))
-			return RAIN.Action.Action.ActionResult.FAILURE;
-		float accuracy = weapon.GetAccuracy();
-		if(agent.LookAt(enemy.transform.position,deltaTime))
-			weapon.Shoot();
-		if(accuracy > 0.85f)
-		{
-			return RAIN.Action.Action.ActionResult.SUCCESS;
-		}
-		else
-		{
-			if(agent.MoveTo(enemy.transform.position,deltaTime))
-			{
-				return RAIN.Action.Action.ActionResult.SUCCESS;
-			}
-		}
-		return RAIN.Action.Action.ActionResult.RUNNING;
+		return us.Shoot(agent,deltaTime,enemy);
     }
 
     public override RAIN.Action.Action.ActionResult Stop(RAIN.Core.Agent agent, float deltaTime)

@@ -46,6 +46,8 @@
   <ItemGroup>
      <Compile Include="Assets\AI\Actions\AdvanceSquadOnAttackObjective.cs" />
      <Compile Include="Assets\AI\Actions\AdvanceSquadOnDefendObjective.cs" />
+     <Compile Include="Assets\AI\Actions\CheckIsCommander.cs" />
+     <Compile Include="Assets\AI\Actions\CheckIsLeader.cs" />
      <Compile Include="Assets\AI\Actions\CheckSquadHealth.cs" />
      <Compile Include="Assets\AI\Actions\CheckSquadStatus.cs" />
      <Compile Include="Assets\AI\Actions\DelegateSquadsToObjective.cs" />
