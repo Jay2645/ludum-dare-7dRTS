@@ -16,11 +16,67 @@ public class Leader : Unit
 	protected GameObject tempOrderTarget = null;
 	protected Commander commander = null;
 	protected float TEMP_GAMEOBJECT_REMOVE_TIME = 7.0f;
+	protected Unit[] lastDetectedUnits = null;
+	protected RAIN.Core.Agent agent = null;
 	
 	protected override void ClassSpawn ()
 	{
 		if(smokeTrail != null)
 			Destroy(smokeTrail);
+	}
+	
+	protected override void ClassUpdate ()
+	{
+		if(commander != Commander.player)
+			return;
+		// Everything below here only affects the player's team.
+		Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
+		CheckUnitLayerDiff(layerChange);
+	}
+	
+	protected Unit[] ChangeNearbyUnitLayers(string unitTag)
+	{
+		Unit[] detectedUnits = null;
+		detectedUnits = DetectUnits(unitTag,50.0f);
+		if(detectedUnits.Length == 0)
+		{
+			Debug.Log(this+" has no nearby units.");
+			return new Unit[0];
+		}
+		foreach(Unit unit in detectedUnits)
+		{
+			unit.gameObject.layer = LayerMask.NameToLayer("Default");
+			if(unit.weapon != null)
+				unit.weapon.gameObject.layer = LayerMask.NameToLayer("Default");
+		}
+		return detectedUnits;
+	}
+	
+	protected void CheckUnitLayerDiff(Unit[] newDetectedUnits)
+	{
+		if(lastDetectedUnits == null || lastDetectedUnits.Length == 0)
+		{
+			lastDetectedUnits = newDetectedUnits;
+			return;
+		}
+		HashSet<Unit> oldDetectedUnitSet = new HashSet<Unit>(lastDetectedUnits);
+		if(oldDetectedUnitSet.Count > 0)
+		{
+			HashSet<Unit> newDetectedUnitSet = new HashSet<Unit>(newDetectedUnits);
+			oldDetectedUnitSet.ExceptWith(newDetectedUnitSet);
+			if(oldDetectedUnitSet.Count > 0)
+			{
+				Unit[] notDetectedAnymore = new Unit[oldDetectedUnitSet.Count];
+				oldDetectedUnitSet.CopyTo(notDetectedAnymore);
+				foreach(Unit u in notDetectedAnymore)
+				{
+					u.gameObject.layer = LayerMask.NameToLayer("Units");
+					if(u.weapon != null)
+						u.weapon.gameObject.layer = LayerMask.NameToLayer("Units");
+				}
+			}
+		}
+		lastDetectedUnits = newDetectedUnits;
 	}
 	
 	public void RegisterUnit(Unit unit)

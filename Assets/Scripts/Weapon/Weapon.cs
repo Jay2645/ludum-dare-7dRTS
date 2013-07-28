@@ -34,6 +34,8 @@ public class Weapon : MonoBehaviour
 	protected int shotsFired = 0;
 	protected int _shotsFired;
 	protected float timer = 0.00f;
+	protected bool lightEnabled = false;
+	LayerMask layers;
 	
 	void Awake()
 	{
@@ -59,8 +61,11 @@ public class Weapon : MonoBehaviour
 			rigidbody.isKinematic = false;
 		else
 			rigidbody.isKinematic = true;
-		if(light.enabled && Random.value * 3 < 1)
+		if(lightEnabled && Random.value * 3 < 1)
+		{
+			lightEnabled = false;
 			light.enabled = false;
+		}
 		if(ammo > 0 && clip <= 0 && !reloading)
 		{
 			Reload();
@@ -68,7 +73,7 @@ public class Weapon : MonoBehaviour
 		}
 		if(reloading || ammo == 0)
 			return;
-		if(owner == (Unit)Commander.player)
+		if(owner == (Unit)Commander.player && !MapView.IsShown())
 		{
 			if(fireOnce)
 			{
@@ -86,6 +91,17 @@ public class Weapon : MonoBehaviour
 			}
 			if(Input.GetButtonDown("Reload") && !Input.GetButton("Fire1"))
 				Reload();
+		}
+		if(lightEnabled)
+		{
+			if(MapView.IsShown())
+			{
+				light.enabled = false;
+			}
+			else
+			{
+				light.enabled = true;
+			}
 		}
 		timer += Time.deltaTime;
 	}
@@ -122,6 +138,7 @@ public class Weapon : MonoBehaviour
 		if(light != null)
 		{
 			light.intensity = Random.Range(0.0f, 3.5f);
+			lightEnabled = true;
 			light.enabled = true;
 		}
 	}
@@ -151,6 +168,7 @@ public class Weapon : MonoBehaviour
 			if(Random.value * (4 / 3) <= 1)
 			{
 				GameObject tracerInstance = Instantiate(tracer) as GameObject;
+				tracerInstance.layer = gameObject.layer;
 				tracerInstance.transform.position = transform.position + (transform.up * 0.45f);
 				tracerInstance.GetComponent<Tracer>().MoveForward(shotDirection);
 			}

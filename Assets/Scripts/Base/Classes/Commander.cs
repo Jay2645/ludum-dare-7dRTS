@@ -27,13 +27,15 @@ public class Commander : Leader
 	protected HashSet<int> lookingAt = new HashSet<int>();
 	protected int teamID = -1;
 	protected static int nextTeamID = 0;
-	public Camera mapCamera;
+	public MapView mapCamera;
 	public Vector3[] spawnPoints;
 	public float spawnTime = 8.0f;
 	protected float _spawnTime;
 	protected List<Leader> leaders = new List<Leader>();
 	public Objective[] objectives;
 	protected Dictionary<int,Unit> allUnits = new Dictionary<int, Unit>();
+	protected static Order[] orderList = {Order.move,Order.attack,Order.defend,Order.stop};
+	protected int currentOrderIndex = 0;
 	
 	/// <summary>
 	/// Called once, at the beginning of the game.
@@ -58,11 +60,6 @@ public class Commander : Leader
 			GenerateUnit(unitPrefab);
 			unitsToGenerate--;
 		}
-		if(mapCamera != null)
-		{
-			mapCamera = (Instantiate(mapCamera.gameObject) as GameObject).camera;
-			mapCamera.name = "Commander "+teamID+"'s Map Camera";
-		}
 	}
 	
 	/// <summary>
@@ -75,6 +72,12 @@ public class Commander : Leader
 		isSelectable = false;
 		leader = this;
 		RegisterUnit(this);
+		if(mapCamera != null)
+		{
+			mapCamera.SetCommander(this);
+		}
+		currentOrder = Order.move;
+		currentOrderIndex = 0;
 	}
 	
 	/// <summary>
@@ -88,6 +91,10 @@ public class Commander : Leader
 			_spawnTime = spawnTime;
 		
 		if(!isPlayer)
+			return;
+		Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
+		CheckUnitLayerDiff(layerChange);
+		if(MapView.IsShown())
 			return;
 		// Everything below here only works on the player.
 		GetLookingAt();
@@ -109,6 +116,19 @@ public class Commander : Leader
 		{
 			GiveOrder();
 		}
+		float input = Input.GetAxis("Mouse ScrollWheel");
+		if(input != 0)
+		{
+			if(input > 0 && currentOrderIndex < orderList.Length)
+			{
+				currentOrderIndex++;
+			}
+			else if(input < 0 && currentOrderIndex > 0)
+			{
+				currentOrderIndex--;
+			}
+			currentOrder = orderList[currentOrderIndex];
+		}
 	}
 	
 	/// <summary>
@@ -118,15 +138,15 @@ public class Commander : Leader
 	/// </summary>
 	protected void GetLookingAt()
 	{
-		// Only players need to worry about this.
-		if(!isPlayer)
+		// Only living players need to worry about this.
+		if(!isPlayer || !Commander.player.IsAlive())
 			return;
 		HashSet<int> visibleUnits = new HashSet<int>();
 		Unit hitUnit = null;
 		int id = -1;
 		// First, check to see what units are in the middle portion of our screen:
 		float selectRadius = 0.45f;
-		while(selectRadius < 0.56f)
+		while(selectRadius < 0.56f && IsAlive())
 		{
 			Ray selectRay = Camera.main.ViewportPointToRay(new Vector3(selectRadius, selectRadius, 0));
 			RaycastHit hit;
@@ -311,7 +331,7 @@ public class Commander : Leader
 			}
 			else
 			{
-				GiveOrder(Order.move,hit.point);
+				GiveOrder(currentOrder,hit.point);
 			}
 		}
 	}
@@ -432,6 +452,8 @@ public class Commander : Leader
 	
 	public float GetTimeToRespawn()
 	{
+		if(_spawnTime < 2.0f)
+			return spawnTime;
 		return _spawnTime;
 	}
 	
@@ -489,6 +511,11 @@ public class Commander : Leader
 		if(spawnPoints == null || spawnPoints.Length == 0)
 			return transform.position + new Vector3(Random.Range(-10.0F, 10.0F), 1001, Random.Range(-10.0F, 10.0F));
 		return spawnPoints[Mathf.RoundToInt(Random.Range(0,spawnPoints.Length - 1))];
+	}
+	
+	public Order GetCurrentOrder()
+	{
+		return currentOrder;
 	}
 	
 	public override Commander GetCommander()

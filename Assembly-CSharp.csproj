@@ -62,6 +62,7 @@
      <Compile Include="Assets\Scripts\Base\Objectives\Flag.cs" />
      <Compile Include="Assets\Scripts\Base\Objectives\Objective.cs" />
      <Compile Include="Assets\Scripts\GUI\MakeButton.cs" />
+     <Compile Include="Assets\Scripts\GUI\MapView.cs" />
      <Compile Include="Assets\Scripts\GUI\MessageList.cs" />
      <Compile Include="Assets\Scripts\GUI\ObjectLabel.cs" />
      <Compile Include="Assets\Scripts\GUI\PhysicalText.cs" />

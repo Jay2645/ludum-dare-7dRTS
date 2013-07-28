@@ -65,6 +65,7 @@ public class Unit : MonoBehaviour
 	public Objective currentObjective;
 	public Vector3 spawnPoint = Vector3.one;
 	protected bool skipSpawn = false;
+	public GameObject shadow = null;
 	
 	void Awake()
 	{
@@ -111,6 +112,7 @@ public class Unit : MonoBehaviour
 		}
 		// Make the GameObject visible.
 		gameObject.SetActive(true);
+		gameObject.layer = LayerMask.NameToLayer("Units");
 		foreach(Transform child in transform)
 		{
 			child.gameObject.SetActive(true);
@@ -142,6 +144,14 @@ public class Unit : MonoBehaviour
 		if(_initialWeapon != null)
 		{
 			CreateWeapon(_initialWeapon);
+			if(weapon != null)
+			{
+				weapon.gameObject.layer = gameObject.layer;
+			}
+		}
+		if(shadow != null)
+		{
+			shadow.layer = gameObject.layer;
 		}
 		
 		if(leader != null)
@@ -349,7 +359,7 @@ public class Unit : MonoBehaviour
 	
 	public virtual void RecieveOrder(Order order, Transform target, Leader giver)
 	{
-		if(target == transform && order != Order.stop || order == currentOrder && target == orderTarget)
+		if(target == null || target == transform && order != Order.stop || order == currentOrder && target == orderTarget)
 			return;
 		//Debug.Log (this+" has recieved "+order);
 		if(moveTarget != null)
@@ -509,7 +519,11 @@ public class Unit : MonoBehaviour
 		spawnPoint = Vector3.zero;
 		Commander commander = GetCommander();
 		if(commander != null)
-			Invoke("Spawn",commander.GetTimeToRespawn());
+		{
+			float respawnTime = commander.GetTimeToRespawn();
+			Debug.Log ("Respawning in: "+respawnTime.ToString());
+			Invoke("Spawn",respawnTime);
+		}
 	}
 	
 	public bool IsAlive()
@@ -561,29 +575,9 @@ public class Unit : MonoBehaviour
 	/// </param>
 	public Unit DetectEnemies(RAIN.Core.Agent agent,string enemy)
 	{
-		if(agent == null)
+		Unit[] units = DetectUnits(agent,enemy);
+		if(units.Length == 0)
 			return null;
-		// Sense any nearby enemies:
-		agent.GainInterestIn(enemy);
-		agent.BeginSense();
-		agent.Sense();
-		
-		// Fetch all GameObjects sensed:
-		GameObject[] gos = new GameObject[10];
-		agent.GetAllObjectsWithAspect(enemy,out gos);
-		
-		// Narrow the list down to just our living enemies:
-		List<Unit> unitList = new List<Unit>();
-		foreach(GameObject go in gos)
-		{
-			Unit unit = go.GetComponent<Unit>();
-			if(unit == null || go.tag != enemy || !unit.IsAlive())
-				continue;
-			unitList.Add(unit);
-		}
-		if(unitList.Count == 0)
-			return null;
-		Unit[] units = unitList.ToArray();
 		Unit bestUnit = null;
 		// Assign a score to each enemy:
 		float score = Mathf.Infinity;
@@ -603,6 +597,53 @@ public class Unit : MonoBehaviour
 		if(bestUnit == null || !bestUnit.IsAlive())
 			return null;
 		return bestUnit;
+	}
+	
+	public Unit[] DetectUnits(RAIN.Core.Agent agent, string unitTag)
+	{
+		if(agent == null)
+			return DetectUnits(unitTag,50.0f);
+		// Sense any nearby enemies:
+		agent.GainInterestIn(unitTag);
+		agent.BeginSense();
+		agent.Sense();
+		
+		// Fetch all GameObjects sensed:
+		GameObject[] gos = new GameObject[10];
+		agent.GetAllObjectsWithAspect(unitTag,out gos);
+		
+		// Narrow the list down to just our living enemies:
+		List<Unit> unitList = new List<Unit>();
+		foreach(GameObject go in gos)
+		{
+			Unit unit = go.GetComponent<Unit>();
+			if(unit == null || unit.tag != unitTag || !unit.IsAlive())
+				continue;
+			unitList.Add(unit);
+		}
+		if(unitList.Count == 0)
+			return new Unit[0];
+		return unitList.ToArray();
+	}
+	
+	public Unit[] DetectUnits(string unitTag, float maxDistance)
+	{
+		GameObject[] gos = GameObject.FindGameObjectsWithTag(unitTag);
+		if(gos.Length == 0)
+			return new Unit[0];
+		Vector3 cachedPosition = transform.position;
+		List<Unit> closestUnits = new List<Unit>();
+		foreach(GameObject go in gos)
+		{
+			Unit u = go.GetComponent<Unit>();
+			if(u == null || go == gameObject)
+				continue;
+			float distance = Vector3.Distance(cachedPosition,go.transform.position);
+			if(distance > maxDistance)
+				continue;
+			closestUnits.Add(u);
+		}
+		return closestUnits.ToArray();
 	}
 	
 	public RAIN.Action.Action.ActionResult Shoot(RAIN.Core.Agent agent, float deltaTime, Unit enemy)

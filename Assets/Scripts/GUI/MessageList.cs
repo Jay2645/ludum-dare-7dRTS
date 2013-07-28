@@ -64,6 +64,8 @@ public class MessageList : MonoBehaviour
 /// </summary>
 	public void AddMessage (string messageText)
 	{
+		if(_messages == null)
+			_messages = new List<GUIText>();
 		GUIText[] currentMessages = _messages.ToArray();
 		for(int i = 0; i < currentMessages.Length; i++)
 		{

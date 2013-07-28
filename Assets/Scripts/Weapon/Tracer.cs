@@ -7,6 +7,7 @@ public class Tracer : MonoBehaviour {
 	private const float DESTROY_TRACER_TIME = 0.5f;
 	public float minLightIntensity = 0.25f;
 	public float maxLightIntensity = 1.0f;
+	public bool lightEnabled = true;
 	
 	void Awake()
 	{
@@ -15,11 +16,27 @@ public class Tracer : MonoBehaviour {
 		{
 			if(Random.value * 3 > 1)
 			{
+				lightEnabled = false;
 				light.enabled = false;
 			}
 			else
 			{
 				light.intensity = Random.Range(minLightIntensity,maxLightIntensity);
+			}
+		}
+	}
+	
+	void Update()
+	{
+		if(lightEnabled)
+		{
+			if(MapView.IsShown())
+			{
+				light.enabled = false;
+			}
+			else
+			{
+				light.enabled = true;
 			}
 		}
 	}
