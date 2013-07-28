@@ -64,8 +64,12 @@
      <None Include="Assets\Shaders\3DText.shader" />
      <None Include="Assets\Audio\credit.txt" />
      <None Include="Assets\RAIN\Editor\ScriptTemplates\BehaviorTreeTemplate.xml" />
+     <None Include="Assets\TerrainToolkit\Read me.txt" />
  <Reference Include="Assembly-UnityScript-firstpass">
  <HintPath>Library\ScriptAssemblies\Assembly-UnityScript-firstpass.dll</HintPath>
+ </Reference>
+ <Reference Include="Assembly-UnityScript">
+ <HintPath>Library\ScriptAssemblies\Assembly-UnityScript.dll</HintPath>
  </Reference>
  <Reference Include="RAINIndie">
  <HintPath>Assets\RAIN\RAINIndie.dll</HintPath>

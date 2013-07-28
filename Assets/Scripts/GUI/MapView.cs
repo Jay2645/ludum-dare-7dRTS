@@ -159,6 +159,12 @@ public class MapView : MonoBehaviour {
 	private void HandleRightClickDown()
 	{
 		// this chunk gets where the player's mouse is pointing on the movement plane
+		if(player == null)
+		{
+			player = Commander.player;
+			if(player == null)
+				return;
+		}
 		Ray ray = camera.ScreenPointToRay(Input.mousePosition);
 		RaycastHit hitInfo;
 		if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity))

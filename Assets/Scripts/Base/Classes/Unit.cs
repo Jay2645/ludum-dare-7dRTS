@@ -355,6 +355,8 @@ public class Unit : MonoBehaviour
 		teamColor = leader.teamColor;
 		leader.RegisterUnit(this);
 		renderer.material.color = teamColor;
+		if(GetCommander() == Commander.player && leader != (Leader)Commander.player)
+			MessageList.Instance.AddMessage(uName+", acknowledging "+leader.name+" as my new leader.");
 	}
 	
 	public virtual void RecieveOrder(Order order, Transform target, Leader giver)

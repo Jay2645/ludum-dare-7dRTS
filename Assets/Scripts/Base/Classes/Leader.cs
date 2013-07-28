@@ -40,7 +40,6 @@ public class Leader : Unit
 		detectedUnits = DetectUnits(unitTag,50.0f);
 		if(detectedUnits.Length == 0)
 		{
-			Debug.Log(this+" has no nearby units.");
 			return new Unit[0];
 		}
 		foreach(Unit unit in detectedUnits)
@@ -70,6 +69,8 @@ public class Leader : Unit
 				oldDetectedUnitSet.CopyTo(notDetectedAnymore);
 				foreach(Unit u in notDetectedAnymore)
 				{
+					if(u == null)
+						continue;
 					u.gameObject.layer = LayerMask.NameToLayer("Units");
 					if(u.weapon != null)
 						u.weapon.gameObject.layer = LayerMask.NameToLayer("Units");

@@ -11,6 +11,8 @@ Project("{30C5E1E1-6EAF-105F-9530-24200A4385DC}") = "ludum-dare-7dRTS", "Assembl
 EndProject
 Project("{30C5E1E1-6EAF-105F-9530-24200A4385DC}") = "ludum-dare-7dRTS", "Assembly-UnityScript-firstpass.unityproj", "{FB7DF121-BC53-FA39-E3CC-B701A6B30E65}"
 EndProject
+Project("{30C5E1E1-6EAF-105F-9530-24200A4385DC}") = "ludum-dare-7dRTS", "Assembly-UnityScript.unityproj", "{553EC5E9-7705-63AB-16BC-3B26C2C71A9B}"
+EndProject
 Project("{30C5E1E1-6EAF-105F-9530-24200A4385DC}") = "ludum-dare-7dRTS", "Assembly-UnityScript-Editor.unityproj", "{AD9421EE-900F-27BF-B9BB-9468E8E85F9B}"
 EndProject
 Global
@@ -39,6 +41,10 @@ Global
 		{FB7DF121-BC53-FA39-E3CC-B701A6B30E65}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB7DF121-BC53-FA39-E3CC-B701A6B30E65}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB7DF121-BC53-FA39-E3CC-B701A6B30E65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{553EC5E9-7705-63AB-16BC-3B26C2C71A9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{553EC5E9-7705-63AB-16BC-3B26C2C71A9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{553EC5E9-7705-63AB-16BC-3B26C2C71A9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{553EC5E9-7705-63AB-16BC-3B26C2C71A9B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AD9421EE-900F-27BF-B9BB-9468E8E85F9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AD9421EE-900F-27BF-B9BB-9468E8E85F9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD9421EE-900F-27BF-B9BB-9468E8E85F9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -47,7 +53,7 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-																																																		GlobalSection(MonoDevelopProperties) = preSolution
+																																																					GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = Assembly-CSharp.csproj
 		Policies = $0
 		$0.TextStylePolicy = $1

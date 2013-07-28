@@ -103,6 +103,8 @@ public class Commander : Leader
 		{
 			if(Input.GetButtonDown("Select") && Input.GetButton("Upgrade"))
 				UpgradeUnits();
+			else if(Input.GetButtonDown("Select") && Input.GetButton("Assign"))
+				AssignSelection();
 			else
 				SelectUnits();
 		}
@@ -289,6 +291,42 @@ public class Commander : Leader
 			}
 		}
 		return GetLeaders();
+	}
+	
+	/// <summary>
+	/// Assigns our selection to a leader we're looking at.
+	/// </summary>
+	public void AssignSelection()
+	{
+		Leader leader = null;
+		int[] lookingAtArray = new int[lookingAt.Count];
+		lookingAt.CopyTo(lookingAtArray);
+		foreach(int i in lookingAtArray)
+		{
+			if(unitID.ContainsKey(i))
+			{
+				Unit u = unitID[i];
+				if(u is Leader)
+				{
+					leader = (Leader)u;
+					break;
+				}
+			}
+			else if(leaderLookup.ContainsKey(i))
+			{
+				leader = leaderLookup[i];
+				break;
+			}
+		}
+		if(leader == null)
+			return;
+		foreach(int i in selectedUnits.ToArray())
+		{
+			if(unitID.ContainsKey(i))
+			{
+				unitID[i].RegisterLeader(leader);
+			}
+		}
 	}
 	
 	/// <summary>
