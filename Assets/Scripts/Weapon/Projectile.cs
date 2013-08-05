@@ -18,6 +18,8 @@ public class Projectile : MonoBehaviour {
 	public float minLightIntensity = 0.25f;
 	public float maxLightIntensity = 1.0f;
 	public bool lightEnabled = true;
+	private TrailRenderer trailRenderer = null;
+	private MeshRenderer meshRenderer = null;
 	
 	void Awake()
 	{
@@ -35,12 +37,13 @@ public class Projectile : MonoBehaviour {
 				light.intensity = Random.Range(minLightIntensity,maxLightIntensity);
 			}
 		}
+		trailRenderer = gameObject.GetComponent<TrailRenderer>();
+		meshRenderer = gameObject.GetComponent<MeshRenderer>();
 	}
 	
 	public void SetOwner(Unit newOwner)
 	{
 		owner = newOwner;
-		MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>(); // Sometimes, gameObject.renderer returns our TrailRenderer instead.
 		if(meshRenderer != null && meshRenderer.material != null)
 			meshRenderer.material.color = owner.teamColor;
 		if(light != null)
@@ -59,23 +62,45 @@ public class Projectile : MonoBehaviour {
 	
 	void Update()
 	{
-		if(lightEnabled)
-		{
-			if(MapView.IsShown())
-			{
-				light.enabled = false;
-			}
-			else
-			{
-				light.enabled = true;
-			}
-		}
 		if(	Mathf.Abs(transform.position.x) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
 			Mathf.Abs(transform.position.y) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
 			Mathf.Abs(transform.position.z) > PROJECTILE_MAX_TRAVEL_DISTANCE)
 		{
 			Debug.Log("Travelled too far, removing.");
 			DestroyImmediate(gameObject);
+			return;
+		}
+		if(owner == null)
+			return;
+		if(MapView.IsShown() && owner.gameObject.layer != LayerMask.NameToLayer("Default"))
+		{
+			if(lightEnabled)
+			{
+				light.enabled = false;
+			}
+			if(trailRenderer != null)
+			{
+				trailRenderer.enabled = false;
+			}
+			if(meshRenderer != null)
+			{
+				meshRenderer.enabled = false;
+			}
+		}
+		else
+		{
+			if(lightEnabled)
+			{
+				light.enabled = true;
+			}
+			if(trailRenderer != null)
+			{
+				trailRenderer.enabled = true;
+			}
+			if(meshRenderer != null)
+			{
+				meshRenderer.enabled = true;
+			}
 		}
 	}
 	

@@ -127,6 +127,15 @@ public class Weapon : MonoBehaviour
 		}
 		clip--;
 		ammo--;
+		if(owner == null || MapView.IsShown() && owner.gameObject.layer != LayerMask.NameToLayer("Default"))
+		{
+			if(light != null)
+			{
+				light.enabled = false;
+				lightEnabled = false;
+			}
+			return;
+		}
 		if(audio != null && fire != null)
 		{
 			audio.PlayOneShot(fire);
