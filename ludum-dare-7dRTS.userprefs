@@ -1,6 +1,19 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Base\Classes\Unit.cs">
+    <Files>
+      <File FileName="Assets\Scripts\Base\Classes\Leader.cs" Line="20" Column="41" />
+      <File FileName="Assets\Scripts\Weapon\Projectile.cs" Line="130" Column="11" />
+      <File FileName="Assets\Scripts\Weapon\Weapon.cs" Line="48" Column="34" />
+      <File FileName="Assets\Scripts\Base\Classes\Unit.cs" Line="446" Column="24" />
+      <File FileName="Assets\Scripts\Base\Classes\Commander.cs" Line="41" Column="36" />
+      <File FileName="Assets\Scripts\GUI\ObjectLabel.cs" Line="77" Column="1" />
+      <File FileName="Assets\Scripts\GUI\PhysicalText.cs" Line="178" Column="4" />
+      <File FileName="Assets\Scripts\GUI\MapView.cs" Line="51" Column="11" />
+      <File FileName="Assets\AI\Actions\UnitCheckOrders.cs" Line="65" Column="3" />
+      <File FileName="Assets\AI\Actions\DelegateSquadsToObjective.cs" Line="161" Column="61" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>

@@ -4,7 +4,11 @@ using System.Collections.Generic;
 
 public class Objective : MonoBehaviour {
 	public Commander owner = null;
-	public int captureIndex = 0; // Must be 0 in order for a unit to capture it.
+	/// <summary>
+	/// The capture index must be 0 to flag an objective as "active."
+	/// If there are objectives which must be captured in a certain sequence, the next objective in the sequence should be 1, the one after 2, etc.
+	/// </summary>
+	public int captureIndex = 0;
 	protected List<Unit> defendingContestants = new List<Unit>();
 	protected List<Unit> attackingContestants = new List<Unit>();
 	protected Vector3 initialPosition;
@@ -66,6 +70,11 @@ public class Objective : MonoBehaviour {
 	protected bool OwnsObjective(Unit query)
 	{
 		return owner != null && query.GetCommander().GetTeamID() == owner.GetTeamID();
+	}
+	
+	public virtual void OnBaseEnter(Unit contestant, Base uBase)
+	{
+		
 	}
 	
 	public virtual void RemovePlayer(Unit player)

@@ -39,6 +39,7 @@ public class Commander : Leader
 	protected float RANDOM_SPAWN_RANGE = 10.0f;
 	protected int leaderCount = 0;
 	protected int MAX_LEADER_COUNT = 4;
+	public int teamScore = 0;
 	
 	/// <summary>
 	/// Called once, at the beginning of the game.
@@ -594,6 +595,11 @@ public class Commander : Leader
 			else return Vector3.zero;
 		}
 		return spawnPoints[Mathf.RoundToInt(Random.Range(0,spawnPoints.Length - 1))];
+	}
+	
+	public void OnScore()
+	{
+		teamScore++;
 	}
 	
 	public Order GetCurrentOrder()

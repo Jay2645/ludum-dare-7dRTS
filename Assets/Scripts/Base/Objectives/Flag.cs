@@ -2,7 +2,7 @@
 using System.Collections;
 
 public class Flag : Objective {
-	protected Unit carrying;
+	public Unit carrying;
 	
 	public override void RemovePlayer (Unit player)
 	{
@@ -16,6 +16,7 @@ public class Flag : Objective {
 	
 	protected void Respawn()
 	{
+		carrying = null;
 		transform.parent = null;
 		transform.position = initialPosition;
 		transform.rotation = initialRotation;
@@ -23,7 +24,7 @@ public class Flag : Objective {
 	
 	protected override void OnContestantEnter (Unit contestant)
 	{
-		if(carrying == null && !OwnsObjective(contestant) && defendingContestants.Count == 0)
+		if(carrying == null && !OwnsObjective(contestant))
 		{
 			CancelInvoke();
 			transform.parent = contestant.transform;
@@ -32,5 +33,14 @@ public class Flag : Objective {
 			contestant.currentObjective = this;
 			carrying = contestant;
 		}
+	}
+	
+	public override void OnBaseEnter (Unit contestant, Base uBase)
+	{
+		if(carrying == null || contestant != carrying || carrying.GetCommander() != uBase.owner || owner == uBase.owner)
+			return;
+		Debug.Log (carrying+" scored!");
+		carrying.Score();
+		Respawn();
 	}
 }

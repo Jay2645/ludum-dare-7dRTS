@@ -59,6 +59,7 @@
      <Compile Include="Assets\Scripts\Base\Classes\Commander.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Leader.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Unit.cs" />
+     <Compile Include="Assets\Scripts\Base\Objectives\Base.cs" />
      <Compile Include="Assets\Scripts\Base\Objectives\Flag.cs" />
      <Compile Include="Assets\Scripts\Base\Objectives\Objective.cs" />
      <Compile Include="Assets\Scripts\GUI\MakeButton.cs" />

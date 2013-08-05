@@ -68,6 +68,8 @@ public class Unit : MonoBehaviour
 	protected const float MOVE_CLOSE_ENOUGH_DISTANCE = 3.0f;
 	protected const float MOVE_TO_LEADER_DISTANCE = 50.0f;
 	protected const float RANDOM_TARGET_VARIATION = 2.0f;
+	protected int kills = 0;
+	protected int captures = 0;
 	
 	void Awake()
 	{
@@ -625,6 +627,12 @@ public class Unit : MonoBehaviour
 			}
 		}
 		return RAIN.Action.Action.ActionResult.RUNNING;
+	}
+	
+	public void Score()
+	{
+		captures++;
+		GetCommander().OnScore();
 	}
 	
 	protected void AllowSpawn()
