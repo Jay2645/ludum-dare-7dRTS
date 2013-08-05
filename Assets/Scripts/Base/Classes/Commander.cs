@@ -37,6 +37,8 @@ public class Commander : Leader
 	protected static Order[] orderList = {Order.move,Order.attack,Order.defend,Order.stop};
 	protected int currentOrderIndex = 0;
 	protected float RANDOM_SPAWN_RANGE = 10.0f;
+	protected int leaderCount = 0;
+	protected int MAX_LEADER_COUNT = 1;
 	
 	/// <summary>
 	/// Called once, at the beginning of the game.
@@ -44,6 +46,7 @@ public class Commander : Leader
 	/// </summary>
 	protected override void ClassSetup ()
 	{
+		spawnPoint = transform.position;
 		_spawnTime = spawnTime;
 		if(defendObjective != null)
 			defendObjective.SetOwner(this);
@@ -69,7 +72,6 @@ public class Commander : Leader
 	/// </summary>
 	protected override void ClassSpawn ()
 	{
-		spawnPoint = transform.position;
 		isSelectable = false;
 		leader = this;
 		RegisterUnit(this);
@@ -266,6 +268,11 @@ public class Commander : Leader
 		}
 	}
 	
+	public bool CanUpgradeUnit()
+	{
+		return leaderCount < MAX_LEADER_COUNT;
+	}
+	
 	/// <summary>
 	/// Upgrades/Demotes a Unit by its ID.
 	/// </summary>
@@ -282,16 +289,37 @@ public class Commander : Leader
 			Unit unit = unitID[selected];
 			if(unit is Leader)
 			{
-				Leader leader = (Leader)unit;
-				leaders.Remove(leader);
-				leader.DowngradeUnit();
+				DemoteUnit(unit);
 			}
 			else
 			{
-				leaders.Add(unit.UpgradeUnit(this));
+				PromoteUnit(unit);
 			}
 		}
 		return GetLeaders();
+	}
+	
+	public Leader PromoteUnit(Unit unit)
+	{
+		if(unit is Leader)
+			return (Leader)unit;
+		if(leaderCount >= MAX_LEADER_COUNT)
+			return null;
+		Leader leader = unit.UpgradeUnit(this);
+		leaders.Add(leader);
+		leaderCount++;
+		return leader;
+	}
+	
+	public void DemoteUnit(Unit unit)
+	{
+		if(unit is Leader)
+		{
+			Leader leader = (Leader)unit;
+			leaders.Remove(leader);
+			leader.DowngradeUnit();
+			leaderCount--;
+		}
 	}
 	
 	/// <summary>
@@ -549,7 +577,7 @@ public class Commander : Leader
 	{
 		if(spawnPoints == null || spawnPoints.Length == 0)
 		{
-			Vector3 randomPos = transform.position;
+			Vector3 randomPos = spawnPoint;
 			randomPos += new Vector3(Random.Range(-RANDOM_SPAWN_RANGE, RANDOM_SPAWN_RANGE), 1001, Random.Range(-RANDOM_SPAWN_RANGE, RANDOM_SPAWN_RANGE));
 			Vector3 ourPos = transform.position;
 			float distance = Mathf.Pow(ourPos.x - randomPos.x, 2) + Mathf.Pow(ourPos.z - randomPos.z, 2);

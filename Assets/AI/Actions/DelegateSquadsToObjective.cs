@@ -153,10 +153,24 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		}
 		if(objectiveLeader == null && unitTarget > 0)
 		{
-			Unit[] leaderArray = DetermineClosestUnitsToTarget(commander.GetNonAssignedUnits(),objective.transform.position,1,true);
-			if(leaderArray.Length == 0)
-				return null;
-			objectiveLeader = leaderArray[0].UpgradeUnit(commander);
+			if(commander.CanUpgradeUnit())
+			{
+				Unit[] leaderArray = DetermineClosestUnitsToTarget(commander.GetNonAssignedUnits(),objective.transform.position,1,true);
+				if(leaderArray.Length == 0)
+					return null;
+				objectiveLeader = commander.PromoteUnit(leaderArray[0]);
+			}
+			else
+			{
+				if(commander.currentObjective == null)
+				{
+					objectiveLeader = (Leader)commander;
+				}
+				else
+				{
+					return null;
+				}
+			}
 		}
 		else if(unitTarget == 0)
 		{

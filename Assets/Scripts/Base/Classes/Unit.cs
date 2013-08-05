@@ -423,7 +423,7 @@ public class Unit : MonoBehaviour
 	
 	public void Deselect()
 	{
-		if(!isSelectable || !IsAlive())
+		if(!isSelectable)
 			return;
 		isSelected = false;
 		if(leader.GetCommander() != Commander.player)
@@ -453,8 +453,9 @@ public class Unit : MonoBehaviour
 			child.gameObject.SetActive(false);
 		}
 		// Reset spawn point.
-		spawnPoint = Vector3.zero;
 		Commander commander = GetCommander();
+		if(commander != this as Commander)
+			spawnPoint = Vector3.zero;
 		if(commander != null)
 		{
 			float respawnTime = commander.GetTimeToRespawn();

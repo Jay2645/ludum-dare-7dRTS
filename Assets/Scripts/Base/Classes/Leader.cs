@@ -63,7 +63,7 @@ public class Leader : Unit
 				oldDetectedUnitSet.CopyTo(notDetectedAnymore);
 				foreach(Unit u in notDetectedAnymore)
 				{
-					if(u == null)
+					if(u == null || u is Leader)
 						continue;
 					u.gameObject.layer = LayerMask.NameToLayer("Units");
 					if(u.weapon != null)
