@@ -15,9 +15,6 @@ public class Unit : MonoBehaviour
 	protected int id = -1;
 	private static int currentID = 0;
 	protected Leader leader = null;
-	protected GameObject smokeTrail = null;
-	public static GameObject smokeTrailPrefab = null;
-	public static GameObject dustPrefab = null;
 	public static GameObject movePrefab = null;
 	public static GameObject attackPrefab = null;
 	public static GameObject defendPrefab = null;
@@ -66,6 +63,9 @@ public class Unit : MonoBehaviour
 	public Vector3 spawnPoint = Vector3.one;
 	protected bool skipSpawn = false;
 	public GameObject shadow = null;
+	protected const float MOVE_CLOSE_ENOUGH_DISTANCE = 3.0f;
+	protected const float MOVE_TO_LEADER_DISTANCE = 50.0f;
+	protected const float RANDOM_TARGET_VARIATION = 2.0f;
 	
 	void Awake()
 	{
@@ -91,7 +91,7 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected virtual void ClassSetup()
 	{
-		
+		InitPrefabs();
 	}
 	
 	void Start()
@@ -129,17 +129,7 @@ public class Unit : MonoBehaviour
 		// Reset all variables to their initial state.
 		Debug.Log ("Resetting variables on "+this);
 		currentOrder = Order.stop;
-		if(moveTarget != null)
-		{
-			DestroyImmediate(moveTarget.gameObject);
-			moveTarget = null;
-			orderTarget = null;
-		}
-		if(moveEffect != null)
-		{
-			DestroyImmediate(moveEffect);
-			moveEffect = null;
-		}
+		ResetTarget();
 		health = _maxHealth;
 		if(_initialWeapon != null)
 		{
@@ -180,12 +170,7 @@ public class Unit : MonoBehaviour
 	/// Creates things that should happen when this class spawns. This will be called every time this Unit dies and respawns.
 	/// </summary>
 	protected virtual void ClassSpawn()
-	{
-		if(transform.position.y > 100)
-		{
-			InitSmokeParticles();
-		}
-	}
+	{}
 	
 	protected virtual void CreateWeapon(Weapon weapon)
 	{
@@ -200,16 +185,8 @@ public class Unit : MonoBehaviour
 		this.weapon.transform.localRotation = Quaternion.Euler(90,0,0);
 	}
 	
-	protected void InitSmokeParticles()
+	protected void InitPrefabs()
 	{
-		if(smokeTrailPrefab == null)
-		{
-			smokeTrailPrefab = Resources.Load("Particles/Smoke Trail") as GameObject;
-		}
-		if(dustPrefab == null)
-		{
-			dustPrefab = Resources.Load("Particles/Dust Storm") as GameObject;
-		}
 		if(movePrefab == null)
 		{
 			movePrefab = Resources.Load("Prefabs/MoveTarget") as GameObject;
@@ -221,25 +198,6 @@ public class Unit : MonoBehaviour
 		if(attackPrefab == null)
 		{
 			attackPrefab = Resources.Load("Prefabs/AttackTarget") as GameObject;
-		}
-		smokeTrail = Instantiate(smokeTrailPrefab) as GameObject;
-		smokeTrail.transform.position = transform.position;
-		smokeTrail.transform.parent = transform;
-	}
-	
-	protected void RemoveSmokeTrail()
-	{
-		if(smokeTrail != null)
-		{
-			if(transform.position.y < 50)
-			{
-				Destroy(smokeTrail,1.0f);
-				smokeTrail = null;
-				GameObject dust = Instantiate(dustPrefab) as GameObject;
-				dust.transform.position = transform.position;
-				dust.transform.parent = transform;
-				Destroy(dust,5.75f);
-			}
 		}
 	}
 	
@@ -257,9 +215,7 @@ public class Unit : MonoBehaviour
 	}
 	
 	protected virtual void ClassUpdate()
-	{
-		RemoveSmokeTrail();
-	}
+	{}
 	
 	protected void CreateSelected()
 	{	
@@ -288,10 +244,7 @@ public class Unit : MonoBehaviour
 		}
 		else
 		{
-			if(moveEffect == null)
-				return;
-			Destroy(moveEffect);
-			moveEffect = null;
+			ResetEffects();
 		}
 	}
 	
@@ -340,15 +293,10 @@ public class Unit : MonoBehaviour
 			Destroy(label);
 		Deselect();
 		currentOrder = Order.stop;
-		if(moveTarget != null)
-		{
-			DestroyImmediate(moveTarget.gameObject);
-			moveTarget = null;
-			orderTarget = null;
-		}
+		ResetTarget();
 		lastOrderer = null;
 		float distanceFromLeader = Vector3.Distance(transform.position,leader.transform.position);
-		if(distanceFromLeader >= 50.0f)
+		if(distanceFromLeader >= MOVE_TO_LEADER_DISTANCE)
 		{
 			RecieveOrder(Order.move,leader.transform,null);
 		}
@@ -364,11 +312,7 @@ public class Unit : MonoBehaviour
 		if(target == null || target == transform && order != Order.stop || order == currentOrder && target == orderTarget)
 			return;
 		//Debug.Log (this+" has recieved "+order);
-		if(moveTarget != null)
-		{
-			DestroyImmediate(moveTarget.gameObject);
-			moveTarget = null;
-		}
+		ResetTarget();
 		lastOrderer = giver;
 		currentOrder = order;
 		if(order == Order.stop)
@@ -385,33 +329,32 @@ public class Unit : MonoBehaviour
 				else if(order == Order.defend)
 					defendObjective = objective;
 			}
-			Transform newTarget = ((GameObject)Instantiate(new GameObject())).transform;
-			newTarget.gameObject.name = "Dummy Game Object";
+			Transform newTarget = new GameObject(target.gameObject.name+"'s Transform Copy").transform;
 			newTarget.parent = target;
 			newTarget.localPosition = Vector3.zero;
-			target = newTarget;
+			orderTarget = newTarget;
 		}
-		target = ((GameObject)Instantiate(target.gameObject,target.position,target.rotation)).transform;
+		GameObject targetGO = new GameObject(uName+"'s Current Target");
 		Vector3 targetLocation = target.position;
-		targetLocation.x += Random.Range(-3,3);
-		targetLocation.z += Random.Range(-3,3);
+		targetLocation.x += Random.Range(-RANDOM_TARGET_VARIATION,RANDOM_TARGET_VARIATION);
+		targetLocation.z += Random.Range(-RANDOM_TARGET_VARIATION,RANDOM_TARGET_VARIATION);
+		target = targetGO.transform;
 		target.position = targetLocation;
-		target.parent = orderTarget;
-		if(Vector3.Distance(target.position,transform.position) < 5.0f)
+		if(orderTarget.parent != null)
+			target.parent = orderTarget.parent;
+		moveTarget = target;
+		if(Vector3.Distance(moveTarget.position,transform.position) < MOVE_CLOSE_ENOUGH_DISTANCE)
 		{
 			if(order != Order.defend)
 			{
 				currentOrder = Order.stop;
-				if(moveTarget != null || moveTarget.gameObject != null)
-					DestroyImmediate(moveTarget.gameObject);
-				moveTarget = null;
+				ResetTarget();
 			}
 			return;
 		}
-		moveTarget = target;
 		CreateSelected();
 		// This is a quick-and-dirty way for players to see that the unit has recieved orders correctly.
-		if(leader == (Leader)Commander.player)
+		if(lastOrderer == (Leader)Commander.player)
 			MessageList.Instance.AddMessage(uName+", acknowledging "+order.ToString()+" order.");
 	}
 	
@@ -429,11 +372,9 @@ public class Unit : MonoBehaviour
 	{
 		if(moveTarget == null)
 			return null;
-		if(Vector3.Distance(moveTarget.position,transform.position) < 5.0f)
+		if(Vector3.Distance(moveTarget.position,transform.position) < MOVE_CLOSE_ENOUGH_DISTANCE)
 		{
-			DestroyImmediate(moveTarget.gameObject);
-			currentOrder = Order.stop;
-			moveTarget = null;
+			ResetTarget();
 		}
 		return moveTarget;
 	}
@@ -506,13 +447,7 @@ public class Unit : MonoBehaviour
 		if(weapon != null)
 			Destroy(weapon.gameObject);
 		Deselect();
-		Destroy (moveEffect);
-		if(moveTarget != null)
-		{
-			Destroy (moveTarget.gameObject);
-			moveTarget = null;
-			orderTarget = null;
-		}
+		ResetTarget();
 		foreach(Transform child in transform)
 		{
 			child.gameObject.SetActive(false);
@@ -678,13 +613,36 @@ public class Unit : MonoBehaviour
 		skipSpawn = false;
 	}
 	
+	protected void ResetTarget()
+	{
+		if(orderTarget != null && orderTarget.name.Contains("Copy"))
+		{
+			DestroyImmediate(orderTarget.gameObject);
+		}
+		if(moveTarget != null)
+		{
+			DestroyImmediate(moveTarget.gameObject);
+			moveTarget = null;
+			orderTarget = null;
+		}
+		ResetEffects();
+	}
+	
+	protected void ResetEffects()
+	{
+		if(moveEffect != null)
+		{
+			DestroyImmediate(moveEffect);
+			moveEffect = null;
+		}
+	}
+	
 	public void CloneUnit(Unit oldClone)
 	{
 		isSelectable = oldClone.isSelectable;
 		id = oldClone.id;
 		leader = oldClone.leader;
 		uName = oldClone.uName;
-		smokeTrail = oldClone.smokeTrail;
 		teamColor = oldClone.teamColor;
 		label = oldClone.label;
 		currentOrder = oldClone.currentOrder;

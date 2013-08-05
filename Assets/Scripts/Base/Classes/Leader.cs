@@ -15,15 +15,9 @@ public class Leader : Unit
 	protected List<int> selectedUnits = new List<int>();
 	protected GameObject tempOrderTarget = null;
 	protected Commander commander = null;
-	protected float TEMP_GAMEOBJECT_REMOVE_TIME = 7.0f;
+	protected float TEMP_GAMEOBJECT_REMOVE_TIME = 1.0f;
 	protected Unit[] lastDetectedUnits = null;
 	protected RAIN.Core.Agent agent = null;
-	
-	protected override void ClassSpawn ()
-	{
-		if(smokeTrail != null)
-			Destroy(smokeTrail);
-	}
 	
 	protected override void ClassUpdate ()
 	{
@@ -166,7 +160,7 @@ public class Leader : Unit
 		tempOrderTarget = new GameObject("Order Target");
 		tempOrderTarget.transform.position = targetPos;
 		GiveOrder(order,tempOrderTarget.transform);
-		Destroy(tempOrderTarget,TEMP_GAMEOBJECT_REMOVE_TIME);
+		//Destroy(tempOrderTarget,TEMP_GAMEOBJECT_REMOVE_TIME);
 	}
 	
 	public virtual void GiveOrder(Order order, Transform target)

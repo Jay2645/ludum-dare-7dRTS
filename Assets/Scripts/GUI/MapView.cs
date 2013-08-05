@@ -22,13 +22,13 @@ public class MapView : MonoBehaviour {
 		{
 			ShowMap();
 		}
+		if(!isShown)
+			return;
 		if(commanderTransform != null)
 		{
 			Vector3 camPosition = new Vector3(commanderTransform.position.x,transform.position.y,commanderTransform.position.z);
 			transform.position = camPosition;
 		}
-		if(!isShown)
-			return;
 		float input = Input.GetAxis("Mouse ScrollWheel");
 		if(input != 0)
 		{
@@ -88,6 +88,8 @@ public class MapView : MonoBehaviour {
 	}
 	
 	void OnGUI() {
+		if(!isShown)
+			return;
 		if(Input.GetButton("Fire1"))
 		{
 		 	Vector3 currentMousePosition = Input.mousePosition;
@@ -117,7 +119,8 @@ public class MapView : MonoBehaviour {
 	
 	        if(width > MIN_BOX_SIZE && height > MIN_BOX_SIZE)
 			{
-				GUI.DrawTexture(selectionBox, boxTexture, ScaleMode.StretchToFill, true);
+				//GUI.DrawTexture(selectionBox, boxTexture, ScaleMode.StretchToFill, true);
+				GUI.Box(selectionBox,new GUIContent());
 			}
 		}
 	}

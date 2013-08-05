@@ -182,19 +182,17 @@ public class PhysicalText
 	
 	private void MakeFontMaterial(Font newFont)
 	{
-		mat = new Material(Shader.Find("GUI/3D Text Shader"));
 		if(mesh != null)
 		{
+			if(render == null)
+				return;
 			if(newFont == null || newFont.name == "Arial")
 			{
 				newFont = Resources.Load("Fonts/arial") as Font;
 			}
-			mat.mainTexture = newFont.material.mainTexture;
-			newFont.material = mat;
+			newFont.material.shader = Shader.Find("GUI/3D Text Shader");
 			mesh.font = newFont;
-			if(render == null)
-				return;
-			render.material = mat;
+			render.material = newFont.material;
 		}
 	}
 	

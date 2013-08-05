@@ -72,7 +72,6 @@
      <Compile Include="Assets\Scripts\Import\PrimitiveMaker.cs" />
      <Compile Include="Assets\Scripts\Weapon\Projectile.cs" />
      <Compile Include="Assets\Scripts\Weapon\Rocket.cs" />
-     <Compile Include="Assets\Scripts\Weapon\Tracer.cs" />
      <Compile Include="Assets\Scripts\Weapon\Weapon.cs" />
      <Compile Include="Assets\TerrainToolkit\TerrainToolkit.cs" />
      <None Include="Assets\Standard Assets\Projectors\Guidelines.txt" />

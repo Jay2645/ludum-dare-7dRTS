@@ -36,6 +36,7 @@ public class Commander : Leader
 	protected Dictionary<int,Unit> allUnits = new Dictionary<int, Unit>();
 	protected static Order[] orderList = {Order.move,Order.attack,Order.defend,Order.stop};
 	protected int currentOrderIndex = 0;
+	protected float RANDOM_SPAWN_RANGE = 10.0f;
 	
 	/// <summary>
 	/// Called once, at the beginning of the game.
@@ -121,7 +122,7 @@ public class Commander : Leader
 		float input = Input.GetAxis("Mouse ScrollWheel");
 		if(input != 0)
 		{
-			if(input > 0 && currentOrderIndex < orderList.Length)
+			if(input > 0 && currentOrderIndex < orderList.Length - 1)
 			{
 				currentOrderIndex++;
 			}
@@ -547,7 +548,23 @@ public class Commander : Leader
 	public Vector3 GetSpawnPoint()
 	{
 		if(spawnPoints == null || spawnPoints.Length == 0)
-			return transform.position + new Vector3(Random.Range(-10.0F, 10.0F), 1001, Random.Range(-10.0F, 10.0F));
+		{
+			Vector3 randomPos = transform.position;
+			randomPos += new Vector3(Random.Range(-RANDOM_SPAWN_RANGE, RANDOM_SPAWN_RANGE), 1001, Random.Range(-RANDOM_SPAWN_RANGE, RANDOM_SPAWN_RANGE));
+			Vector3 ourPos = transform.position;
+			float distance = Mathf.Pow(ourPos.x - randomPos.x, 2) + Mathf.Pow(ourPos.z - randomPos.z, 2);
+			if(distance < 2.0f)
+			{
+				randomPos += new Vector3(2,0,2);
+			}
+			Ray findFloorRay = new Ray(randomPos,Vector3.down);
+			RaycastHit floor;
+			if(Physics.Raycast(findFloorRay, out floor, Mathf.Infinity))
+			{
+				return floor.point + Vector3.up;
+			}
+			else return Vector3.zero;
+		}
 		return spawnPoints[Mathf.RoundToInt(Random.Range(0,spawnPoints.Length - 1))];
 	}
 	

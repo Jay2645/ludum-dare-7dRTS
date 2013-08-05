@@ -149,9 +149,10 @@ public class Weapon : MonoBehaviour
 	protected virtual void OnShootProjectile()
 	{
 		Projectile proj = Instantiate(projectile,transform.position,transform.rotation) as Projectile;
+		proj.gameObject.transform.position = transform.position + transform.up + ShootError();
 		proj.damage = damage;
-		proj.owner = owner;
-		proj.constantForce.force = transform.up * proj.speed;
+		proj.SetOwner(owner);
+		proj.MoveForward(transform.up * proj.speed);
 	}
 	
 	/// <summary>
@@ -170,7 +171,7 @@ public class Weapon : MonoBehaviour
 				GameObject tracerInstance = Instantiate(tracer) as GameObject;
 				tracerInstance.layer = gameObject.layer;
 				tracerInstance.transform.position = transform.position + (transform.up * 0.45f);
-				tracerInstance.GetComponent<Tracer>().MoveForward(shotDirection);
+				tracerInstance.GetComponent<Projectile>().MoveForward(shotDirection);
 			}
 			Unit hitUnit = hit.transform.root.gameObject.GetComponentInChildren<Unit>();
 			if(hitUnit != null)
@@ -199,10 +200,9 @@ public class Weapon : MonoBehaviour
 	{
 		if(this == null || gameObject == null) // For some reason this is firing even after the script has been destroyed?
 			return Vector3.zero;
-		float sprayX = (1 - Random.value) * shotSpread;
-		float sprayY = 25.0f;
-		float sprayZ = (1 - Random.value) * shotSpread;
-	 	return transform.TransformDirection(new Vector3(sprayX, sprayY, sprayZ));
+		float sprayX = (1 - Random.value) * shotSpread / 5;
+		float sprayZ = (1 - Random.value) * shotSpread / 5;
+	 	return transform.TransformDirection(new Vector3(sprayX, 0, sprayZ));
 	}
 	
 	protected void Reload()

@@ -19,6 +19,7 @@ public class ObjectLabel : MonoBehaviour
 	private float _xScale = 0.0f;
 	private float _zScale = 0.0f;
 	public bool isLookedAt = false;
+	public Font font = null;
 	
 	void OnEnable () 
 	{
@@ -40,6 +41,10 @@ public class ObjectLabel : MonoBehaviour
 			text = new PhysicalText(target);
 		}
 		text.textString = label;
+		if(font != null)
+		{
+			text.font = font;
+		}
 		textTransform = text.text.transform;
 		textTransform.parent = target;
 		textTransform.localPosition = offset;
