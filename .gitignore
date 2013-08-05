@@ -5,6 +5,7 @@ Future Import/
 Assets/Profiles/
 *.bat
 *.svd
+sysinfo.txt
  
 !Library/*.asset
 !Library/AssetImportState
