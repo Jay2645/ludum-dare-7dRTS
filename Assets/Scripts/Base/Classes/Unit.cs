@@ -443,7 +443,7 @@ public class Unit : MonoBehaviour
 		if(!isSelectable)
 			return;
 		isSelected = false;
-		if(leader.GetCommander() != Commander.player)
+		if(leader != null && leader.GetCommander() != Commander.player)
 			return;
 		CreateSelected();
 		renderer.material.SetColor("_OutlineColor",Color.black);
