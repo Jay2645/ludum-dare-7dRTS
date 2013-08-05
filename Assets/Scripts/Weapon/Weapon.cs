@@ -37,11 +37,15 @@ public class Weapon : MonoBehaviour
 	protected bool lightEnabled = false;
 	LayerMask layers;
 	
-	void Awake()
+	void Start()
 	{
 		if(tracer == null)
 		{
 			tracer = Resources.Load("Prefabs/Tracer") as GameObject;
+		}
+		if(owner != null && light != null)
+		{
+			light.color = owner.teamColor;
 		}
 		_maxClipSize = clip;
 		_maxAmmoCount = ammo;

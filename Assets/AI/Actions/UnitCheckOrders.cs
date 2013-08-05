@@ -51,10 +51,8 @@ public class UnitCheckOrders : RAIN.Action.Action
     public override RAIN.Action.Action.ActionResult Execute(RAIN.Core.Agent agent, float deltaTime)
     {
 		SetVariables(agent);
-		
 		if(isPlayer == 1)
 			return RAIN.Action.Action.ActionResult.SUCCESS;
-		
 		Unit nearestEnemy = unit.DetectEnemies(agent,enemy);
 		if(nearestEnemy != null)
 		{
@@ -68,6 +66,8 @@ public class UnitCheckOrders : RAIN.Action.Action
 			agent.MoveTo(agent.Avatar.transform.position,deltaTime);
 			return RAIN.Action.Action.ActionResult.FAILURE;
 		}
+		if(unit == null)
+			unit = agent.Avatar.GetComponent<Unit>();
 		Transform target = unit.GetMoveTarget();
 		if(target == null)
 		{

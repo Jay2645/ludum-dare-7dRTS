@@ -370,7 +370,7 @@ public class Unit : MonoBehaviour
 	
 	public Transform GetMoveTarget()
 	{
-		if(moveTarget == null)
+		if(moveTarget == null || this == null)
 			return null;
 		if(Vector3.Distance(moveTarget.position,transform.position) < MOVE_CLOSE_ENOUGH_DISTANCE)
 		{
@@ -485,6 +485,7 @@ public class Unit : MonoBehaviour
 		Leader upgrade = gameObject.AddComponent<Leader>();
 		upgrade.CloneUnit(this);
 		upgrade.RegisterCommander(commander);
+		upgrade.CreateSelected();
 		if(leader == (Leader)Commander.player)
 			MessageList.Instance.AddMessage(uName+", acknowledging promotion to Leader.");
 		Destroy(this); // This script will not be destroyed until the end of this frame.
@@ -640,6 +641,7 @@ public class Unit : MonoBehaviour
 	public void CloneUnit(Unit oldClone)
 	{
 		isSelectable = oldClone.isSelectable;
+		isSelected = oldClone.isSelected;
 		id = oldClone.id;
 		leader = oldClone.leader;
 		uName = oldClone.uName;

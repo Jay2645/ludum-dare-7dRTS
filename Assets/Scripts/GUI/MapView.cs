@@ -47,6 +47,9 @@ public class MapView : MonoBehaviour {
 			HandleRightClickDown();
 		}
 		
+		if(Input.GetButton("Fire1"))
+			return;
+		
 		Ray checkLegalMoveRay = new Ray(camera.ViewportToWorldPoint(new Vector3(0.1f,0.5f,0)),Vector3.down);
 		RaycastHit hitInfo;
 		bool canMoveLeft = Physics.Raycast(checkLegalMoveRay,out hitInfo,Mathf.Infinity);

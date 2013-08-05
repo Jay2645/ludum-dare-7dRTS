@@ -66,7 +66,6 @@ public class Projectile : MonoBehaviour {
 			Mathf.Abs(transform.position.y) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
 			Mathf.Abs(transform.position.z) > PROJECTILE_MAX_TRAVEL_DISTANCE)
 		{
-			Debug.Log("Travelled too far, removing.");
 			DestroyImmediate(gameObject);
 			return;
 		}
@@ -129,7 +128,6 @@ public class Projectile : MonoBehaviour {
 		Unit unit = collide.transform.root.GetComponentInChildren<Unit>();
 		if(owner != null && unit == owner)
 			return;
-		Debug.Log ("Hit: "+collide.name);
 		if(unit != null)
 		{
 			if(owner != null)
@@ -137,6 +135,6 @@ public class Projectile : MonoBehaviour {
 			if(gameObject.GetComponent<MeshRenderer>() != null) // Tracer damage is handled in Weapon.cs
 				unit.health -= damage;
 		}
-		Destroy (gameObject);
+		Destroy(gameObject);
 	}
 }
