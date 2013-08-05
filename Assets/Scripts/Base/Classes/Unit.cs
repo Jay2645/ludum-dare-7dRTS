@@ -18,6 +18,7 @@ public class Unit : MonoBehaviour
 	public static GameObject movePrefab = null;
 	public static GameObject attackPrefab = null;
 	public static GameObject defendPrefab = null;
+	public static GameObject selectPrefab = null;
 	public static string[] firstNames = 
 	{
 		"Buzz",
@@ -53,6 +54,7 @@ public class Unit : MonoBehaviour
 	protected Transform moveTarget = null;
 	protected Transform orderTarget = null;
 	protected GameObject moveEffect = null;
+	protected GameObject selectEffect = null;
 	public int health = 100;
 	protected int _maxHealth;
 	public Weapon weapon = null;
@@ -199,6 +201,10 @@ public class Unit : MonoBehaviour
 		{
 			attackPrefab = Resources.Load("Prefabs/AttackTarget") as GameObject;
 		}
+		if(selectPrefab == null)
+		{
+			selectPrefab = Resources.Load("Prefabs/SelectEffect") as GameObject;
+		}
 	}
 	
 	void Update()
@@ -219,6 +225,17 @@ public class Unit : MonoBehaviour
 	
 	protected void CreateSelected()
 	{	
+		if(isSelected)
+		{
+			selectEffect = Instantiate(selectPrefab) as GameObject;
+			selectEffect.transform.parent = transform;
+			selectEffect.transform.localPosition = Vector3.zero;
+		}
+		else if(selectEffect != null)
+		{
+			Destroy(selectEffect);
+			selectEffect = null;
+		}
 		if(isSelected && currentOrder != Order.stop && moveTarget != null)
 		{
 			if(moveEffect == null)

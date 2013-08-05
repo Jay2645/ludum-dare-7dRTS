@@ -38,7 +38,7 @@ public class Commander : Leader
 	protected int currentOrderIndex = 0;
 	protected float RANDOM_SPAWN_RANGE = 10.0f;
 	protected int leaderCount = 0;
-	protected int MAX_LEADER_COUNT = 1;
+	protected int MAX_LEADER_COUNT = 4;
 	
 	/// <summary>
 	/// Called once, at the beginning of the game.
