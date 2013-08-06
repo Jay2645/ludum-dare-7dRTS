@@ -438,10 +438,7 @@ public class Commander : Leader
 				this.weapon.transform.parent = null;
 			}
 			this.weapon = Instantiate(weapon) as Weapon;
-			this.weapon.owner = this;
-			this.weapon.transform.parent = Camera.main.transform;
-			this.weapon.transform.localPosition = this.weapon.GetLocation();
-			this.weapon.transform.localRotation = Quaternion.Euler(90,0,0);
+			this.weapon.Pickup(this);
 		}
 		else
 		{

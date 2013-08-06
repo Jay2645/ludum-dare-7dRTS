@@ -126,7 +126,7 @@ public class Projectile : MonoBehaviour {
 		if(collide.layer == LayerMask.NameToLayer("Ignore Raycast"))
 			return;
 		Unit unit = collide.transform.root.GetComponentInChildren<Unit>();
-		if(owner != null && unit == owner)
+		if(owner != null && (unit == owner || unit != null && unit.weapon != null && collide == unit.weapon.gameObject))
 			return;
 		if(unit != null)
 		{

@@ -19,7 +19,7 @@ public class Weapon : MonoBehaviour
 	
 	protected float lastShotTime = 0;
 	public Projectile projectile = null;
-	public Unit owner = null;
+	protected Unit owner = null;
 	public Vector3 unitPosition = new Vector3(-0.35f,0.075f,0.75f);
 	public Vector3 playerPosition = new Vector3(0.35f, -0.2f, 0.45f);
 	public static GameObject tracer = null;
@@ -35,7 +35,9 @@ public class Weapon : MonoBehaviour
 	protected int _shotsFired;
 	protected float timer = 0.00f;
 	protected bool lightEnabled = false;
-	LayerMask layers;
+	protected LayerMask layers;
+	
+	protected float WEAPON_DESPAWN_TIME = 30.0f;
 	
 	void Start()
 	{
@@ -61,10 +63,6 @@ public class Weapon : MonoBehaviour
 			_projectileHits = 0;
 			_shotsFired = 0;
 		}
-		if(owner == null)
-			rigidbody.isKinematic = false;
-		else
-			rigidbody.isKinematic = true;
 		if(lightEnabled && Random.value * 3 < 1)
 		{
 			lightEnabled = false;
@@ -256,6 +254,50 @@ public class Weapon : MonoBehaviour
 	public bool NeedToReload()
 	{
 		return clip < _maxClipSize;
+	}
+	
+	public void Drop()
+	{
+		CancelInvoke();
+		transform.parent = null;
+		collider.enabled = true;
+		rigidbody.isKinematic = false;
+		rigidbody.useGravity = true;
+		owner = null;
+		Invoke ("Despawn",WEAPON_DESPAWN_TIME);
+	}
+	
+	public void Pickup(Unit owner)
+	{
+		CancelInvoke();
+		rigidbody.isKinematic = true;
+		rigidbody.useGravity = false;
+		collider.enabled = false;
+		if(owner is Commander)
+		{
+			if((Commander)owner == Commander.player)
+			{
+				transform.parent = Camera.main.transform;
+				transform.localPosition = playerPosition;
+			}
+			else
+			{	
+				transform.parent = owner.transform;
+				transform.localPosition = unitPosition;
+			}
+		}
+		else
+		{			
+			transform.parent = owner.transform;
+			transform.localPosition = unitPosition;
+		}
+		transform.localRotation = Quaternion.Euler(90,0,0);
+		this.owner = owner;
+	}
+	
+	protected void Despawn()
+	{
+		Destroy(gameObject);
 	}
 	
 	void OnDisable()

@@ -183,10 +183,7 @@ public class Unit : MonoBehaviour
 			this.weapon.transform.parent = null;
 		}
 		this.weapon = Instantiate(weapon) as Weapon;
-		this.weapon.owner = this;
-		this.weapon.transform.parent = transform;
-		this.weapon.transform.localPosition = this.weapon.GetLocation();
-		this.weapon.transform.localRotation = Quaternion.Euler(90,0,0);
+		this.weapon.Pickup(this);
 	}
 	
 	protected void InitPrefabs()
@@ -464,9 +461,9 @@ public class Unit : MonoBehaviour
 		if(leader != null)
 			leader.RemoveUnit(id);
 		if(weapon != null)
-			Destroy(weapon.gameObject);
+			weapon.Drop();
 		Deselect();
-		ResetTarget();
+		ResetEffects();
 		foreach(Transform child in transform)
 		{
 			child.gameObject.SetActive(false);
@@ -610,8 +607,16 @@ public class Unit : MonoBehaviour
 			return RAIN.Action.Action.ActionResult.FAILURE;
 		if(weapon.ammo <= 0)
 			return RAIN.Action.Action.ActionResult.FAILURE;
-		if(weapon.range < Vector3.Distance(enemy.transform.position,agent.Avatar.transform.position))
+		float range = weapon.range;
+		if(range < Vector3.Distance(enemy.transform.position,agent.Avatar.transform.position))
 			return RAIN.Action.Action.ActionResult.FAILURE;
+		Ray shotRay = new Ray(transform.position,transform.forward);
+		RaycastHit hitInfo;
+		if(Physics.Raycast(shotRay, out hitInfo, range))
+		{
+			if(hitInfo.transform.tag == "Ground")
+				return RAIN.Action.Action.ActionResult.FAILURE;
+		}
 		if(agent.LookAt(enemy.transform.position,deltaTime))
 			weapon.Shoot();
 		float accuracy = weapon.GetAccuracy();
@@ -678,7 +683,7 @@ public class Unit : MonoBehaviour
 		orderTarget = oldClone.orderTarget;
 		health = oldClone.health;
 		weapon = oldClone.weapon;
-		weapon.owner = this;
+		weapon.Pickup(this);
 		leader.ReplaceUnit(id, this);
 		skipSpawn = true;
 		Invoke("AllowSpawn",5.0f);

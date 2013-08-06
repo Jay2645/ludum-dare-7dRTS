@@ -24,11 +24,6 @@ public class MapView : MonoBehaviour {
 		}
 		if(!isShown)
 			return;
-		if(commanderTransform != null)
-		{
-			Vector3 camPosition = new Vector3(commanderTransform.position.x,transform.position.y,commanderTransform.position.z);
-			transform.position = camPosition;
-		}
 		float input = Input.GetAxis("Mouse ScrollWheel");
 		if(input != 0)
 		{
@@ -223,6 +218,10 @@ public class MapView : MonoBehaviour {
 		}
 		commanderTransform = commander.transform;
 		player = commander;
+		Vector3 newPosition = transform.position;
+		newPosition.x = commanderTransform.position.x;
+		newPosition.z = commanderTransform.position.z;
+		transform.position = newPosition;
 	}
 	
 	private void ShowMap()
@@ -230,7 +229,14 @@ public class MapView : MonoBehaviour {
 		if(camera.depth == 1)
 			camera.depth = -1;
 		else
+		{
+			if(commanderTransform != null)
+			{
+				Vector3 camPosition = new Vector3(commanderTransform.position.x,transform.position.y,commanderTransform.position.z);
+				transform.position = camPosition;
+			}
 			camera.depth = 1;
+		}
 		isShown = camera.depth == 1;
 	}
 	
