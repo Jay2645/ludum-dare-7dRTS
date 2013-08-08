@@ -667,6 +667,11 @@ public class Unit : MonoBehaviour
 			DestroyImmediate(moveEffect);
 			moveEffect = null;
 		}
+		if(selectEffect != null)
+		{
+			DestroyImmediate(selectEffect);
+			selectEffect = null;
+		}
 	}
 	
 	public void CloneUnit(Unit oldClone)

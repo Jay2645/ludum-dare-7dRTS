@@ -10,6 +10,7 @@ ModelImporter:
     100008: //RootNode
     100010: Plane001
     100012: Sky001
+    100014: Plane002
     400000: Camera001
     400002: Camera001.Target
     400004: Camera002
@@ -17,14 +18,19 @@ ModelImporter:
     400008: //RootNode
     400010: Plane001
     400012: Sky001
+    400014: Plane002
     2300000: Plane001
+    2300002: Plane002
     3300000: Plane001
+    3300002: Plane002
     4300000: Plane001
+    4300002: Plane002
     6400000: Plane001
+    6400002: Plane002
     7400000: Take 001
     9500000: //RootNode
   materials:
-    importMaterials: 0
+    importMaterials: 1
     materialName: 0
     materialSearch: 1
   animations:
