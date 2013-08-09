@@ -4,6 +4,7 @@ obj/
 Future Import/
 Assets/Profiles/
 Heatmaps/*.png
+Raw/
 *.bat
 *.svd
 sysinfo.txt
