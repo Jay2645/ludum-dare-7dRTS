@@ -3,6 +3,7 @@ Library/
 obj/
 Future Import/
 Assets/Profiles/
+Heatmaps/*.png
 *.bat
 *.svd
 sysinfo.txt
