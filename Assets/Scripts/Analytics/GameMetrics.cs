@@ -53,6 +53,16 @@ public class GameMetrics : MonoBehaviour {
 		}
 	}
 	
+	void OnDrawGizmosSelected()
+	{
+		time += Time.deltaTime;
+		if(time > HEATMAP_UPDATE_FREQUENCY)
+		{
+			time = 0.0f;
+			UpdateHeatmaps();
+		}
+	}
+	
 	void LateUpdate()
 	{
 		if(heatmapCam == null)
