@@ -125,7 +125,11 @@ public class Projectile : MonoBehaviour {
 	/// </param>
 	private void DamageGameObject(GameObject collide)
 	{
-		if(collide.layer == LayerMask.NameToLayer("Ignore Raycast"))
+		LayerMask layer = collide.layer;
+		if(	layer == LayerMask.NameToLayer("Ignore Raycast") ||
+			layer == LayerMask.NameToLayer("Heat Data") ||
+			layer == LayerMask.NameToLayer("Death Data") ||
+			layer == LayerMask.NameToLayer("Move Data"))
 			return;
 		Unit unit = collide.transform.root.GetComponentInChildren<Unit>();
 		if(owner != null && (unit == owner || unit != null && unit.weapon != null && collide == unit.weapon.gameObject))

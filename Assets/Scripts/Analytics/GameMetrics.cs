@@ -24,6 +24,7 @@ public class GameMetrics : MonoBehaviour {
 	private static Dictionary<Vector3,HeatmapBlock> blockLocations = new Dictionary<Vector3, HeatmapBlock>();
 	private float time = 0.0f;
 	private const float HEATMAP_UPDATE_FREQUENCY = 2.0f;
+	private const float HEATMAP_SPACE_AMOUNT = 5.0f;
 	private LayerMask originalMask;
 	private bool tookScreenShot = false;
 	
@@ -35,6 +36,7 @@ public class GameMetrics : MonoBehaviour {
 		}
 		if(heatmapCam != null)
 			originalMask = heatmapCam.cullingMask;
+		CreateMesh();
 	}
 	
 	// Update is called once per frame
@@ -44,22 +46,11 @@ public class GameMetrics : MonoBehaviour {
 		if(time > HEATMAP_UPDATE_FREQUENCY)
 		{
 			time = 0.0f;
-			//UpdateHeatmaps();
 			if(tookScreenShot)
 			{
 				heatmapCam.depth = -2;
 				heatmapCam.cullingMask = originalMask;
 			}
-		}
-	}
-	
-	void OnDrawGizmosSelected()
-	{
-		time += Time.deltaTime;
-		if(time > HEATMAP_UPDATE_FREQUENCY)
-		{
-			time = 0.0f;
-			UpdateHeatmaps();
 		}
 	}
 	
@@ -71,9 +62,8 @@ public class GameMetrics : MonoBehaviour {
 		if(Input.GetKeyDown(KeyCode.F1) && heatmapCam != null)
 		{
 			time = HEATMAP_UPDATE_FREQUENCY - 1;
-			UpdateHeatmaps();
 			heatmapCam.depth = 2;
-			heatmapCam.cullingMask = originalMask;
+			heatmapCam.cullingMask = 1 << LayerMask.NameToLayer("Heat Data") | 1 << LayerMask.NameToLayer("Default");
 			Application.CaptureScreenshot("Heatmaps/All.png");
 			Debug.Log("Completed writing heatmaps to file.");
 			tookScreenShot = true;
@@ -81,7 +71,6 @@ public class GameMetrics : MonoBehaviour {
 		if(Input.GetKeyDown(KeyCode.F2) && heatmapCam != null)
 		{
 			time = HEATMAP_UPDATE_FREQUENCY - 1;
-			UpdateHeatmaps();
 			heatmapCam.depth = 2;
 			heatmapCam.cullingMask = 1 << LayerMask.NameToLayer("Death Data") | 1 << LayerMask.NameToLayer("Default");
 			Application.CaptureScreenshot("Heatmaps/Deaths.png");
@@ -91,7 +80,6 @@ public class GameMetrics : MonoBehaviour {
 		if(Input.GetKeyDown(KeyCode.F3) && heatmapCam != null)
 		{
 			time = HEATMAP_UPDATE_FREQUENCY - 1;
-			UpdateHeatmaps();
 			heatmapCam.depth = 2;
 			heatmapCam.cullingMask = 1 << LayerMask.NameToLayer("Move Data") | 1 << LayerMask.NameToLayer("Default");
 			Application.CaptureScreenshot("Heatmaps/Movement.png");
@@ -100,94 +88,198 @@ public class GameMetrics : MonoBehaviour {
 		}
 	}
 	
-	public static void AddHeatData(UnitHeatData uHeat)
+	private void CreateMesh()
 	{
-		if(heatData == null)
+		Vector3 raycast = transform.position;
+		raycast.x = Mathf.RoundToInt(raycast.x);
+		raycast.y = 30.0f;
+		raycast.z = Mathf.RoundToInt(raycast.z);
+		Ray cornerRay = new Ray(raycast,Vector3.down);
+		
+		// Find furthest location on Z axis.
+		cornerRay.origin = MoveRay(cornerRay,Vector3.forward, true);
+		// Find furthest location on X axis.
+		cornerRay.origin = MoveRay(cornerRay,Vector3.left, true);
+		PlaceMesh(cornerRay,Vector3.right * HEATMAP_SPACE_AMOUNT,Vector3.back * HEATMAP_SPACE_AMOUNT);
+		HeatmapBlock.allBlocks = GetHeatBlockLocations();
+	}
+	
+	private Vector3 MoveRay(Ray raycast, Vector3 moveBy, bool checkFalseNegative)
+	{
+		Vector3 origin = raycast.origin;
+		int steps = 0;
+		
+		// Keep raycasting until we don't hit the ground anymore.
+		while(Physics.Raycast(raycast,50.0f))
 		{
-			heatData = new UnitHeatData[1];
-			heatData[0] = uHeat;
+			origin = origin + moveBy;
+			raycast.origin = origin;
+			steps++;
 		}
-		else
+		// Once loop breaks, go back one step.
+		origin = origin - moveBy;
+		if(!checkFalseNegative)
+			return origin;
+		raycast.origin = origin;
+		
+		// Do test recast in every cardinal direction to prevent false negatives.
+		bool falseNegative = false;
+		// Get the dot product to make sure we only cast perpendicular to the moveBy Vector.
+		float verticalDotProduct = Vector3.Dot(moveBy,Vector3.back);
+		if(verticalDotProduct < 0.5f && verticalDotProduct > -0.5f)
 		{
-			List<UnitHeatData> heatList = new List<UnitHeatData>(heatData);
-			heatList.Add(uHeat);
-			heatData = heatList.ToArray();
+			Vector3 vOrigin = origin + Vector3.back;
+			raycast.origin = vOrigin;
+			for(int i = 0; i < Mathf.Max(10,steps); i++)
+			{
+				if(Physics.Raycast(raycast,50.0f))
+				{
+					falseNegative = true;
+					break;
+				}
+				vOrigin = vOrigin + Vector3.back;
+				raycast.origin = vOrigin;
+			}
+			if(falseNegative)
+			{
+				vOrigin = vOrigin + moveBy;
+				raycast.origin = vOrigin;
+				if(Physics.Raycast(raycast,50.0f))
+				{
+					return MoveRay(raycast,moveBy, true);
+				}
+				vOrigin = vOrigin - moveBy;
+			}
+			vOrigin = origin + Vector3.forward;
+			raycast.origin = vOrigin;
+			for(int i = 0; i < Mathf.Max(10,steps); i++)
+			{
+				if(Physics.Raycast(raycast,50.0f))
+				{
+					falseNegative = true;
+					break;
+				}
+				vOrigin = vOrigin + Vector3.forward;
+				raycast.origin = vOrigin;
+			}
+			if(falseNegative)
+			{
+				vOrigin = vOrigin + moveBy;
+				raycast.origin = vOrigin;
+				if(Physics.Raycast(raycast,50.0f))
+				{
+					return MoveRay(raycast,moveBy, true);
+				}
+				vOrigin = vOrigin - moveBy;
+			}
 		}
-		if(uHeat.isDeath)
+		float horizontalDotProduct = Vector3.Dot(moveBy, Vector3.left);
+		if(horizontalDotProduct < 0.5f && horizontalDotProduct > -0.5f)
 		{
-			if(deathData == null)
+			Vector3 hOrigin = origin + Vector3.left;
+			raycast.origin = hOrigin;
+			for(int i = 0; i < Mathf.Max(10,steps); i++)
 			{
-				deathData = new UnitHeatData[1];
-				deathData[0] = uHeat;
+				if(Physics.Raycast(raycast,50.0f))
+				{
+					falseNegative = true;
+					break;
+				}
+				hOrigin = hOrigin + Vector3.left;
+				raycast.origin = hOrigin;
 			}
-			else
+			if(falseNegative)
 			{
-				List<UnitHeatData> deathList = new List<UnitHeatData>(deathData);
-				deathList.Add(uHeat);
-				deathData = deathList.ToArray();
+				hOrigin = hOrigin + moveBy;
+				raycast.origin = hOrigin;
+				if(Physics.Raycast(raycast,50.0f))
+				{
+					return MoveRay(raycast,moveBy, true);
+				}
+				hOrigin = hOrigin - moveBy;
+			}
+			hOrigin = origin + Vector3.right;
+			raycast.origin = hOrigin;
+			for(int i = 0; i < Mathf.Max(10,steps); i++)
+			{
+				if(Physics.Raycast(raycast,50.0f))
+				{
+					falseNegative = true;
+					break;
+				}
+				hOrigin = hOrigin + Vector3.right;
+				raycast.origin = hOrigin;
+			}
+			if(falseNegative)
+			{
+				hOrigin = hOrigin + moveBy;
+				raycast.origin = hOrigin;
+				if(Physics.Raycast(raycast,50.0f))
+				{
+					return MoveRay(raycast,moveBy, true);
+				}
+				hOrigin = hOrigin - moveBy;
 			}
 		}
-		else
+		return origin;
+	}
+	
+	private void PlaceMesh(Ray raycast, Vector3 moveDirectionOne, Vector3 moveDirectionTwo)
+	{
+		Vector3 origin = raycast.origin;
+		while(Physics.Raycast(raycast, 50.0f))
 		{
-			if(moveData == null)
+			PlaceHeatBlock(raycast.origin);
+			origin = origin + moveDirectionOne;
+			raycast.origin = origin;
+		}
+		origin = origin - moveDirectionOne + moveDirectionTwo;
+		raycast.origin = origin;
+		if(Physics.Raycast(raycast,50.0f))
+		{
+			while(Physics.Raycast(raycast, 50.0f))
 			{
-				moveData = new UnitHeatData[1];
-				moveData[0] = uHeat;
+				PlaceHeatBlock(raycast.origin);
+				origin = origin - moveDirectionOne;
+				raycast.origin = origin;
 			}
-			else
+			origin = origin + moveDirectionOne + moveDirectionTwo;
+			raycast.origin = origin;
+			if(Physics.Raycast(raycast,50.0f))
 			{
-				List<UnitHeatData> moveList = new List<UnitHeatData>(moveData);
-				moveList.Add(uHeat);
-				moveData = moveList.ToArray();
+				PlaceMesh(raycast,moveDirectionOne,moveDirectionTwo);
 			}
 		}
 	}
+	
+	private void PlaceHeatBlock(Vector3 position)
+	{
+		position.x = Mathf.RoundToInt(position.x);
+		position.y = Mathf.RoundToInt(position.y);
+		position.z = Mathf.RoundToInt(position.z);
+		
+		GameObject heatGO = Instantiate(heatBlockPrefab) as GameObject;
+		heatGO.transform.position = position;
+		HeatmapBlock heatBlock = heatGO.GetComponent<HeatmapBlock>();
+		if(heatBlock == null)
+			heatBlock = heatGO.AddComponent<HeatmapBlock>();
+		heatBlock.SetLocation(position);
+		if(blockLocations.ContainsKey(position))
+		{
+			blockLocations[position] = heatBlock;
+		}
+		else
+		{
+			blockLocations.Add(position,heatBlock);
+		}
+		heatGO.transform.parent = transform;
+	}
+	
 	
 	public static HeatmapBlock[] GetHeatBlockLocations()
 	{
 		HeatmapBlock[] valueArray = new HeatmapBlock[blockLocations.Count];
 		blockLocations.Values.CopyTo(valueArray,0);
 		return valueArray;
-	}
-	
-	private void UpdateHeatmaps()
-	{
-		if(heatData == null || heatData.Length == 0)
-			return;
-		foreach(UnitHeatData uHeatData in heatData)
-		{
-			Vector3 roundedPosition = uHeatData.position;
-			roundedPosition = new Vector3(Mathf.RoundToInt(roundedPosition.x), 15, Mathf.RoundToInt(roundedPosition.z));
-			HeatmapBlock heatBlock;
-			if(blockLocations.ContainsKey(roundedPosition))
-			{
-				heatBlock = blockLocations[roundedPosition];
-			}
-			else
-			{
-				GameObject heatGO = Instantiate(heatBlockPrefab) as GameObject;
-				heatGO.transform.position = roundedPosition;
-				heatBlock = heatGO.GetComponent<HeatmapBlock>();
-				if(heatBlock == null)
-					heatBlock = heatGO.AddComponent<HeatmapBlock>();
-				heatBlock.SetLocation(roundedPosition);
-				blockLocations.Add(roundedPosition,heatBlock);
-			}
-			if(uHeatData.isDeath)
-			{
-				heatBlock.AddDeath();
-			}
-			else
-			{
-				heatBlock.AddMove();
-			}
-			heatBlock.transform.parent = transform;
-		}
-		HeatmapBlock[] heatBlocks = GetHeatBlockLocations();
-		foreach(KeyValuePair<Vector3,HeatmapBlock> kvp in blockLocations)
-		{
-			HeatmapBlock heatBlock = kvp.Value;
-			heatBlock.AdjustColor(heatBlocks);
-		}
 	}
 }

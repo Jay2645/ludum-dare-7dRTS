@@ -1,6 +1,23 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Analytics\GameMetrics.cs">
+    <Files>
+      <File FileName="Assets\Scripts\Base\Classes\Leader.cs" Line="20" Column="41" />
+      <File FileName="Assets\Scripts\Weapon\Projectile.cs" Line="132" Column="12" />
+      <File FileName="Assets\Scripts\Weapon\Weapon.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Base\Classes\Unit.cs" Line="221" Column="17" />
+      <File FileName="Assets\Scripts\Base\Classes\Commander.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\GUI\ObjectLabel.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\GUI\PhysicalText.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\GUI\MapView.cs" Line="1" Column="1" />
+      <File FileName="Assets\AI\Actions\UnitCheckOrders.cs" Line="1" Column="1" />
+      <File FileName="Assets\AI\Actions\DelegateSquadsToObjective.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Base\Objectives\Objective.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Base\Objectives\Flag.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Analytics\GameMetrics.cs" Line="345" Column="3" />
+      <File FileName="Assets\Scripts\Analytics\HeatmapBlock.cs" Line="30" Column="64" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
