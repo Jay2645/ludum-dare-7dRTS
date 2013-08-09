@@ -44,6 +44,8 @@ public class Projectile : MonoBehaviour {
 	public void SetOwner(Unit newOwner)
 	{
 		owner = newOwner;
+		if(owner == null)
+			return;
 		if(meshRenderer != null && meshRenderer.material != null)
 			meshRenderer.material.color = owner.teamColor;
 		if(light != null)

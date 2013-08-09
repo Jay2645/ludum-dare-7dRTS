@@ -56,6 +56,8 @@
      <Compile Include="Assets\AI\Actions\SquadAttackEnemy.cs" />
      <Compile Include="Assets\AI\Actions\UnitCheckOrders.cs" />
      <Compile Include="Assets\AI\Actions\UnitLowOnHealth.cs" />
+     <Compile Include="Assets\Scripts\Analytics\GameMetrics.cs" />
+     <Compile Include="Assets\Scripts\Analytics\HeatmapBlock.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Commander.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Leader.cs" />
      <Compile Include="Assets\Scripts\Base\Classes\Unit.cs" />

@@ -68,8 +68,10 @@ public class Unit : MonoBehaviour
 	protected const float MOVE_CLOSE_ENOUGH_DISTANCE = 3.0f;
 	protected const float MOVE_TO_LEADER_DISTANCE = 50.0f;
 	protected const float RANDOM_TARGET_VARIATION = 2.0f;
+	protected const float HEATMAP_LOCATION_UPDATE_TIME = 1.0f;
 	protected int kills = 0;
 	protected int captures = 0;
+	UnitHeatData lastData;
 	
 	void Awake()
 	{
@@ -217,6 +219,7 @@ public class Unit : MonoBehaviour
 	protected void UnitUpdate()
 	{
 		CheckHealth();
+		LogPosition(false);
 	}
 	
 	protected virtual void ClassUpdate()
@@ -452,6 +455,7 @@ public class Unit : MonoBehaviour
 	{
 		if(!IsAlive())
 			return;
+		LogPosition(true);
 		if(leader != null)
 			leader.RemoveUnit(id);
 		if(currentObjective != null)
@@ -692,5 +696,28 @@ public class Unit : MonoBehaviour
 		leader.ReplaceUnit(id, this);
 		skipSpawn = true;
 		Invoke("AllowSpawn",5.0f);
+	}
+	
+	/// <summary>
+	/// This is used for Heatmaps.
+	/// It logs all current unit data and sends it to GameMetrics.cs.
+	/// </summary>
+	protected void LogPosition(bool isDeath)
+	{
+		float lastTime = lastData.time;
+		if(lastTime > 0.0f && !isDeath)
+		{
+			if(Time.realtimeSinceStartup - lastTime < HEATMAP_LOCATION_UPDATE_TIME)
+				return;
+			if(Vector3.Distance(transform.position, lastData.position) <= 2)
+				return;
+		}
+		UnitHeatData heatData = new UnitHeatData();
+		heatData.position = transform.position;
+		heatData.time = Time.realtimeSinceStartup;
+		heatData.isDeath = isDeath;
+		GameMetrics.AddHeatData(heatData);
+		if(!isDeath)
+			lastData = heatData;
 	}
 }
