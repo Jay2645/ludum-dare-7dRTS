@@ -42,6 +42,7 @@ public class Objective : MonoBehaviour {
 			defendingContestants.Add(unitEntered);
 		else
 			attackingContestants.Add(unitEntered);
+		unitEntered.isCapturing = true;
 		OnContestantEnter(unitEntered);
 	}
 	
@@ -87,6 +88,28 @@ public class Objective : MonoBehaviour {
 	
 	public virtual void OnCaptured(Unit capturer)
 	{
-		SetOwner(capturer.GetCommander());
+		Debug.Log (capturer+" scored!");
+		capturer.Score();
+		capturer.currentObjective = null;
+		capturer.attackObjective = null;
+		capturer.GetCommander().attackObjective = null;
+		capturer.isCapturing = false;
+	}
+	
+	public Unit[] GetAttackers()
+	{
+		return attackingContestants.ToArray();
+	}
+	
+	public static Unit[] GetAllUnitsWithObjective(Commander commander, Objective objective)
+	{
+		Unit[] allUnits = commander.GetAllUnits();
+		List<Unit> unitsWithObjective = new List<Unit>();
+		foreach(Unit u in allUnits)
+		{
+			if(u.currentObjective == objective)
+				unitsWithObjective.Add(u);
+		}
+		return unitsWithObjective.ToArray();
 	}
 }

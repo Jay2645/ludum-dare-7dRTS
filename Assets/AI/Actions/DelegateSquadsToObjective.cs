@@ -15,37 +15,57 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 	private Objective[] objectives;
 	private Objective[] defendObjectives;
 	private Objective[] attackObjectives;
+	private const float TOO_FAR_AWAY_TO_RESPOND_AMOUNT = 25.0f;
+	private const float MIN_DEFENDERS_PERCENTAGE = 0.2f;
+	private const float MAX_ATTACKERS_PERCENTAGE = 0.8f;
 	
     public override RAIN.Action.Action.ActionResult Start(RAIN.Core.Agent agent, float deltaTime)
     {
 		if(commander == null)
 		{
-			commander = agent.actionContext.GetContextItem<Unit>("unit") as Commander;
+			commander = agent.Avatar.GetComponent<Commander>();
 			if(commander == null)
 				return RAIN.Action.Action.ActionResult.FAILURE;
 		}
-		GameObject[] objectiveGOs = GameObject.FindGameObjectsWithTag("Objective");
-		List<Objective> objectiveList = new List<Objective>();
-		List<Objective> defendObjectiveList = new List<Objective>();
-		List<Objective> attackObjectiveList = new List<Objective>();
-		foreach(GameObject go in objectiveGOs)
+		Objective attackObjective = commander.attackObjective;
+		Objective defendObjective = commander.defendObjective;
+		if(attackObjective == null || defendObjective == null)
 		{
-			Objective objective = go.GetComponent<Objective>();
-			if(objective == null)
-				continue;
-			objectiveList.Add(objective);
-			if(objective.owner.GetTeamID() == commander.GetTeamID())
+			Debug.Log ("An objective is null; looking for one.");
+			GameObject[] objectiveGOs = GameObject.FindGameObjectsWithTag("Objective");
+			List<Objective> objectiveList = new List<Objective>();
+			List<Objective> defendObjectiveList = new List<Objective>();
+			List<Objective> attackObjectiveList = new List<Objective>();
+			foreach(GameObject go in objectiveGOs)
 			{
-				defendObjectiveList.Add(objective);
+				Objective objective = go.GetComponent<Objective>();
+				if(objective == null || objective is Base && objective.captureIndex != 0)
+					continue;
+				objectiveList.Add(objective);
+				if(objective.owner.GetTeamID() == commander.GetTeamID())
+				{
+					defendObjectiveList.Add(objective);
+				}
+				else
+				{
+					attackObjectiveList.Add(objective);
+				}
 			}
-			else
-			{
-				attackObjectiveList.Add(objective);
-			}
+			objectives = objectiveList.ToArray();
+			if(defendObjective == null)
+				defendObjectives = defendObjectiveList.ToArray();
+			if(attackObjective == null)
+				attackObjectives = attackObjectiveList.ToArray();
 		}
-		objectives = objectiveList.ToArray();
-		defendObjectives = defendObjectiveList.ToArray();
-		attackObjectives = attackObjectiveList.ToArray();
+		else
+		{
+			Debug.Log("Have objectives: "+attackObjective+" and "+defendObjective+".");
+			objectives = new Objective[2];
+			attackObjectives = new Objective[1];
+			defendObjectives = new Objective[1];
+			objectives[0] = attackObjectives[0] = attackObjective;
+			objectives[1] = defendObjectives[0] = defendObjective;
+		}
 		if(objectives == null || defendObjectives == null && attackObjectives == null)
 			return RAIN.Action.Action.ActionResult.FAILURE;
         return RAIN.Action.Action.ActionResult.SUCCESS;
@@ -56,7 +76,7 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		commander.SetObjectives(objectives);
 		if(defendObjectives.Length == 1)
 		{
-			Leader defenseLeader = AllocateToSingleObjective(defendObjectives[0],0.2f);
+			Leader defenseLeader = AllocateToSingleObjective(defendObjectives[0],MIN_DEFENDERS_PERCENTAGE);
 			if(defenseLeader != null)
 				defenseLeader.RecieveOrder(Order.defend,defendObjectives[0].transform,commander);
 		}
@@ -69,7 +89,20 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 				if(objective.captureIndex == 0)
 					canBeCapturedList.Add(objective);
 				else if(Mathf.Abs(objective.captureIndex) == 1)
-					atRiskList.Add(objective);
+				{
+					// First, see if we already have some units stationed nearby that could respond in a reasonable amount of time.
+					List<Objective> allObjectives = canBeCapturedList;
+					allObjectives.AddRange(atRiskList);
+					bool tooFar = true;
+					Vector3 pos = objective.transform.position;
+					foreach(Objective o in allObjectives.ToArray())
+					{
+						if(Vector3.Distance(o.transform.position,pos) <= TOO_FAR_AWAY_TO_RESPOND_AMOUNT)
+							tooFar = false;
+					}
+					if(tooFar)
+						atRiskList.Add(objective);
+				}
 			}
 			Objective[] canBeCaptured = canBeCapturedList.ToArray();
 			Objective[] atRisk = atRiskList.ToArray();
@@ -79,9 +112,13 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 				{
 					DefendSingleObjectiveAtRisk(canBeCaptured[0],atRisk[0]);
 				}
-				else
+				else if(atRisk.Length > 1)
 				{
 					AllocateToSingleObjective(canBeCaptured[0],0.4f);
+				}
+				else
+				{
+					AllocateToSingleObjective(canBeCaptured[0],MAX_ATTACKERS_PERCENTAGE);
 				}
 			}
 			else
@@ -89,14 +126,55 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		}
 		if(attackObjectives.Length == 1)
 		{
-			Leader attackLeader = AllocateToSingleObjective(attackObjectives[0],0.7f);
+			Leader attackLeader = AllocateToSingleObjective(attackObjectives[0],MAX_ATTACKERS_PERCENTAGE);
 			if(attackLeader != null)
 				attackLeader.RecieveOrder(Order.attack,attackObjectives[0].transform,commander);
 		}
 		else if(attackObjectives.Length > 1)
 		{
-			
+			List<Objective> canBeCapturedList = new List<Objective>();
+			List<Objective> atRiskList = new List<Objective>();
+			foreach(Objective objective in attackObjectives)
+			{
+				if(objective.captureIndex == 0)
+					canBeCapturedList.Add(objective);
+				else if(Mathf.Abs(objective.captureIndex) == 1)
+				{
+					// First, see if we already have some units stationed nearby that could attack in a reasonable amount of time.
+					List<Objective> allObjectives = canBeCapturedList;
+					allObjectives.AddRange(atRiskList);
+					bool tooFar = true;
+					Vector3 pos = objective.transform.position;
+					foreach(Objective o in allObjectives.ToArray())
+					{
+						if(Vector3.Distance(o.transform.position,pos) <= TOO_FAR_AWAY_TO_RESPOND_AMOUNT)
+							tooFar = false;
+					}
+					if(tooFar)
+						atRiskList.Add(objective);
+				}
+			}
+			Objective[] canBeCaptured = canBeCapturedList.ToArray();
+			Objective[] atRisk = atRiskList.ToArray();
+			if(canBeCaptured.Length == 1)
+			{
+				if(atRisk.Length == 1)
+				{
+					//AttackSingleObjectiveAtRisk(canBeCaptured[0],atRisk[0]);
+				}
+				else if(atRisk.Length > 1)
+				{
+					AllocateToSingleObjective(canBeCaptured[0],0.4f);
+				}
+				else
+				{
+					AllocateToSingleObjective(canBeCaptured[0],MAX_ATTACKERS_PERCENTAGE);
+				}
+			}
+			//else
+				//AttackMultipleObjectives(canBeCaptured);
 		}
+		agent.actionContext.SetContextItem<Objective>("objective",commander.currentObjective);
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 	
@@ -181,6 +259,22 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		}
 		objectiveLeader.currentObjective = objective;
 		Unit[] squadMembers = objectiveLeader.GetSquadMembers();
+		List<Unit> squadList = new List<Unit>(squadMembers);
+		Unit[] objectiveSquad = Objective.GetAllUnitsWithObjective(commander,objective);
+		foreach(Unit u in objectiveSquad)
+		{
+			if(squadList.Contains(u))
+				continue;
+			squadList.Add(u);
+		}
+		Unit[] capturing = objective.GetAttackers();
+		foreach(Unit u in capturing)
+		{
+			if(squadList.Contains(u))
+				continue;
+			squadList.Add(u);
+		}
+		squadMembers = squadList.ToArray();
 		int memberCount = squadMembers.Length + 1;
 		if(memberCount == unitTarget)
 			return objectiveLeader;
@@ -200,6 +294,7 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 				unit.RegisterLeader(objectiveLeader);
 			}
 		}
+		Debug.Log (objectiveLeader+" is leading the attack on "+objective);
 		return objectiveLeader;
 	}
 	
@@ -294,6 +389,7 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 	
     public override RAIN.Action.Action.ActionResult Stop(RAIN.Core.Agent agent, float deltaTime)
     {
+		agent.actionContext.SetContextItem<Objective>("objective",null);
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 }

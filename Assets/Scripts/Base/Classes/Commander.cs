@@ -145,7 +145,7 @@ public class Commander : Leader
 	protected void GetLookingAt()
 	{
 		// Only living players need to worry about this.
-		if(!isPlayer || !Commander.player.IsAlive())
+		if(!isPlayer || !IsAlive())
 			return;
 		HashSet<int> visibleUnits = new HashSet<int>();
 		Unit hitUnit = null;
@@ -607,5 +607,20 @@ public class Commander : Leader
 	public override Commander GetCommander()
 	{
 		return this;
+	}
+	
+	public override bool IsLedByPlayer ()
+	{
+		return isPlayer;
+	}
+	
+	public override bool IsOwnedByPlayer ()
+	{
+		return isPlayer;
+	}
+	
+	public override bool IsPlayer()
+	{
+		return isPlayer;
 	}
 }

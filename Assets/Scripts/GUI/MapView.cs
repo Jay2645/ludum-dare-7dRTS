@@ -173,7 +173,7 @@ public class MapView : MonoBehaviour {
 			Unit enemyUnit = hitInfo.collider.gameObject.GetComponentInChildren<Unit>();
 			if(enemyUnit != null)
 			{
-				if(enemyUnit.GetCommander() == player)
+				if(enemyUnit.IsOwnedByPlayer())
 					player.GiveOrder(Order.defend,enemyUnit.transform);
 				else
 					player.GiveOrder(Order.attack,enemyUnit.transform);

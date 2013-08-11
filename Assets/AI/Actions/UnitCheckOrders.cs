@@ -53,7 +53,7 @@ public class UnitCheckOrders : RAIN.Action.Action
 		SetVariables(agent);
 		if(isPlayer == 1)
 			return RAIN.Action.Action.ActionResult.SUCCESS;
-		if(unit == null)
+		/*if(unit == null)
 			unit = agent.Avatar.GetComponent<Unit>();
 		Unit nearestEnemy = unit.DetectEnemies(agent,enemy);
 		if(nearestEnemy != null)
@@ -61,7 +61,7 @@ public class UnitCheckOrders : RAIN.Action.Action
 			Action.ActionResult shootResult = unit.Shoot(agent,deltaTime,nearestEnemy);
 			if(shootResult == Action.ActionResult.SUCCESS || shootResult == Action.ActionResult.RUNNING)
 				return RAIN.Action.Action.ActionResult.RUNNING;
-		}
+		}*/
 		
 		if(orders == Order.stop)
 		{

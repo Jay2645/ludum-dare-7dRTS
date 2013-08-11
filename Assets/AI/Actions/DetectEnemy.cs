@@ -29,15 +29,18 @@ public class DetectEnemy : RAIN.Action.Action
 			if(us == null)
 			{
 				us = agent.Avatar.GetComponent<Unit>();
-				if(us == null)
+				if(us == null || !us.IsAlive())
 					return RAIN.Action.Action.ActionResult.FAILURE;
 			}
 		}
+		if(!us.IsAlive())
+			return RAIN.Action.Action.ActionResult.FAILURE;
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 
     public override RAIN.Action.Action.ActionResult Execute(RAIN.Core.Agent agent, float deltaTime)
     {
+		
 		bestUnit = us.DetectEnemies(agent,enemy);
 		if(bestUnit == null)
 			return RAIN.Action.Action.ActionResult.FAILURE;

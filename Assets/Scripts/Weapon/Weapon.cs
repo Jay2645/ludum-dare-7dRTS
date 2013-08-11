@@ -38,6 +38,7 @@ public class Weapon : MonoBehaviour
 	protected LayerMask layers;
 	
 	protected float WEAPON_DESPAWN_TIME = 30.0f;
+	protected float RECENT_SHOT_TIME = 7.0f;
 	
 	void Start()
 	{
@@ -45,16 +46,15 @@ public class Weapon : MonoBehaviour
 		{
 			tracer = Resources.Load("Prefabs/Tracer") as GameObject;
 		}
-		if(owner != null && light != null)
-		{
-			light.color = owner.teamColor;
-		}
+		MakeOwner();
 		_maxClipSize = clip;
 		_maxAmmoCount = ammo;
 	}
 	
 	void Update()
 	{
+		if(owner == null)
+			return;
 		if(timer >= 1 && _shotsFired > 0)
 		{
 			projectileHits = _projectileHits;
@@ -75,7 +75,7 @@ public class Weapon : MonoBehaviour
 		}
 		if(reloading || ammo == 0)
 			return;
-		if(owner == (Unit)Commander.player && !MapView.IsShown())
+		if(owner.IsPlayer() && !MapView.IsShown())
 		{
 			if(fireOnce)
 			{
@@ -108,12 +108,36 @@ public class Weapon : MonoBehaviour
 		timer += Time.deltaTime;
 	}
 	
+	private void MakeOwner()
+	{
+		if(owner != null && light != null)
+		{
+			light.color = owner.teamColor;
+			if(audio != null && gameObject.GetComponent<RAIN.Ontology.Decoration>() == null)
+			{
+				gameObject.AddComponent<RAIN.Ontology.Entity>();
+				RAIN.Ontology.Decoration decoration = gameObject.AddComponent<RAIN.Ontology.Decoration>();
+				RAIN.Ontology.Aspect aspect = new RAIN.Ontology.Aspect(owner.gameObject.tag+" Gunshot",new RAIN.Ontology.Sensation("sound"));
+				decoration.aspect = aspect;
+			}
+		}
+		else
+		{
+			RAIN.Ontology.Decoration decoration = gameObject.GetComponent<RAIN.Ontology.Decoration>();
+			if(decoration != null)
+			{
+				Destroy(decoration);
+				Destroy(gameObject.GetComponent<RAIN.Ontology.Entity>());
+			}
+		}
+	}
+	
 	/// <summary>
 	/// Handles things all weapons do when shooting, such as managing ammo count.
 	/// </summary>
 	public void Shoot()
 	{
-		if(this == null || gameObject == null) // For some reason, we keep trying to shoot after we've been destroyed.
+		if(this == null || gameObject == null || owner == null) // For some reason, we keep trying to shoot after we've been destroyed.
 			return;
 		if(reloading || ammo <= 0 || lastShotTime > 0 && Time.time - lastShotTime < timeBetweenShots)
 			return;
@@ -273,18 +297,10 @@ public class Weapon : MonoBehaviour
 		rigidbody.isKinematic = true;
 		rigidbody.useGravity = false;
 		collider.enabled = false;
-		if(owner is Commander)
+		if(owner.IsPlayer())
 		{
-			if((Commander)owner == Commander.player)
-			{
-				transform.parent = Camera.main.transform;
-				transform.localPosition = playerPosition;
-			}
-			else
-			{	
-				transform.parent = owner.transform;
-				transform.localPosition = unitPosition;
-			}
+			transform.parent = Camera.main.transform;
+			transform.localPosition = playerPosition;
 		}
 		else
 		{			
@@ -293,6 +309,19 @@ public class Weapon : MonoBehaviour
 		}
 		transform.localRotation = Quaternion.Euler(90,0,0);
 		this.owner = owner;
+		MakeOwner();
+	}
+	
+	public Unit GetOwner()
+	{
+		return owner;
+	}
+	
+	public bool HasShotRecently()
+	{
+		if(owner == null)
+			return false;
+		return lastShotTime < Time.time - RECENT_SHOT_TIME;
 	}
 	
 	protected void Despawn()

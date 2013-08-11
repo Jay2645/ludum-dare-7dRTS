@@ -52,6 +52,8 @@
      <Compile Include="Assets\AI\Actions\CheckSquadStatus.cs" />
      <Compile Include="Assets\AI\Actions\DelegateSquadsToObjective.cs" />
      <Compile Include="Assets\AI\Actions\DetectEnemy.cs" />
+     <Compile Include="Assets\AI\Actions\DetermineUnitType.cs" />
+     <Compile Include="Assets\AI\Actions\RecheckObjectiveTimer.cs" />
      <Compile Include="Assets\AI\Actions\ShootEnemy.cs" />
      <Compile Include="Assets\AI\Actions\SquadAttackEnemy.cs" />
      <Compile Include="Assets\AI\Actions\UnitCheckOrders.cs" />

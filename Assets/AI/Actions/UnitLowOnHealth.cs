@@ -25,8 +25,15 @@ public class UnitLowOnHealth : RAIN.Action.Action
 		{
 			unit = agent.actionContext.GetContextItem<Unit>("unit");
 			if(unit == null)
-				return RAIN.Action.Action.ActionResult.FAILURE;
+			{
+				unit = agent.Avatar.GetComponent<Unit>();
+				if(unit == null)
+					return RAIN.Action.Action.ActionResult.FAILURE;
+				else
+					agent.actionContext.SetContextItem<Unit>("unit",unit);
+			}
 		}
+		unit.SetAgent(agent);
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 

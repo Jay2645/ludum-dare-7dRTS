@@ -10,15 +10,30 @@ using System.Collections.Generic;
 /// </summary>
 public class Unit : MonoBehaviour 
 {
-	protected bool isSelectable = true;
-	protected bool isSelected = false;
-	protected int id = -1;
+	// Static variables //
+	/// <summary>
+	/// The current global Unit ID.
+	/// </summary>
 	private static int currentID = 0;
-	protected Leader leader = null;
-	public static GameObject movePrefab = null;
-	public static GameObject attackPrefab = null;
-	public static GameObject defendPrefab = null;
+	/// <summary>
+	/// The prefab instantiated when a unit is selected.
+	/// </summary>
 	public static GameObject selectPrefab = null;
+	/// <summary>
+	/// The prefab instantiated when a move order is given.
+	/// </summary>
+	public static GameObject movePrefab = null;
+	/// <summary>
+	/// The prefab instantiated when an attack order is given.
+	/// </summary>
+	public static GameObject attackPrefab = null;
+	/// <summary>
+	/// The prefab instantiated when a defend order is given.
+	/// </summary>
+	public static GameObject defendPrefab = null;
+	/// <summary>
+	/// A list of possible first names for each unit.
+	/// </summary>
 	public static string[] firstNames = 
 	{
 		"Buzz",
@@ -34,6 +49,9 @@ public class Unit : MonoBehaviour
 		"Edward",
 		"Jaime"
 	};
+	/// <summary>
+	/// A list of possible last names for each unit.
+	/// </summary>
 	public static string[] lastNames = 
 	{
 		"Harrington",
@@ -46,32 +64,174 @@ public class Unit : MonoBehaviour
 		"Hunt",
 		"Clark"
 	};
-	protected string uName = "";
-	public Color teamColor = Color.white;
-	public ObjectLabel label = null;
-	public Order currentOrder = Order.stop;
-	protected Leader lastOrderer = null;
-	protected Transform moveTarget = null;
-	protected Transform orderTarget = null;
-	protected GameObject moveEffect = null;
-	protected GameObject selectEffect = null;
-	public int health = 100;
-	protected int _maxHealth;
-	public Weapon weapon = null;
-	protected Weapon _initialWeapon;
-	public Objective defendObjective;
-	public Objective attackObjective;
-	public Objective currentObjective;
-	public Vector3 spawnPoint = Vector3.one;
-	protected bool skipSpawn = false;
-	public GameObject shadow = null;
-	protected const float MOVE_CLOSE_ENOUGH_DISTANCE = 3.0f;
+	
+	
+	// Constants //
+	/// <summary>
+	/// How far we have to be from our goal to be "close enough".
+	/// </summary>
+	protected const float MOVE_CLOSE_ENOUGH_DISTANCE = 2.0f;
+	/// <summary>
+	/// How far away do we have to be from our leader to move towards it.
+	/// </summary>
 	protected const float MOVE_TO_LEADER_DISTANCE = 50.0f;
+	/// <summary>
+	/// The distance our move target can be away from where we were ordered to go.
+	/// </summary>
 	protected const float RANDOM_TARGET_VARIATION = 2.0f;
-	protected const float HEATMAP_LOCATION_UPDATE_TIME = 1.0f;
+	/// <summary>
+	/// How long to wait between rechecking for enemies.
+	/// </summary>
+	protected const float ENEMY_RECHECK_TIME = 5.0f;
+	/// <summary>
+	/// How often the AI forces a repath when going to an objective.
+	/// </summary>
+	protected const float AI_REPATH_TIME = 4.0f;
+	
+	// Unit variables //
+	
+	// SELECTION
+	/// <summary>
+	/// Are we able to be selected?
+	/// </summary>
+	protected bool isSelectable = true;
+	/// <summary>
+	/// Are we currently selected?
+	/// </summary>
+	protected bool isSelected = false;
+	
+	// GAMEPLAY
+	/// <summary>
+	/// Our current health.
+	/// </summary>
+	public int health = 100;
+	/// <summary>
+	/// Our max health.
+	/// </summary>
+	protected int _maxHealth;
+	/// <summary>
+	/// Our current weapon.
+	/// </summary>
+	public Weapon weapon = null;
+	/// <summary>
+	/// Our initial weapon.
+	/// </summary>
+	protected Weapon _initialWeapon;
+	/// <summary>
+	/// The number of kills we've earned.
+	/// </summary>
 	protected int kills = 0;
+	/// <summary>
+	/// The number of captures we've had.
+	/// </summary>
 	protected int captures = 0;
+	/// <summary>
+	/// Our spawn point.
+	/// </summary>
+	public Vector3 spawnPoint = Vector3.one;
+	/// <summary>
+	/// Should we skip our next opprotunity to spawn?
+	/// </summary>
+	protected bool skipSpawn = false;
+	/// <summary>
+	/// The base this unit belongs to.
+	/// </summary>
+	public Base aBase = null;
+	/// <summary>
+	/// Is this unit currently capturing an objective?
+	/// </summary>
+	public bool isCapturing = false;
+	
+	
+	// IDENTIFICATION
+	/// <summary>
+	/// This unit's unique identifier.
+	/// </summary>
+	protected int id = -1;
+	/// <summary>
+	/// The name of the unit.
+	/// </summary>
+	protected string uName = "";
+	/// <summary>
+	/// The color of our team.
+	/// </summary>
+	public Color teamColor = Color.white;
+	/// <summary>
+	/// The team name of our enemy.
+	/// </summary>
+	public string enemyName = "";
+	
+	// AI
+	/// <summary>
+	/// The Transform we are currently moving to.
+	/// </summary>
+	protected Transform moveTarget = null;
+	/// <summary>
+	/// The Transform we were ordered to go to.
+	/// </summary>
+	protected Transform orderTarget = null;
+	/// <summary>
+	/// Our leader.
+	/// </summary>
+	protected Leader leader = null;
+	/// <summary>
+	/// The unit which last gave us orders..
+	/// </summary>
+	protected Leader lastOrderer = null;
+	/// <summary>
+	/// Our AI agent.
+	/// </summary>
+	protected RAIN.Core.Agent agent = null;
+	/// <summary>
+	/// Our current order.
+	/// </summary>
+	public Order currentOrder = Order.stop;
+	/// <summary>
+	/// The objective we're currently defending.
+	/// </summary>
+	public Objective defendObjective;
+	/// <summary>
+	/// The objective we're currently attacking.
+	/// </summary>
+	public Objective attackObjective;
+	/// <summary>
+	/// Our current objective.
+	/// </summary>
+	public Objective currentObjective;
+	/// <summary>
+	/// The time since we last tried to detect enemies.
+	/// </summary>
+	protected float timeSinceLastDetect = 0.0f;
+	/// <summary>
+	/// The best enemy unit for us to shoot at.
+	/// </summary>
+	protected Unit bestUnit;
+	protected float timeSinceLastRepath = 0.0f;
+	
+	
+	// VISUALS
+	/// <summary>
+	/// This unit's shadow, set in the Inspector.
+	/// </summary>
+	public GameObject shadow = null;
+	/// <summary>
+	/// This unit's label.
+	/// </summary>
+	public ObjectLabel label = null;
+	/// <summary>
+	/// The effect the player sees that marks where we're currently moving to.
+	/// </summary>
+	protected GameObject moveEffect = null;
+	/// <summary>
+	/// The effect the player sees that marks we are selected.
+	/// </summary>
+	protected GameObject selectEffect = null;
+	/// <summary>
+	/// The heatmap block we're currently in.
+	/// </summary>
 	protected HeatmapBlock heatmapBlock = null;
+	
+	
 	
 	void Awake()
 	{
@@ -90,6 +250,11 @@ public class Unit : MonoBehaviour
 			_initialWeapon = weapon;
 		}
 		_maxHealth = health;
+		string tag = gameObject.tag;
+		if(tag == "Red")
+			enemyName = "Blue";
+		else
+			enemyName = "Red";
 	}
 	
 	/// <summary>
@@ -106,7 +271,7 @@ public class Unit : MonoBehaviour
 	}
 	
 	/// <summary>
-	/// Spawns this Unit. This will be called every time the Unit dies and respawns.
+	/// Spawns this Unit. This will be called every time the Unit dies and respawns or this script is restarted.
 	/// </summary>
 	protected void Spawn()
 	{
@@ -168,8 +333,19 @@ public class Unit : MonoBehaviour
 			{
 				spawnPoint = commander.GetSpawnPoint();
 				transform.position = spawnPoint;
+				if(commander.attackObjective == null)
+				{
+					transform.rotation = commander.transform.rotation;
+				}
+				else
+				{
+					transform.LookAt(commander.attackObjective.transform);
+				}
 			}
 		}
+		
+		// Force a recheck of any AI functions.
+		timeSinceLastDetect = ENEMY_RECHECK_TIME + 1;
 	}
 	
 	/// <summary>
@@ -188,6 +364,9 @@ public class Unit : MonoBehaviour
 		this.weapon.Pickup(this);
 	}
 	
+	/// <summary>
+	/// Initializes all prefabs.
+	/// </summary>
 	protected void InitPrefabs()
 	{
 		if(movePrefab == null)
@@ -216,14 +395,47 @@ public class Unit : MonoBehaviour
 		ClassUpdate();
 	}
 	
+	/// <summary>
+	/// Updates values on this unit and every class which inherits from it. Called every frame that we are alive.
+	/// </summary>
 	protected void UnitUpdate()
 	{
 		CheckHealth();
 	}
 	
+	/// <summary>
+	/// Updates values specific to only this class. Called every frame that we are alive.
+	/// </summary>
 	protected virtual void ClassUpdate()
 	{}
 	
+	void LateUpdate()
+	{
+		if(!IsAlive())
+			return;
+		UnitLateUpdate();
+		ClassLateUpdate();
+	}
+	
+	/// <summary>
+	/// Handles any values which should only happen after everything else has happened this turn for this class and all that inherit from it.
+	/// Called every frame we are alive.
+	/// </summary>
+	protected void UnitLateUpdate()
+	{
+		HandleAI();
+	}
+	
+	/// <summary>
+	/// Handles any values which should only happen after everything else has happened this turn for this class only.
+	/// Called every frame we are alive.
+	/// </summary>
+	protected virtual void ClassLateUpdate()
+	{}
+	
+	/// <summary>
+	/// Creates/Destroys the selection visuals.
+	/// </summary>
 	protected void CreateSelected()
 	{	
 		if(isSelected)
@@ -304,10 +516,10 @@ public class Unit : MonoBehaviour
 		return leader.GetCommander().GetTeamID();
 	}
 	
-	public virtual void RegisterLeader(Leader leader)
+	public virtual void RegisterLeader(Leader newLeader)
 	{
-		this.leader = leader;
-		if(leader.GetCommander() != Commander.player)
+		leader = newLeader;
+		if(!leader.IsOwnedByPlayer())
 			Destroy(label);
 		Deselect();
 		currentOrder = Order.stop;
@@ -318,10 +530,11 @@ public class Unit : MonoBehaviour
 		{
 			RecieveOrder(Order.move,leader.transform,null);
 		}
+		aBase = leader.aBase;
 		teamColor = leader.teamColor;
 		leader.RegisterUnit(this);
 		renderer.material.color = teamColor;
-		if(GetCommander() == Commander.player && leader != (Leader)Commander.player)
+		if(IsOwnedByPlayer() && !IsLedByPlayer())
 			MessageList.Instance.AddMessage(uName+", acknowledging "+leader.name+" as my new leader.");
 	}
 	
@@ -347,20 +560,12 @@ public class Unit : MonoBehaviour
 				else if(order == Order.defend)
 					defendObjective = objective;
 			}
-			Transform newTarget = new GameObject(target.gameObject.name+"'s Transform Copy").transform;
+			/*Transform newTarget = new GameObject(target.gameObject.name+"'s Transform Copy").transform;
 			newTarget.parent = target;
 			newTarget.localPosition = Vector3.zero;
-			orderTarget = newTarget;
+			orderTarget = newTarget;*/
 		}
-		GameObject targetGO = new GameObject(uName+"'s Current Target");
-		Vector3 targetLocation = target.position;
-		targetLocation.x += Random.Range(-RANDOM_TARGET_VARIATION,RANDOM_TARGET_VARIATION);
-		targetLocation.z += Random.Range(-RANDOM_TARGET_VARIATION,RANDOM_TARGET_VARIATION);
-		target = targetGO.transform;
-		target.position = targetLocation;
-		if(orderTarget.parent != null)
-			target.parent = orderTarget.parent;
-		moveTarget = target;
+		MakeMoveTarget(target);
 		if(Vector3.Distance(moveTarget.position,transform.position) < MOVE_CLOSE_ENOUGH_DISTANCE)
 		{
 			if(order != Order.defend)
@@ -374,6 +579,19 @@ public class Unit : MonoBehaviour
 		// This is a quick-and-dirty way for players to see that the unit has recieved orders correctly.
 		if(lastOrderer == (Leader)Commander.player)
 			MessageList.Instance.AddMessage(uName+", acknowledging "+order.ToString()+" order.");
+	}
+	
+	public void MakeMoveTarget(Transform target)
+	{
+		GameObject targetGO = new GameObject(uName+"'s Current Target");
+		Vector3 targetLocation = target.position;
+		targetLocation.x += Random.Range(-RANDOM_TARGET_VARIATION,RANDOM_TARGET_VARIATION);
+		targetLocation.z += Random.Range(-RANDOM_TARGET_VARIATION,RANDOM_TARGET_VARIATION);
+		Transform oldTarget = target;
+		target = targetGO.transform;
+		target.position = targetLocation;
+		target.parent = oldTarget;
+		moveTarget = target;
 	}
 	
 	public Order GetOrder()
@@ -405,7 +623,7 @@ public class Unit : MonoBehaviour
 			return false;
 		}
 		isSelected = true;
-		if(leader != (Leader)Commander.player)
+		if(!IsLedByPlayer())
 			return true;
 		CreateSelected();
 		renderer.material.SetColor("_OutlineColor",Color.green);
@@ -444,7 +662,7 @@ public class Unit : MonoBehaviour
 		if(!isSelectable)
 			return;
 		isSelected = false;
-		if(leader != null && leader.GetCommander() != Commander.player)
+		if(!IsLedByPlayer())
 			return;
 		CreateSelected();
 		renderer.material.SetColor("_OutlineColor",Color.black);
@@ -507,7 +725,7 @@ public class Unit : MonoBehaviour
 		upgrade.CloneUnit(this);
 		upgrade.RegisterCommander(commander);
 		upgrade.CreateSelected();
-		if(leader == (Leader)Commander.player)
+		if(IsOwnedByPlayer())
 			MessageList.Instance.AddMessage(uName+", acknowledging promotion to Leader.");
 		Destroy(this); // This script will not be destroyed until the end of this frame.
 		return upgrade;
@@ -518,6 +736,76 @@ public class Unit : MonoBehaviour
 		if(leader == null) // Haven't set anything up yet.
 			return null;
 		return leader.GetCommander();
+	}
+	
+	/// <summary>
+	/// Handles AI functions.
+	/// Anything which is handled by a behavior tree is not included.
+	/// </summary>
+	protected void HandleAI()
+	{
+		if(IsPlayer() || !IsAlive())
+			return;
+		HandleClassAIPreUniversal();
+		HandleUniversalAI();
+		HandleClassAIPostUniversal();
+	}
+	
+	/// <summary>
+	/// Handles the AI for every class.
+	/// </summary>
+	protected void HandleUniversalAI()
+	{
+		if(timeSinceLastDetect > ENEMY_RECHECK_TIME)
+		{
+			FindShootTargets();
+			timeSinceLastDetect = 0.0f;
+		}
+		if(timeSinceLastRepath > AI_REPATH_TIME && currentObjective != null)
+		{
+			RepathToObjective();
+		}
+		timeSinceLastDetect += Time.deltaTime;
+		timeSinceLastRepath += Time.deltaTime;
+	}
+	
+	/// <summary>
+	/// Handles the AI for this class only. Called before we have handled universal AI.
+	/// </summary>
+	protected virtual void HandleClassAIPreUniversal()
+	{}
+	
+	/// <summary>
+	/// Handles the AI for this class only. Called after we have handled universal AI.
+	/// </summary>
+	protected virtual void HandleClassAIPostUniversal()
+	{}
+	
+	/// <summary>
+	/// Makes the AI find and shoot at a specific target.
+	/// </summary>
+	protected void FindShootTargets()
+	{
+		//Unit enemy = DetectEnemies(agent,enemyName);
+	}
+	
+	/// <summary>
+	/// Forces a repath on the next frame, so long as our objective is not null.
+	/// </summary>
+	public void ForceRepath()
+	{
+		if(currentObjective == null)
+		{
+			Debug.LogWarning("Can't force a repath next frame: our current objective is null!");
+			return;
+		}
+		timeSinceLastRepath = AI_REPATH_TIME + 1;
+	}
+	
+	protected void RepathToObjective()
+	{
+		ResetTarget();
+		MakeMoveTarget(currentObjective.transform);
 	}
 	
 	/// <summary>
@@ -532,12 +820,12 @@ public class Unit : MonoBehaviour
 	/// <param name='enemy'>
 	/// A string representing the aspect owned by our enemy.
 	/// </param>
-	public Unit DetectEnemies(RAIN.Core.Agent agent,string enemy)
+	public Unit DetectEnemies(RAIN.Core.Agent rAgent,string enemyAspect)
 	{
-		Unit[] units = DetectUnits(agent,enemy);
+		Unit[] units = DetectUnits(rAgent,enemyAspect);
 		if(units.Length == 0)
 			return null;
-		Unit bestUnit = null;
+		bestUnit = null;
 		// Assign a score to each enemy:
 		float score = Mathf.Infinity;
 		foreach(Unit unit in units)
@@ -558,12 +846,14 @@ public class Unit : MonoBehaviour
 		return bestUnit;
 	}
 	
-	public Unit[] DetectUnits(RAIN.Core.Agent agent, string unitTag)
+	public Unit[] DetectUnits(RAIN.Core.Agent rAgent, string unitTag)
 	{
-		if(agent == null)
+		if(rAgent == null)
 			return DetectUnits(unitTag,50.0f);
+		agent = rAgent;
 		// Sense any nearby enemies:
 		agent.GainInterestIn(unitTag);
+		agent.GainInterestIn(unitTag+" Gunshot");
 		agent.BeginSense();
 		agent.Sense();
 		
@@ -580,13 +870,37 @@ public class Unit : MonoBehaviour
 				continue;
 			unitList.Add(unit);
 		}
+		
+		gos = new GameObject[10];
+		agent.GetAllObjectsWithAspect(unitTag+" Gunshot",out gos);
+		foreach(GameObject go in gos)
+		{
+			if(go.audio == null)
+				continue;
+			Weapon gun = go.GetComponent<Weapon>();
+			if(gun == null || !gun.HasShotRecently())
+				continue;
+			Unit unit = gun.GetOwner();
+			if(unit == null || unit.tag != unitTag || !unit.IsAlive())
+				continue;
+			Debug.Log ("Found a gun.");
+			unitList.Add(unit);
+		}
+		
 		if(unitList.Count == 0)
 			return new Unit[0];
 		return unitList.ToArray();
 	}
 	
+	public void SetAgent(RAIN.Core.Agent agent)
+	{
+		this.agent = agent;
+	}
+	
 	public Unit[] DetectUnits(string unitTag, float maxDistance)
 	{
+		if(agent != null)
+			return DetectUnits(agent,unitTag);
 		GameObject[] gos = GameObject.FindGameObjectsWithTag(unitTag);
 		if(gos.Length == 0)
 			return new Unit[0];
@@ -605,6 +919,18 @@ public class Unit : MonoBehaviour
 		return closestUnits.ToArray();
 	}
 	
+	/// <summary>
+	/// Allows the AI to aim and shoot at a target.
+	/// </summary>
+	/// <param name='agent'>
+	/// The AI agent.
+	/// </param>
+	/// <param name='deltaTime'>
+	/// The time it's taken since the last step in the behavior tree, as reported by the agent.
+	/// </param>
+	/// <param name='enemy'>
+	/// The enemy we're trying to shoot at.
+	/// </param>
 	public RAIN.Action.Action.ActionResult Shoot(RAIN.Core.Agent agent, float deltaTime, Unit enemy)
 	{
 		if(enemy == null || !enemy.IsAlive())
@@ -620,7 +946,14 @@ public class Unit : MonoBehaviour
 		{
 			if(hitInfo.transform.tag == "Ground")
 				return RAIN.Action.Action.ActionResult.FAILURE;
+			Unit unit = hitInfo.collider.gameObject.GetComponent<Unit>();
+			if(unit != null && IsFriendly(unit))
+			{
+				return RAIN.Action.Action.ActionResult.FAILURE;
+			}
 		}
+		else
+			return RAIN.Action.Action.ActionResult.FAILURE;
 		if(agent.LookAt(enemy.transform.position,deltaTime))
 			weapon.Shoot();
 		float accuracy = weapon.GetAccuracy();
@@ -644,24 +977,55 @@ public class Unit : MonoBehaviour
 		GetCommander().OnScore();
 	}
 	
+	public bool IsFriendly(Unit other)
+	{
+		return GetCommander() == other.GetCommander();
+	}
+	
+	public virtual bool IsLedByPlayer()
+	{
+		return leader == (Leader)Commander.player;
+	}
+	
+	public virtual bool IsOwnedByPlayer()
+	{
+		return GetCommander().IsPlayer();
+	}
+	
+	public virtual bool IsPlayer()
+	{
+		return false;
+	}
+	
 	protected void AllowSpawn()
 	{
 		skipSpawn = false;
 	}
 	
+	public void OnPickupFlag()
+	{
+		ResetTarget(false);
+	}
+	
 	protected void ResetTarget()
+	{
+		ResetTarget(true);
+	}
+	
+	protected void ResetTarget(bool effects)
 	{
 		if(orderTarget != null && orderTarget.name.Contains("Copy"))
 		{
-			DestroyImmediate(orderTarget.gameObject);
+			Destroy(orderTarget.gameObject);
 		}
 		if(moveTarget != null)
 		{
-			DestroyImmediate(moveTarget.gameObject);
+			Destroy(moveTarget.gameObject);
 			moveTarget = null;
 			orderTarget = null;
 		}
-		ResetEffects();
+		if(effects)
+			ResetEffects();
 	}
 	
 	protected void ResetEffects()
@@ -692,6 +1056,7 @@ public class Unit : MonoBehaviour
 		orderTarget = oldClone.orderTarget;
 		health = oldClone.health;
 		weapon = oldClone.weapon;
+		aBase = oldClone.aBase;
 		weapon.Pickup(this);
 		leader.ReplaceUnit(id, this);
 		skipSpawn = true;

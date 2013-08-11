@@ -17,11 +17,11 @@ public class Leader : Unit
 	protected Commander commander = null;
 	protected float TEMP_GAMEOBJECT_REMOVE_TIME = 1.0f;
 	protected Unit[] lastDetectedUnits = null;
-	protected RAIN.Core.Agent agent = null;
+	public Unit[] ownedUnits;
 	
 	protected override void ClassUpdate ()
 	{
-		if(commander != Commander.player)
+		if(!IsOwnedByPlayer())
 			return;
 		// Everything below here only affects the player's team.
 		Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
@@ -88,6 +88,8 @@ public class Leader : Unit
 		{
 			GiveOrder(currentOrder,moveTarget,unit);
 		}
+		ownedUnits = new Unit[unitID.Count];
+		unitID.Values.CopyTo(ownedUnits,0);
 		Debug.Log("Registered ID number "+id);
 	}
 	
@@ -148,7 +150,7 @@ public class Leader : Unit
 		Unit downgrade = gameObject.AddComponent<Unit>();
 		leader = (Leader)commander;
 		downgrade.CloneUnit(this);
-		if(leader == (Leader)Commander.player)
+		if(IsLedByPlayer())
 			MessageList.Instance.AddMessage(uName+", acknowledging demotion to grunt.");
 		Destroy(this);
 	}
