@@ -36,10 +36,24 @@ public class Weapon : MonoBehaviour
 	protected float timer = 0.00f;
 	protected bool lightEnabled = false;
 	protected LayerMask layers;
-	//protected 
+	protected BoxCollider physicsCollider;
+	protected SphereCollider triggerCollider;
 	
 	protected float WEAPON_DESPAWN_TIME = 30.0f;
 	protected float RECENT_SHOT_TIME = 7.0f;
+	
+	void Awake()
+	{
+		physicsCollider = gameObject.GetComponent<BoxCollider>();
+		triggerCollider = gameObject.GetComponent<SphereCollider>();
+		if(physicsCollider == null)
+			physicsCollider = gameObject.AddComponent<BoxCollider>();
+		if(triggerCollider == null)
+			triggerCollider = gameObject.AddComponent<SphereCollider>();
+		physicsCollider.isTrigger = false;
+		triggerCollider.isTrigger = true;
+		triggerCollider.enabled = false;
+	}
 	
 	void Start()
 	{
@@ -280,11 +294,21 @@ public class Weapon : MonoBehaviour
 		return clip < _maxClipSize;
 	}
 	
+	public bool AddAmmo(int bulletAmount)
+	{
+		if(ammo == _maxAmmoCount)
+			return false;
+		ammo += bulletAmount;
+		ammo = Mathf.Min(ammo,_maxAmmoCount);
+		return true;
+	}
+	
 	public void Drop()
 	{
 		CancelInvoke();
 		transform.parent = null;
-		collider.enabled = true;
+		physicsCollider.enabled = true;
+		triggerCollider.enabled = true;
 		rigidbody.isKinematic = false;
 		rigidbody.useGravity = true;
 		light.enabled = false;
@@ -297,7 +321,8 @@ public class Weapon : MonoBehaviour
 		CancelInvoke();
 		rigidbody.isKinematic = true;
 		rigidbody.useGravity = false;
-		collider.enabled = false;
+		triggerCollider.enabled = false;
+		physicsCollider.enabled = false;
 		if(owner.IsPlayer())
 		{
 			transform.parent = Camera.main.transform;
@@ -311,6 +336,18 @@ public class Weapon : MonoBehaviour
 		transform.localRotation = Quaternion.Euler(90,0,0);
 		this.owner = owner;
 		MakeOwner();
+	}
+	
+	void OnTriggerEnter(Collider col)
+	{
+		Unit unit = col.transform.GetComponent<Unit>();
+		if(unit == null || !unit.IsAlive() || unit.weapon == null)
+			return;
+		if(unit.weapon.AddAmmo(ammo + clip))
+		{
+			CancelInvoke();
+			Destroy(gameObject);
+		}
 	}
 	
 	public Unit GetOwner()

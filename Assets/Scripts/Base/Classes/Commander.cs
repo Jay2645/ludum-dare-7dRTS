@@ -59,6 +59,7 @@ public class Commander : Leader
 			player = this;
 			uName = "You";
 			gameObject.name = "Player";
+			Screen.showCursor = false;
 		}
 		if(unitPrefab == null)
 			unitPrefab = Resources.Load ("Prefabs/Unit") as GameObject;
@@ -464,6 +465,14 @@ public class Commander : Leader
 		{
 			allUnits.Add(id,unit);
 		}
+		Unit[] allOurUnits = GetAllUnits();
+		foreach(Unit u in allOurUnits)
+		{
+			if(u == unit)
+				continue;
+			Physics.IgnoreCollision(u.collider,unit.collider,true);
+		}
+		Physics.IgnoreCollision(unit.collider,collider,true);
 	}
 	
 	public override void RemoveUnit (int id)

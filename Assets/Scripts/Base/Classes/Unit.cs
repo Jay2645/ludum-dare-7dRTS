@@ -64,6 +64,11 @@ public class Unit : MonoBehaviour
 		"Hunt",
 		"Clark"
 	};
+	/// <summary>
+	/// TRUE if we can hurt our teammates; FALSE if we cannot hurt them.
+	/// If friendly fire is disabled, we can also move through our teammates.
+	/// </summary>
+	public static bool friendlyFire = false;
 	
 	
 	// Constants //
@@ -277,6 +282,10 @@ public class Unit : MonoBehaviour
 	/// The heatmap block we're currently in.
 	/// </summary>
 	protected HeatmapBlock heatmapBlock = null;
+	/// <summary>
+	/// The color of our outline.
+	/// </summary>
+	protected Color outlineColor = Color.black;
 	
 	
 	
@@ -297,6 +306,8 @@ public class Unit : MonoBehaviour
 			_initialWeapon = weapon;
 		}
 		_maxHealth = health;
+		if(renderer != null)
+			outlineColor = renderer.material.GetColor("_OutlineColor");
 	}
 	
 	/// <summary>
@@ -732,7 +743,7 @@ public class Unit : MonoBehaviour
 		if(!IsLedByPlayer())
 			return;
 		CreateSelected();
-		renderer.material.SetColor("_OutlineColor",Color.black);
+		renderer.material.SetColor("_OutlineColor",outlineColor);
 	}
 	
 	protected void OnDie()

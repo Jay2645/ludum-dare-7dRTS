@@ -157,25 +157,36 @@ public class Projectile : MonoBehaviour {
 	/// </param>
 	private void DamageGameObject(GameObject collide)
 	{
+		// Never collide with certain layers.
 		LayerMask layer = collide.layer;
 		if(	layer == LayerMask.NameToLayer("Ignore Raycast") ||
 			layer == LayerMask.NameToLayer("Heat Data") ||
 			layer == LayerMask.NameToLayer("Death Data") ||
 			layer == LayerMask.NameToLayer("Move Data"))
 			return;
+		// Find out if we hit a unit.
 		Unit unit = collide.transform.root.GetComponentInChildren<Unit>();
-		if(owner != null && (unit == owner || unit != null && unit.weapon != null && collide == unit.weapon.gameObject))
-		{
-			Destroy(gameObject);
-			return;
-		}
 		if(unit != null)
 		{
+			// If we hit a friendly and friendly fire is disabled, ignore the collision. 
+			if(!Unit.friendlyFire && unit == owner || owner.IsFriendly(unit))
+			{
+				return;
+			}
+			// If we hit a weapon, we don't damage the unit holding it.
+			if(unit.weapon != null && collide == unit.weapon.gameObject)
+			{
+				Destroy(gameObject);
+				return;
+			}
+			// Let the weapon that shot us know we hit something.
 			if(owner != null)
 				owner.weapon.AddHit();
+			// Damage the unit, if applicable.
 			if(gameObject.GetComponent<MeshRenderer>() != null) // Tracer damage is handled in Weapon.cs
 				unit.Damage(damage,owner);
 		}
+		// Make sure we don't hit someone else afterward.
 		Destroy(gameObject);
 	}
 }

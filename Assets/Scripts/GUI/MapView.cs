@@ -227,7 +227,10 @@ public class MapView : MonoBehaviour {
 	private void ShowMap()
 	{
 		if(camera.depth == 1)
+		{
 			camera.depth = -1;
+			Screen.showCursor = false;
+		}
 		else
 		{
 			if(commanderTransform != null)
@@ -236,6 +239,7 @@ public class MapView : MonoBehaviour {
 				transform.position = camPosition;
 			}
 			camera.depth = 1;
+			Screen.showCursor = true;
 		}
 		isShown = camera.depth == 1;
 	}
