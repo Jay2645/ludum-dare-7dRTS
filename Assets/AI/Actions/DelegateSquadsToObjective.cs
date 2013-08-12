@@ -350,6 +350,8 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		SortedDictionary<float,Unit> unitsByDistance = new SortedDictionary<float, Unit>();
 		foreach(Unit unit in unitPool)
 		{
+			if(unit == null)
+				continue;
 			unitsByDistance.Add(Mathf.Pow(target.x - unit.transform.position.x,2) + Mathf.Pow(target.z - unit.transform.position.z,2),unit);
 		}
 		if(nearTarget)

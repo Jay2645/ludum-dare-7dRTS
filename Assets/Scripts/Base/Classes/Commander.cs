@@ -28,6 +28,7 @@ public class Commander : Leader
 	protected int teamID = -1;
 	protected static int nextTeamID = 0;
 	public MapView mapCamera;
+	protected Vector3 cameraPosition;
 	public Vector3[] spawnPoints;
 	public float spawnTime = 8.0f;
 	protected float _spawnTime;
@@ -49,6 +50,7 @@ public class Commander : Leader
 	{
 		spawnPoint = transform.position;
 		_spawnTime = spawnTime;
+		cameraPosition = Camera.main.transform.localPosition;
 		if(defendObjective != null)
 			defendObjective.SetOwner(this);
 		commander = this;
@@ -79,6 +81,11 @@ public class Commander : Leader
 		if(mapCamera != null)
 		{
 			mapCamera.SetCommander(this);
+		}
+		if(isPlayer)
+		{
+			Camera.main.transform.parent = transform;
+			Camera.main.transform.localPosition = cameraPosition;
 		}
 		currentOrder = Order.move;
 		currentOrderIndex = 0;
@@ -156,7 +163,7 @@ public class Commander : Leader
 		{
 			Ray selectRay = Camera.main.ViewportPointToRay(new Vector3(selectRadius, selectRadius, 0));
 			RaycastHit hit;
-			if (Physics.Raycast(selectRay, out hit,Mathf.Infinity))
+			if (Physics.Raycast(selectRay, out hit,Mathf.Infinity,raycastIgnoreLayers))
 			{
 				hitUnit = hit.transform.GetComponentInChildren<Unit>();
 				if(hitUnit != null)
@@ -382,7 +389,7 @@ public class Commander : Leader
 			return;
 		Ray selectRay = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
 		RaycastHit hit;
-		if (Physics.Raycast(selectRay, out hit,Mathf.Infinity))
+		if (Physics.Raycast(selectRay, out hit,Mathf.Infinity,raycastIgnoreLayers))
 		{
 			Unit hitUnit = hit.transform.GetComponentInChildren<Unit>();
 			if(hitUnit != null)
@@ -585,7 +592,7 @@ public class Commander : Leader
 			}
 			Ray findFloorRay = new Ray(randomPos,Vector3.down);
 			RaycastHit floor;
-			if(Physics.Raycast(findFloorRay, out floor, Mathf.Infinity))
+			if(Physics.Raycast(findFloorRay, out floor, Mathf.Infinity,raycastIgnoreLayers))
 			{
 				return floor.point + Vector3.up;
 			}

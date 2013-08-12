@@ -145,7 +145,7 @@ public class MapView : MonoBehaviour {
 		}
 		else
 		{
-			if(Physics.Raycast(screenRay, out hitInfo, Mathf.Infinity))
+			if(Physics.Raycast(screenRay, out hitInfo, Mathf.Infinity,player.raycastIgnoreLayers))
 			{ 
 				// something under our mouse right now.
 				Unit unit = hitInfo.collider.GetComponent<Unit>();
@@ -168,7 +168,7 @@ public class MapView : MonoBehaviour {
 		}
 		Ray ray = camera.ScreenPointToRay(Input.mousePosition);
 		RaycastHit hitInfo;
-		if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity))
+		if (Physics.Raycast(ray, out hitInfo, Mathf.Infinity,player.raycastIgnoreLayers))
 		{
 			Unit enemyUnit = hitInfo.collider.gameObject.GetComponentInChildren<Unit>();
 			if(enemyUnit != null)

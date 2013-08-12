@@ -2,25 +2,25 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
   <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Base\Classes\Unit.cs">
     <Files>
-      <File FileName="Assets\Scripts\Base\Objectives\Objective.cs" Line="101" Column="41" />
+      <File FileName="Assets\Scripts\Base\Classes\Unit.cs" Line="1047" Column="5" />
       <File FileName="Assets\AI\Actions\DetermineUnitType.cs" Line="23" Column="51" />
-      <File FileName="Assets\Scripts\Base\Classes\Unit.cs" Line="593" Column="29" />
-      <File FileName="Assets\Scripts\Base\Classes\Leader.cs" Line="20" Column="27" />
-      <File FileName="Assets\Scripts\Weapon\Projectile.cs" Line="132" Column="12" />
-      <File FileName="Assets\Scripts\Weapon\Weapon.cs" Line="324" Column="22" />
-      <File FileName="Assets\Scripts\Base\Classes\Commander.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Base\Classes\Leader.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Weapon\Projectile.cs" Line="76" Column="81" />
+      <File FileName="Assets\Scripts\Weapon\Weapon.cs" Line="202" Column="85" />
+      <File FileName="Assets\Scripts\Base\Classes\Commander.cs" Line="588" Column="82" />
       <File FileName="Assets\Scripts\GUI\ObjectLabel.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\GUI\PhysicalText.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\GUI\MapView.cs" Line="1" Column="1" />
-      <File FileName="Assets\AI\Actions\UnitCheckOrders.cs" Line="64" Column="6" />
-      <File FileName="Assets\AI\Actions\DelegateSquadsToObjective.cs" Line="278" Column="43" />
-      <File FileName="Assets\Scripts\Base\Objectives\Flag.cs" Line="48" Column="28" />
+      <File FileName="Assets\Scripts\GUI\MapView.cs" Line="171" Column="82" />
+      <File FileName="Assets\AI\Actions\UnitCheckOrders.cs" Line="1" Column="1" />
+      <File FileName="Assets\AI\Actions\DelegateSquadsToObjective.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Base\Objectives\Objective.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Base\Objectives\Flag.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Analytics\GameMetrics.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Analytics\HeatmapBlock.cs" Line="1" Column="1" />
       <File FileName="Assets\AI\Actions\ShootEnemy.cs" Line="1" Column="1" />
       <File FileName="Assets\AI\Actions\DetectEnemy.cs" Line="1" Column="1" />
       <File FileName="Assets\AI\Actions\UnitLowOnHealth.cs" Line="1" Column="1" />
-      <File FileName="Assets\AI\Actions\CheckSquadStatus.cs" Line="1" Column="1" />
+      <File FileName="Assets\AI\Actions\CheckSquadStatus.cs" Line="11" Column="25" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

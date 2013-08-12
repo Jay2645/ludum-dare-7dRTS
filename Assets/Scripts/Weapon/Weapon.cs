@@ -15,7 +15,7 @@ public class Weapon : MonoBehaviour
 	public float reloadTime = 1.5f;
 	public string weaponName = "Gun";
 	public float range = Mathf.Infinity;
-	public float shotSpread = 0.25f;
+	public float shotSpread = 2.0f;
 	
 	protected float lastShotTime = 0;
 	public Projectile projectile = null;
@@ -36,6 +36,7 @@ public class Weapon : MonoBehaviour
 	protected float timer = 0.00f;
 	protected bool lightEnabled = false;
 	protected LayerMask layers;
+	//protected 
 	
 	protected float WEAPON_DESPAWN_TIME = 30.0f;
 	protected float RECENT_SHOT_TIME = 7.0f;
@@ -183,11 +184,10 @@ public class Weapon : MonoBehaviour
 	/// </summary>
 	protected virtual void OnShootProjectile()
 	{
-		Projectile proj = Instantiate(projectile,transform.position,transform.rotation) as Projectile;
-		proj.gameObject.transform.position = transform.position + transform.up + ShootError();
+		Projectile proj = Instantiate(projectile,transform.position + (transform.up * 0.5f),transform.rotation) as Projectile;
 		proj.damage = damage;
 		proj.SetOwner(owner);
-		proj.MoveForward(transform.up * proj.speed);
+		proj.MoveForward(ShootError());
 	}
 	
 	/// <summary>
@@ -199,20 +199,20 @@ public class Weapon : MonoBehaviour
 		Vector3 shotDirection = ShootError();
 		Ray directionRay = new Ray(transform.position,shotDirection);
 		Debug.DrawRay(transform.position + transform.up,shotDirection, Color.blue);
-		if (Physics.Raycast(directionRay, out hit,Mathf.Infinity))
+		if (Physics.Raycast(directionRay, out hit,Mathf.Infinity,owner.raycastIgnoreLayers))
 		{
 			if(Random.value * (4 / 3) <= 1)
 			{
 				GameObject tracerInstance = Instantiate(tracer) as GameObject;
 				tracerInstance.layer = gameObject.layer;
-				tracerInstance.transform.position = transform.position + (transform.up * 0.45f);
+				tracerInstance.transform.position = transform.position;
 				tracerInstance.GetComponent<Projectile>().MoveForward(shotDirection);
 			}
 			Unit hitUnit = hit.transform.root.gameObject.GetComponentInChildren<Unit>();
 			if(hitUnit != null)
 			{
 				_projectileHits++;
-				hitUnit.health -= damage;
+				hitUnit.Damage(damage,owner);
 			}
 		}
 	}
@@ -234,10 +234,10 @@ public class Weapon : MonoBehaviour
 	protected Vector3 ShootError()
 	{
 		if(this == null || gameObject == null) // For some reason this is firing even after the script has been destroyed?
-			return Vector3.zero;
-		float sprayX = (1 - Random.value) * shotSpread / 5;
-		float sprayZ = (1 - Random.value) * shotSpread / 5;
-	 	return transform.TransformDirection(new Vector3(sprayX, 0, sprayZ));
+			return Vector3.forward;
+		float sprayX = (1 - Random.Range(0.0f,2.0f)) * shotSpread * 2;
+		float sprayZ = (1 - Random.Range(0.0f,2.0f)) * shotSpread * 2;
+	 	return Quaternion.Euler(sprayX,0,sprayZ) * transform.up;
 	}
 	
 	protected void Reload()
@@ -287,6 +287,7 @@ public class Weapon : MonoBehaviour
 		collider.enabled = true;
 		rigidbody.isKinematic = false;
 		rigidbody.useGravity = true;
+		light.enabled = false;
 		owner = null;
 		Invoke ("Despawn",WEAPON_DESPAWN_TIME);
 	}
@@ -319,7 +320,7 @@ public class Weapon : MonoBehaviour
 	
 	public bool HasShotRecently()
 	{
-		if(owner == null)
+		if(owner == null || lastShotTime == 0.0f)
 			return false;
 		return lastShotTime < Time.time - RECENT_SHOT_TIME;
 	}

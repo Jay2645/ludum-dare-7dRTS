@@ -41,6 +41,22 @@ public class Projectile : MonoBehaviour {
 		meshRenderer = gameObject.GetComponent<MeshRenderer>();
 	}
 	
+	void Start()
+	{
+		if(owner == null)
+		{
+			Destroy(gameObject);
+			return;
+		}
+		Ray groundDetection = new Ray(transform.position,transform.forward);
+		RaycastHit hitInfo;
+		if(Physics.Raycast(groundDetection,out hitInfo,speed,owner.raycastIgnoreLayers))
+		{
+			if(hitInfo.transform.tag == "Ground")
+				Destroy(gameObject,0.4f);
+		}
+	}
+	
 	public void SetOwner(Unit newOwner)
 	{
 		owner = newOwner;
@@ -64,6 +80,18 @@ public class Projectile : MonoBehaviour {
 	
 	void Update()
 	{
+		if(owner == null)
+		{
+			Destroy(gameObject);
+			return;
+		}
+		Ray groundDetection = new Ray(transform.position,transform.forward);
+		RaycastHit hitInfo;
+		if(Physics.Raycast(groundDetection,out hitInfo,speed,owner.raycastIgnoreLayers))
+		{
+			if(hitInfo.transform.tag == "Ground")
+				Destroy(gameObject,1.0f);
+		}
 		if(	Mathf.Abs(transform.position.x) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
 			Mathf.Abs(transform.position.y) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
 			Mathf.Abs(transform.position.z) > PROJECTILE_MAX_TRAVEL_DISTANCE)
@@ -109,11 +137,15 @@ public class Projectile : MonoBehaviour {
 	{
 		if(collision.gameObject.GetComponent<Weapon>() == null)
 			DamageGameObject(collision.gameObject);
+		if(collision.gameObject.tag == "Ground")
+			Destroy(gameObject);
 	}
 	
 	void OnTriggerEnter(Collider trigger)
 	{
 		DamageGameObject(trigger.gameObject);
+		if(trigger.tag == "Ground")
+			Destroy(gameObject);
 	}
 	
 	/// <summary>
@@ -133,13 +165,16 @@ public class Projectile : MonoBehaviour {
 			return;
 		Unit unit = collide.transform.root.GetComponentInChildren<Unit>();
 		if(owner != null && (unit == owner || unit != null && unit.weapon != null && collide == unit.weapon.gameObject))
+		{
+			Destroy(gameObject);
 			return;
+		}
 		if(unit != null)
 		{
 			if(owner != null)
 				owner.weapon.AddHit();
 			if(gameObject.GetComponent<MeshRenderer>() != null) // Tracer damage is handled in Weapon.cs
-				unit.health -= damage;
+				unit.Damage(damage,owner);
 		}
 		Destroy(gameObject);
 	}

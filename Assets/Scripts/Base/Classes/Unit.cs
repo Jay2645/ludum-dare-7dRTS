@@ -82,11 +82,31 @@ public class Unit : MonoBehaviour
 	/// <summary>
 	/// How long to wait between rechecking for enemies.
 	/// </summary>
-	protected const float ENEMY_RECHECK_TIME = 5.0f;
+	protected const float ENEMY_RECHECK_TIME = 7.0f;
 	/// <summary>
 	/// How often the AI forces a repath when going to an objective.
 	/// </summary>
-	protected const float AI_REPATH_TIME = 4.0f;
+	protected const float AI_REPATH_TIME = 9.0f;
+	/// <summary>
+	/// The AI's horizontal field of view.
+	/// </summary>
+	protected const float AI_FOV_HORIZONTAL_RANGE = 180.0f;
+	/// <summary>
+	/// The AI's vertical field of view.
+	/// </summary>
+	protected const float AI_FOV_VERTICAL_RANGE = 60.0f;
+	/// <summary>
+	/// How much to increment the raycast by when calculating FOV.
+	/// </summary>
+	protected const float FOV_RAYCAST_INCREMENT_RATE = 15.0f;
+	/// <summary>
+	/// We will detect any enemy which is this close to us.
+	/// </summary>
+	protected const float CLOSE_ENEMY_DETECT_RANGE = 5.0f;
+	/// <summary>
+	/// How long it takes after spawning before we take damage.
+	/// </summary>
+	protected const float RESPAWN_BLINK_TIME = 3.0f;
 	
 	// Unit variables //
 	
@@ -104,7 +124,7 @@ public class Unit : MonoBehaviour
 	/// <summary>
 	/// Our current health.
 	/// </summary>
-	public int health = 100;
+	protected int health = 100;
 	/// <summary>
 	/// Our max health.
 	/// </summary>
@@ -141,6 +161,10 @@ public class Unit : MonoBehaviour
 	/// Is this unit currently capturing an objective?
 	/// </summary>
 	public bool isCapturing = false;
+	/// <summary>
+	/// Does this unit avoid all damage?
+	/// </summary>
+	public bool immortal = false;
 	
 	
 	// IDENTIFICATION
@@ -185,7 +209,7 @@ public class Unit : MonoBehaviour
 	/// <summary>
 	/// Our current order.
 	/// </summary>
-	public Order currentOrder = Order.stop;
+	public Order currentOrder = Order.attack;
 	/// <summary>
 	/// The objective we're currently defending.
 	/// </summary>
@@ -201,12 +225,35 @@ public class Unit : MonoBehaviour
 	/// <summary>
 	/// The time since we last tried to detect enemies.
 	/// </summary>
-	protected float timeSinceLastDetect = 0.0f;
+	protected float lastDetectTime = 0.0f;
 	/// <summary>
 	/// The best enemy unit for us to shoot at.
 	/// </summary>
 	protected Unit bestUnit;
+	/// <summary>
+	/// The time since our last repath call.
+	/// </summary>
 	protected float timeSinceLastRepath = 0.0f;
+	/// <summary>
+	/// Our old move target.
+	/// </summary>
+	protected Transform oldMoveTarget = null;
+	/// <summary>
+	/// Our old order.
+	/// </summary>
+	protected Order oldOrder = Order.stop;
+	/// <summary>
+	/// Are we shooting?
+	/// </summary>
+	protected bool isShooting = false;
+	/// <summary>
+	/// Which layers we ignore for raycasting.
+	/// </summary>
+	public LayerMask raycastIgnoreLayers;
+	/// <summary>
+	/// The last unit which damaged us.
+	/// </summary>
+	protected Unit lastDamager;
 	
 	
 	// VISUALS
@@ -250,11 +297,6 @@ public class Unit : MonoBehaviour
 			_initialWeapon = weapon;
 		}
 		_maxHealth = health;
-		string tag = gameObject.tag;
-		if(tag == "Red")
-			enemyName = "Blue";
-		else
-			enemyName = "Red";
 	}
 	
 	/// <summary>
@@ -317,6 +359,10 @@ public class Unit : MonoBehaviour
 		
 		if(leader != null)
 			leader.RegisterUnit(this);
+		if(gameObject.tag == "Red")
+			enemyName = "Blue";
+		else
+			enemyName = "Red";
 		
 		// Call class-specific spawn code.
 		ClassSpawn();
@@ -343,9 +389,11 @@ public class Unit : MonoBehaviour
 				}
 			}
 		}
+		immortal = true;
+		Invoke ("CanTakeDamage",RESPAWN_BLINK_TIME);
 		
 		// Force a recheck of any AI functions.
-		timeSinceLastDetect = ENEMY_RECHECK_TIME + 1;
+		HandleAI(true);
 	}
 	
 	/// <summary>
@@ -353,6 +401,11 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected virtual void ClassSpawn()
 	{}
+	
+	protected void CanTakeDamage()
+	{
+		immortal = false;
+	}
 	
 	protected virtual void CreateWeapon(Weapon weapon)
 	{
@@ -478,6 +531,14 @@ public class Unit : MonoBehaviour
 		}
 	}
 	
+	public void Damage(float damageAmount, Unit damager)
+	{
+		if(immortal || health <= 0)
+			return;
+		health -= Mathf.RoundToInt(damageAmount);
+		lastDamager = damager;
+	}
+	
 	protected void CheckHealth()
 	{
 		if(health <= 0)
@@ -596,6 +657,8 @@ public class Unit : MonoBehaviour
 	
 	public Order GetOrder()
 	{
+		if(isShooting)
+			return Order.attack;
 		return currentOrder;
 	}
 	
@@ -606,7 +669,11 @@ public class Unit : MonoBehaviour
 	
 	public Transform GetMoveTarget()
 	{
-		if(moveTarget == null || this == null)
+		if(this == null)
+			return null;
+		if(isShooting && bestUnit != null)
+			return bestUnit.transform;
+		if(moveTarget == null)
 			return null;
 		if(Vector3.Distance(moveTarget.position,transform.position) < MOVE_CLOSE_ENOUGH_DISTANCE)
 		{
@@ -674,6 +741,7 @@ public class Unit : MonoBehaviour
 			return;
 		if(heatmapBlock != null)
 			heatmapBlock.AddDeath();
+		lastDamager.AddKill(this);
 		if(leader != null)
 			leader.RemoveUnit(id);
 		if(currentObjective != null)
@@ -688,6 +756,16 @@ public class Unit : MonoBehaviour
 		ResetEffects();
 		foreach(Transform child in transform)
 		{
+			if(child.GetComponent<Objective>() != null)
+			{
+				child.parent = null;
+				continue;
+			}
+			if(child.GetComponent<AudioListener>() != null)
+			{
+				child.parent = null;
+				continue;
+			}
 			child.gameObject.SetActive(false);
 		}
 		// Reset spawn point.
@@ -696,10 +774,27 @@ public class Unit : MonoBehaviour
 			spawnPoint = Vector3.zero;
 		if(commander != null)
 		{
+			if(IsLedByPlayer())
+			{
+				string deathMessage = uName;
+				if(IsPlayer())
+					deathMessage = 	deathMessage+" were killed by "+lastDamager.name+". " +
+									"Respawning in "+Mathf.RoundToInt(GetCommander().GetTimeToRespawn())+" seconds.";
+				else
+					deathMessage = deathMessage+" was killed by "+lastDamager.name+".";
+				MessageList.Instance.AddMessage(deathMessage);
+			}
 			float respawnTime = commander.GetTimeToRespawn();
 			Debug.Log ("Respawning in: "+respawnTime.ToString());
 			Invoke("Spawn",respawnTime);
 		}
+	}
+	
+	public void AddKill(Unit dead)
+	{
+		kills++;
+		if(IsLedByPlayer())
+			MessageList.Instance.AddMessage(uName+" killed "+dead.name+".");
 	}
 	
 	public bool IsAlive()
@@ -742,43 +837,49 @@ public class Unit : MonoBehaviour
 	/// Handles AI functions.
 	/// Anything which is handled by a behavior tree is not included.
 	/// </summary>
+	/// 
 	protected void HandleAI()
+	{
+		HandleAI(false);
+	}
+	protected void HandleAI(bool force)
 	{
 		if(IsPlayer() || !IsAlive())
 			return;
-		HandleClassAIPreUniversal();
-		HandleUniversalAI();
-		HandleClassAIPostUniversal();
+		HandleClassAIPreUniversal(force);
+		HandleUniversalAI(force);
+		HandleClassAIPostUniversal(force);
 	}
 	
 	/// <summary>
 	/// Handles the AI for every class.
 	/// </summary>
-	protected void HandleUniversalAI()
+	protected void HandleUniversalAI(bool force)
 	{
-		if(timeSinceLastDetect > ENEMY_RECHECK_TIME)
-		{
+		//if(force || timeSinceLastDetect > ENEMY_RECHECK_TIME || isShooting)
+		//{
 			FindShootTargets();
-			timeSinceLastDetect = 0.0f;
-		}
-		if(timeSinceLastRepath > AI_REPATH_TIME && currentObjective != null)
+			//timeSinceLastDetect = 0.0f;
+		//}
+		if(force || timeSinceLastRepath > AI_REPATH_TIME && !isShooting)
 		{
-			RepathToObjective();
+			if(currentObjective != null)
+				RepathToObjective();
 		}
-		timeSinceLastDetect += Time.deltaTime;
+		//timeSinceLastDetect += Time.deltaTime;
 		timeSinceLastRepath += Time.deltaTime;
 	}
 	
 	/// <summary>
 	/// Handles the AI for this class only. Called before we have handled universal AI.
 	/// </summary>
-	protected virtual void HandleClassAIPreUniversal()
+	protected virtual void HandleClassAIPreUniversal(bool force)
 	{}
 	
 	/// <summary>
 	/// Handles the AI for this class only. Called after we have handled universal AI.
 	/// </summary>
-	protected virtual void HandleClassAIPostUniversal()
+	protected virtual void HandleClassAIPostUniversal(bool force)
 	{}
 	
 	/// <summary>
@@ -786,7 +887,37 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected void FindShootTargets()
 	{
-		//Unit enemy = DetectEnemies(agent,enemyName);
+		if(agent == null)
+			return;
+		DetectEnemies(agent,enemyName);
+		if(bestUnit == null)
+		{
+			if(isShooting)
+			{
+				moveTarget = oldMoveTarget;
+				oldMoveTarget = null;
+				isShooting = false;
+				currentOrder = oldOrder;
+				oldOrder = Order.attack;
+			}
+			return;
+		}
+		/*if(oldMoveTarget == null)
+			oldMoveTarget = moveTarget;
+		if(oldOrder == Order.attack)
+			oldOrder = currentOrder;
+		currentOrder = Order.attack;
+		moveTarget = bestUnit.transform;
+		isShooting = true;*/
+		RAIN.Action.Action.ActionResult result = Shoot(agent,Time.deltaTime,bestUnit);
+		if(result == RAIN.Action.Action.ActionResult.FAILURE)
+		{
+			moveTarget = oldMoveTarget;
+			oldMoveTarget = null;
+			isShooting = false;
+			currentOrder = oldOrder;
+			oldOrder = Order.attack;
+		}
 	}
 	
 	/// <summary>
@@ -804,6 +935,8 @@ public class Unit : MonoBehaviour
 	
 	protected void RepathToObjective()
 	{
+		if(currentObjective == null)
+			return;
 		ResetTarget();
 		MakeMoveTarget(currentObjective.transform);
 	}
@@ -822,15 +955,21 @@ public class Unit : MonoBehaviour
 	/// </param>
 	public Unit DetectEnemies(RAIN.Core.Agent rAgent,string enemyAspect)
 	{
+		if(bestUnit != null && bestUnit.IsAlive() && Vector3.Distance(bestUnit.transform.position,transform.position) <= weapon.range)
+			return bestUnit;
+		lastDetectTime = Time.time;
 		Unit[] units = DetectUnits(rAgent,enemyAspect);
 		if(units.Length == 0)
+		{
+			bestUnit = null;
 			return null;
+		}
 		bestUnit = null;
 		// Assign a score to each enemy:
 		float score = Mathf.Infinity;
 		foreach(Unit unit in units)
 		{
-			if(unit == null)
+			if(unit == null || !unit.IsAlive())
 				continue;
 			float uScore = Vector3.Distance(unit.transform.position,transform.position);
 			uScore *= unit.GetHealthPercent();
@@ -840,15 +979,54 @@ public class Unit : MonoBehaviour
 				score = uScore;
 			}
 		}
-		// Set the lowest-scoring unit to be our target:
-		if(bestUnit == null || !bestUnit.IsAlive())
-			return null;
+		if(!bestUnit.IsAlive())
+			bestUnit = null;
 		return bestUnit;
 	}
 	
 	public Unit[] DetectUnits(RAIN.Core.Agent rAgent, string unitTag)
 	{
-		if(rAgent == null)
+		if(weapon == null)
+			return new Unit[0];
+		float maxVerticalFOV = AI_FOV_VERTICAL_RANGE / 2;
+		float currentVerticalFOV = -maxVerticalFOV - FOV_RAYCAST_INCREMENT_RATE;
+		Vector3 position = transform.position;
+		float sightRange = weapon.range + 15.0f;
+		Vector3 fovDirection = transform.forward;
+		RaycastHit hitInfo;
+		List<Unit> detectedUnits = new List<Unit>();
+		for(; currentVerticalFOV <= maxVerticalFOV; currentVerticalFOV += FOV_RAYCAST_INCREMENT_RATE)
+		{
+			float maxFOV = AI_FOV_HORIZONTAL_RANGE / 2;
+			float currentFOV = -maxFOV;
+			for(;currentFOV <= maxFOV; currentFOV += FOV_RAYCAST_INCREMENT_RATE)
+			{
+				fovDirection = Quaternion.Euler(currentVerticalFOV,currentFOV,0) * transform.forward;
+				if(Physics.Raycast(position,fovDirection,out hitInfo,sightRange,raycastIgnoreLayers))
+				{
+					Unit unit = hitInfo.transform.GetComponent<Unit>();
+					if(unit == null || detectedUnits.Contains(unit) || unit.tag != unitTag || !unit.IsAlive())
+						continue;
+					detectedUnits.Add(unit);
+				}
+				Debug.DrawRay(position,fovDirection,Color.magenta);
+			}
+		}
+		for(float closeDetectAmount = 0; closeDetectAmount < 360; closeDetectAmount += FOV_RAYCAST_INCREMENT_RATE)
+		{
+			fovDirection = Quaternion.Euler(0,closeDetectAmount,0) * transform.forward;
+			if(Physics.Raycast(position,fovDirection,out hitInfo,CLOSE_ENEMY_DETECT_RANGE,raycastIgnoreLayers))
+			{
+				Unit unit = hitInfo.transform.GetComponent<Unit>();
+				if(unit == null || detectedUnits.Contains(unit) || unit.tag != unitTag || !unit.IsAlive())
+					continue;
+				detectedUnits.Add(unit);
+			}
+			Debug.DrawRay(position,fovDirection,Color.cyan);
+		}
+		return detectedUnits.ToArray();
+	}
+		/*if(rAgent == null)
 			return DetectUnits(unitTag,50.0f);
 		agent = rAgent;
 		// Sense any nearby enemies:
@@ -856,7 +1034,6 @@ public class Unit : MonoBehaviour
 		agent.GainInterestIn(unitTag+" Gunshot");
 		agent.BeginSense();
 		agent.Sense();
-		
 		// Fetch all GameObjects sensed:
 		GameObject[] gos = new GameObject[10];
 		agent.GetAllObjectsWithAspect(unitTag,out gos);
@@ -866,8 +1043,9 @@ public class Unit : MonoBehaviour
 		foreach(GameObject go in gos)
 		{
 			Unit unit = go.GetComponent<Unit>();
-			if(unit == null || unit.tag != unitTag || !unit.IsAlive())
+			if(unit == null || !unit.IsAlive())
 				continue;
+			Debug.Log (this+" detected "+unit);
 			unitList.Add(unit);
 		}
 		
@@ -881,16 +1059,16 @@ public class Unit : MonoBehaviour
 			if(gun == null || !gun.HasShotRecently())
 				continue;
 			Unit unit = gun.GetOwner();
-			if(unit == null || unit.tag != unitTag || !unit.IsAlive())
+			if(unit == null || !unit.IsAlive())
 				continue;
-			Debug.Log ("Found a gun.");
+			Debug.Log (this+" heard "+unit+"'s gunshot.");
 			unitList.Add(unit);
 		}
 		
 		if(unitList.Count == 0)
 			return new Unit[0];
-		return unitList.ToArray();
-	}
+		return unitList.ToArray();*/
+	//}
 	
 	public void SetAgent(RAIN.Core.Agent agent)
 	{
@@ -938,26 +1116,37 @@ public class Unit : MonoBehaviour
 		if(weapon.ammo <= 0)
 			return RAIN.Action.Action.ActionResult.FAILURE;
 		float range = weapon.range;
-		if(range < Vector3.Distance(enemy.transform.position,agent.Avatar.transform.position))
+		if(range < Vector3.Distance(enemy.transform.position,transform.position))
 			return RAIN.Action.Action.ActionResult.FAILURE;
-		Ray shotRay = new Ray(transform.position,transform.forward);
+		Quaternion rot = Quaternion.LookRotation(enemy.transform.position - transform.position);
+		transform.rotation = Quaternion.Slerp(transform.rotation,rot,Time.deltaTime * 4);
+		Vector3 weaponForward = weapon.transform.up;
+		Ray shotRay = new Ray(weapon.transform.position,weaponForward);
+		Debug.DrawRay(weapon.transform.position,weaponForward,Color.red);
 		RaycastHit hitInfo;
-		if(Physics.Raycast(shotRay, out hitInfo, range))
+		if(Physics.Raycast(shotRay, out hitInfo, range,raycastIgnoreLayers))
 		{
 			if(hitInfo.transform.tag == "Ground")
-				return RAIN.Action.Action.ActionResult.FAILURE;
-			Unit unit = hitInfo.collider.gameObject.GetComponent<Unit>();
-			if(unit != null && IsFriendly(unit))
 			{
 				return RAIN.Action.Action.ActionResult.FAILURE;
 			}
+			/*Unit unit = hitInfo.collider.gameObject.GetComponent<Unit>();
+			if(unit != null)
+			{
+				return RAIN.Action.Action.ActionResult.FAILURE;
+			}
+			if(IsFriendly(unit))
+			{
+				Debug.Log (this+" is not shooting in case of friendly fire hitting "+unit);
+				return RAIN.Action.Action.ActionResult.FAILURE;
+			}*/
 		}
-		else
-			return RAIN.Action.Action.ActionResult.FAILURE;
-		if(agent.LookAt(enemy.transform.position,deltaTime))
-			weapon.Shoot();
+		//else
+			//return RAIN.Action.Action.ActionResult.FAILURE;
+		
+		weapon.Shoot();
 		float accuracy = weapon.GetAccuracy();
-		if(accuracy > 0.85f)
+		if(accuracy > 0.65f)
 		{
 			return RAIN.Action.Action.ActionResult.SUCCESS;
 		}
@@ -989,7 +1178,10 @@ public class Unit : MonoBehaviour
 	
 	public virtual bool IsOwnedByPlayer()
 	{
-		return GetCommander().IsPlayer();
+		Commander commander = GetCommander();
+		if(commander == null)
+			return false;
+		return commander.IsPlayer();
 	}
 	
 	public virtual bool IsPlayer()
@@ -1047,6 +1239,7 @@ public class Unit : MonoBehaviour
 		isSelectable = oldClone.isSelectable;
 		isSelected = oldClone.isSelected;
 		id = oldClone.id;
+		enemyName = oldClone.enemyName;
 		leader = oldClone.leader;
 		uName = oldClone.uName;
 		teamColor = oldClone.teamColor;
@@ -1054,6 +1247,7 @@ public class Unit : MonoBehaviour
 		currentOrder = oldClone.currentOrder;
 		moveTarget = oldClone.moveTarget;
 		orderTarget = oldClone.orderTarget;
+		lastDamager = oldClone.lastDamager;
 		health = oldClone.health;
 		weapon = oldClone.weapon;
 		aBase = oldClone.aBase;
