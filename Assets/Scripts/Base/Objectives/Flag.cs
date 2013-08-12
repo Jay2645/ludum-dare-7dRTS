@@ -4,6 +4,12 @@ using System.Collections;
 public class Flag : Objective {
 	public Unit carrying;
 	
+	protected override void ObjectiveAwake ()
+	{
+		if(renderer != null && owner != null)
+			renderer.material.SetColor("_OutlineColor",owner.teamColor);
+	}
+	
 	public override void RemovePlayer (Unit player)
 	{
 		base.RemovePlayer (player);

@@ -90,7 +90,7 @@ public class Projectile : MonoBehaviour {
 		if(Physics.Raycast(groundDetection,out hitInfo,speed,owner.raycastIgnoreLayers))
 		{
 			if(hitInfo.transform.tag == "Ground")
-				Destroy(gameObject,1.0f);
+				Destroy(gameObject,0.3f);
 		}
 		if(	Mathf.Abs(transform.position.x) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
 			Mathf.Abs(transform.position.y) > PROJECTILE_MAX_TRAVEL_DISTANCE || 

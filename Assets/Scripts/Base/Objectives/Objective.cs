@@ -18,7 +18,10 @@ public class Objective : MonoBehaviour {
 	{
 		initialPosition = transform.position;
 		initialRotation = transform.rotation;
+		ObjectiveAwake();
 	}
+	
+	protected virtual void ObjectiveAwake() {}
 	
 	public void SetOwner(Commander newOwner)
 	{

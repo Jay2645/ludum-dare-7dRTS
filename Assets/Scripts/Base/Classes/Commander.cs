@@ -41,6 +41,7 @@ public class Commander : Leader
 	protected int leaderCount = 0;
 	protected int MAX_LEADER_COUNT = 4;
 	public int teamScore = 0;
+	public AudioClip goalScored = null;
 	
 	/// <summary>
 	/// Called once, at the beginning of the game.
@@ -465,6 +466,8 @@ public class Commander : Leader
 		{
 			allUnits.Add(id,unit);
 		}
+		if(friendlyFire)
+			return;
 		Unit[] allOurUnits = GetAllUnits();
 		foreach(Unit u in allOurUnits)
 		{
@@ -613,6 +616,7 @@ public class Commander : Leader
 	public void OnScore()
 	{
 		teamScore++;
+		Camera.main.audio.PlayOneShot(goalScored);
 	}
 	
 	public Order GetCurrentOrder()

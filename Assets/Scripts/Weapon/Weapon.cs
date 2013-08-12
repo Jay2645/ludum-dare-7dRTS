@@ -28,6 +28,7 @@ public class Weapon : MonoBehaviour
 	protected int _maxAmmoCount;
 	public AudioClip fire = null;
 	public AudioClip reload = null;
+	public AudioClip ammoPickup = null;
 	
 	protected int projectileHits = 0;
 	protected int _projectileHits;
@@ -300,6 +301,7 @@ public class Weapon : MonoBehaviour
 			return false;
 		ammo += bulletAmount;
 		ammo = Mathf.Min(ammo,_maxAmmoCount);
+		audio.PlayOneShot(ammoPickup);
 		return true;
 	}
 	

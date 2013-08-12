@@ -170,6 +170,10 @@ public class Unit : MonoBehaviour
 	/// Does this unit avoid all damage?
 	/// </summary>
 	public bool immortal = false;
+	/// <summary>
+	/// How much longer until we respawn?
+	/// </summary>
+	protected float timeToOurRespawn = 0.0f;
 	
 	
 	// IDENTIFICATION
@@ -286,6 +290,14 @@ public class Unit : MonoBehaviour
 	/// The color of our outline.
 	/// </summary>
 	protected Color outlineColor = Color.black;
+	/// <summary>
+	/// The noise made every second before we respawn.
+	/// </summary>
+	public AudioClip respawnBlip = null;
+	/// <summary>
+	/// The noise made when we respawn.
+	/// </summary>
+	public AudioClip respawnBeep = null;
 	
 	
 	
@@ -321,6 +333,8 @@ public class Unit : MonoBehaviour
 	void Start()
 	{
 		Spawn();
+		UnitStart();
+		ClassStart();
 	}
 	
 	/// <summary>
@@ -334,6 +348,10 @@ public class Unit : MonoBehaviour
 			skipSpawn = false;
 			return;
 		}
+		CancelInvoke();
+		timeToOurRespawn = 0.0f;
+		if(!gameObject.activeInHierarchy && IsPlayer())
+			Camera.main.audio.PlayOneShot(respawnBeep);
 		// Make the GameObject visible.
 		gameObject.SetActive(true);
 		gameObject.layer = LayerMask.NameToLayer("Units");
@@ -411,6 +429,12 @@ public class Unit : MonoBehaviour
 	/// Creates things that should happen when this class spawns. This will be called every time this Unit dies and respawns.
 	/// </summary>
 	protected virtual void ClassSpawn()
+	{}
+	
+	protected virtual void UnitStart()
+	{}
+	
+	protected virtual void ClassStart()
 	{}
 	
 	protected void CanTakeDamage()
@@ -795,9 +819,11 @@ public class Unit : MonoBehaviour
 					deathMessage = deathMessage+" was killed by "+lastDamager.name+".";
 				MessageList.Instance.AddMessage(deathMessage);
 			}
-			float respawnTime = commander.GetTimeToRespawn();
-			Debug.Log ("Respawning in: "+respawnTime.ToString());
-			Invoke("Spawn",respawnTime);
+			timeToOurRespawn = commander.GetTimeToRespawn();
+			Debug.Log ("Respawning in: "+timeToOurRespawn.ToString());
+			if(IsPlayer())
+				 InvokeRepeating("PlayRespawn",timeToOurRespawn - Mathf.Floor(timeToOurRespawn),1.0f);
+			Invoke("Spawn",timeToOurRespawn);
 		}
 	}
 	
@@ -1175,6 +1201,11 @@ public class Unit : MonoBehaviour
 	{
 		captures++;
 		GetCommander().OnScore();
+	}
+	
+	protected void PlayRespawn()
+	{
+		Camera.main.audio.PlayOneShot(respawnBlip);
 	}
 	
 	public bool IsFriendly(Unit other)
