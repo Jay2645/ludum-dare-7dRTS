@@ -143,9 +143,11 @@ public class Leader : Unit
 	public void DowngradeUnit()
 	{
 		selectedUnits.Clear();
-		foreach(KeyValuePair<int, Unit> kvp in unitID)
+		Unit[] units = new Unit[unitID.Count];
+		unitID.Values.CopyTo(units,0);
+		foreach(Unit u in units)
 		{
-			kvp.Value.RegisterLeader(commander);
+			u.RegisterLeader(commander);
 		}
 		Unit downgrade = gameObject.AddComponent<Unit>();
 		leader = (Leader)commander;

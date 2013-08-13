@@ -630,6 +630,7 @@ public class Unit : MonoBehaviour
 		teamColor = leader.teamColor;
 		leader.RegisterUnit(this);
 		renderer.material.color = teamColor;
+		renderer.material.SetColor("_OutlineColor",outlineColor);
 		if(IsOwnedByPlayer() && !IsLedByPlayer())
 			MessageList.Instance.AddMessage(uName+", acknowledging "+leader.name+" as my new leader.");
 	}
@@ -1295,6 +1296,10 @@ public class Unit : MonoBehaviour
 		aBase = oldClone.aBase;
 		weapon.Pickup(this);
 		leader.ReplaceUnit(id, this);
+		if(isSelected)
+			renderer.material.SetColor("_OutlineColor",Color.green);
+		else
+			renderer.material.SetColor("_OutlineColor",oldClone.outlineColor);
 		skipSpawn = true;
 		Invoke("AllowSpawn",5.0f);
 	}
