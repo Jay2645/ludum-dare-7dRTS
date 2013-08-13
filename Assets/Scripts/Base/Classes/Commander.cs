@@ -91,6 +91,8 @@ public class Commander : Leader
 		}
 		currentOrder = Order.move;
 		currentOrderIndex = 0;
+		transform.position = transform.position + new Vector3(0.0f, 0.5f,0.0f);
+		transform.localScale = new Vector3(1.475f,1.475f,1.475f);
 	}
 	
 	/// <summary>

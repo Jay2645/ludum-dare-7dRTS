@@ -19,6 +19,12 @@ public class Leader : Unit
 	protected Unit[] lastDetectedUnits = null;
 	public Unit[] ownedUnits;
 	
+	protected override void ClassSpawn ()
+	{
+		transform.position = transform.position + new Vector3(0, 0.25f, 0);
+		transform.localScale = new Vector3(1.25f,1.25f,1.25f);
+	}
+	
 	protected override void ClassUpdate ()
 	{
 		if(!IsOwnedByPlayer())

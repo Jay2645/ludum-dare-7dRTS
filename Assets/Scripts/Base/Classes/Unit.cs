@@ -5,7 +5,6 @@ using System.Collections.Generic;
 /// <summary>
 /// A Unit is the main object of the game. Anything which can be selected and recieve orders is considered a Unit.
 /// Units have a unique ID and a name so the player can tell them apart.
-/// They currently fall from the sky upon spawn, akin to ODSTs from the Halo series.
 /// Units can be promoted or demoted to Leader class by a Commander; however, there is only one Commander which can be active at any given time.
 /// </summary>
 public class Unit : MonoBehaviour 
@@ -289,7 +288,7 @@ public class Unit : MonoBehaviour
 	/// <summary>
 	/// The color of our outline.
 	/// </summary>
-	protected Color outlineColor = Color.black;
+	protected static Color outlineColor = Color.clear;
 	/// <summary>
 	/// The noise made every second before we respawn.
 	/// </summary>
@@ -318,7 +317,7 @@ public class Unit : MonoBehaviour
 			_initialWeapon = weapon;
 		}
 		_maxHealth = health;
-		if(renderer != null)
+		if(renderer != null && outlineColor == Color.clear)
 			outlineColor = renderer.material.GetColor("_OutlineColor");
 	}
 	
@@ -429,7 +428,9 @@ public class Unit : MonoBehaviour
 	/// Creates things that should happen when this class spawns. This will be called every time this Unit dies and respawns.
 	/// </summary>
 	protected virtual void ClassSpawn()
-	{}
+	{
+		transform.localScale = Vector3.one;
+	}
 	
 	protected virtual void UnitStart()
 	{}
@@ -1300,8 +1301,9 @@ public class Unit : MonoBehaviour
 		if(isSelected)
 			renderer.material.SetColor("_OutlineColor",Color.green);
 		else
-			renderer.material.SetColor("_OutlineColor",oldClone.outlineColor);
+			renderer.material.SetColor("_OutlineColor",outlineColor);
 		skipSpawn = true;
+		ClassSpawn();
 		Invoke("AllowSpawn",5.0f);
 	}
 	
