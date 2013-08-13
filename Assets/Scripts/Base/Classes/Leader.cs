@@ -140,7 +140,7 @@ public class Leader : Unit
 		GiveOrder(order,target);
 	}
 	
-	public void DowngradeUnit()
+	public Unit DowngradeUnit()
 	{
 		selectedUnits.Clear();
 		Unit[] units = new Unit[unitID.Count];
@@ -150,11 +150,13 @@ public class Leader : Unit
 			u.RegisterLeader(commander);
 		}
 		Unit downgrade = gameObject.AddComponent<Unit>();
+		downgrade.renderer.material.SetColor("_OutlineColor",outlineColor);
 		leader = (Leader)commander;
 		downgrade.CloneUnit(this);
 		if(IsLedByPlayer())
 			MessageList.Instance.AddMessage(uName+", acknowledging demotion to grunt.");
 		Destroy(this);
+		return downgrade;
 	}
 	
 	public void GiveOrder(Order order, Vector3 targetPos)

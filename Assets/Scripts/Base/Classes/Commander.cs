@@ -161,7 +161,8 @@ public class Commander : Leader
 		int id = -1;
 		// First, check to see what units are in the middle portion of our screen:
 		float selectRadius = 0.45f;
-		while(selectRadius < 0.56f && IsAlive())
+		bool scan = true;
+		while(scan && selectRadius < 0.56f && IsAlive())
 		{
 			Ray selectRay = Camera.main.ViewportPointToRay(new Vector3(selectRadius, selectRadius, 0));
 			RaycastHit hit;
@@ -176,6 +177,7 @@ public class Commander : Leader
 						hitUnit.IsLookedAt(true);
 						visibleUnits.Add(id);
 					}
+					scan = false;
 				}
 			}
 			Debug.DrawRay(selectRay.origin,selectRay.direction);
@@ -241,7 +243,7 @@ public class Commander : Leader
 	/// </param>
 	public void SelectUnits(int selected)
 	{
-		if(!selectedUnits.Contains(selected) && unitID.ContainsKey(selected) && unitID[selected].Select())
+		if(!selectedUnits.Contains(selected) && unitID.ContainsKey(selected) && unitID[selected].Select(this))
 			selectedUnits.Add(selected);
 	}
 	
@@ -317,6 +319,7 @@ public class Commander : Leader
 			return null;
 		Leader leader = unit.UpgradeUnit(this);
 		leaders.Add(leader);
+		unitID[leader.GetID()] = leader;
 		leaderCount++;
 		return leader;
 	}
@@ -327,7 +330,8 @@ public class Commander : Leader
 		{
 			Leader leader = (Leader)unit;
 			leaders.Remove(leader);
-			leader.DowngradeUnit();
+			unit = leader.DowngradeUnit();
+			unitID[unit.GetID()] = unit;
 			leaderCount--;
 		}
 	}
@@ -480,7 +484,12 @@ public class Commander : Leader
 	
 	public override void RemoveUnit (int id)
 	{
-		base.RemoveUnit (id);
+		if(leaderLookup.ContainsKey(id))
+		{
+			leaderLookup.Remove(id);
+		}
+		if(selectedUnits.Contains(id))
+			selectedUnits.Remove(id);
 		if(allUnits.ContainsKey(id))
 			allUnits.Remove(id);
 	}

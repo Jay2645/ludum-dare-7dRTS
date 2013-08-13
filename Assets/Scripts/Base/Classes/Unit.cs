@@ -718,7 +718,7 @@ public class Unit : MonoBehaviour
 		return moveTarget;
 	}
 	
-	public bool Select()
+	public bool Select(Leader selector)
 	{
 		if(!isSelectable || !IsAlive())
 		{
@@ -726,7 +726,7 @@ public class Unit : MonoBehaviour
 			return false;
 		}
 		isSelected = true;
-		if(!IsLedByPlayer())
+		if(!IsLedByPlayer() && !(selector is Commander))
 			return true;
 		CreateSelected();
 		renderer.material.SetColor("_OutlineColor",Color.green);
@@ -765,10 +765,10 @@ public class Unit : MonoBehaviour
 		if(!isSelectable)
 			return;
 		isSelected = false;
+		renderer.material.SetColor("_OutlineColor",outlineColor);
+		CreateSelected();
 		if(!IsLedByPlayer())
 			return;
-		CreateSelected();
-		renderer.material.SetColor("_OutlineColor",outlineColor);
 	}
 	
 	protected void OnDie()
@@ -855,6 +855,7 @@ public class Unit : MonoBehaviour
 	public Leader UpgradeUnit(Commander commander)
 	{
 		Leader upgrade = gameObject.AddComponent<Leader>();
+		upgrade.renderer.material.SetColor("_OutlineColor",outlineColor);
 		upgrade.CloneUnit(this);
 		upgrade.RegisterCommander(commander);
 		upgrade.CreateSelected();

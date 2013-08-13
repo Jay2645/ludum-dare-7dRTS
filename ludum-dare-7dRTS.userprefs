@@ -1,28 +1,6 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Base\Classes\Unit.cs">
-    <Files>
-      <File FileName="Assets\Scripts\Base\Classes\Unit.cs" Line="1047" Column="5" />
-      <File FileName="Assets\AI\Actions\DetermineUnitType.cs" Line="23" Column="51" />
-      <File FileName="Assets\Scripts\Base\Classes\Leader.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Weapon\Projectile.cs" Line="76" Column="81" />
-      <File FileName="Assets\Scripts\Weapon\Weapon.cs" Line="202" Column="85" />
-      <File FileName="Assets\Scripts\Base\Classes\Commander.cs" Line="588" Column="82" />
-      <File FileName="Assets\Scripts\GUI\ObjectLabel.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\GUI\PhysicalText.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\GUI\MapView.cs" Line="171" Column="82" />
-      <File FileName="Assets\AI\Actions\UnitCheckOrders.cs" Line="1" Column="1" />
-      <File FileName="Assets\AI\Actions\DelegateSquadsToObjective.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Base\Objectives\Objective.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Base\Objectives\Flag.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Analytics\GameMetrics.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Analytics\HeatmapBlock.cs" Line="1" Column="1" />
-      <File FileName="Assets\AI\Actions\ShootEnemy.cs" Line="1" Column="1" />
-      <File FileName="Assets\AI\Actions\DetectEnemy.cs" Line="1" Column="1" />
-      <File FileName="Assets\AI\Actions\UnitLowOnHealth.cs" Line="1" Column="1" />
-      <File FileName="Assets\AI\Actions\CheckSquadStatus.cs" Line="11" Column="25" />
-    </Files>
-  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workbench />
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
