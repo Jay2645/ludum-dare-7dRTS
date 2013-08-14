@@ -18,11 +18,22 @@ public class Leader : Unit
 	protected float TEMP_GAMEOBJECT_REMOVE_TIME = 1.0f;
 	protected Unit[] lastDetectedUnits = null;
 	public Unit[] ownedUnits;
+	protected static GameObject leaderCrown;
 	
 	protected override void ClassSpawn ()
 	{
-		transform.position = transform.position + new Vector3(0, 0.25f, 0);
-		transform.localScale = new Vector3(1.25f,1.25f,1.25f);
+		if(leaderCrown == null)
+			leaderCrown = Resources.Load("Prefabs/Leader Crown") as GameObject;
+		if(uniqueGeo == null)
+		{
+			uniqueGeo = Instantiate(leaderCrown) as GameObject;
+			uniqueGeo.transform.parent = transform;
+			uniqueGeo.transform.localRotation = Quaternion.Euler(new Vector3(270,0,0));
+			uniqueGeo.transform.localPosition = new Vector3(0.0f, 0.5f, 0.0f);
+			uniqueGeo.layer = gameObject.layer;
+		}
+		transform.position = transform.position + new Vector3(0, 0.2f, 0);
+		transform.localScale = new Vector3(1.2f,1.2f,1.2f);
 	}
 	
 	protected override void ClassUpdate ()
@@ -30,8 +41,12 @@ public class Leader : Unit
 		if(!IsOwnedByPlayer())
 			return;
 		// Everything below here only affects the player's team.
-		Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
-		CheckUnitLayerDiff(layerChange);
+		if(MapView.IsShown())
+		{
+			Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
+			CheckUnitLayerDiff(layerChange);
+			return;
+		}
 	}
 	
 	protected Unit[] ChangeNearbyUnitLayers(string unitTag)
@@ -44,9 +59,7 @@ public class Leader : Unit
 		}
 		foreach(Unit unit in detectedUnits)
 		{
-			unit.gameObject.layer = LayerMask.NameToLayer("Default");
-			if(unit.weapon != null)
-				unit.weapon.gameObject.layer = LayerMask.NameToLayer("Default");
+			unit.ChangeLayer(defaultLayer);
 		}
 		return detectedUnits;
 	}
@@ -71,9 +84,7 @@ public class Leader : Unit
 				{
 					if(u == null || u is Leader)
 						continue;
-					u.gameObject.layer = LayerMask.NameToLayer("Units");
-					if(u.weapon != null)
-						u.weapon.gameObject.layer = LayerMask.NameToLayer("Units");
+					u.ChangeLayer(unitLayer);
 				}
 			}
 		}
@@ -159,8 +170,17 @@ public class Leader : Unit
 		downgrade.renderer.material.SetColor("_OutlineColor",outlineColor);
 		leader = (Leader)commander;
 		downgrade.CloneUnit(this);
+		downgrade.ChangeLayer(unitLayer);
+		if(lastDetectedUnits != null)
+		{
+			foreach(Unit u in lastDetectedUnits)
+			{
+				u.ChangeLayer(unitLayer);
+			}
+		}
 		if(IsLedByPlayer())
 			MessageList.Instance.AddMessage(uName+", acknowledging demotion to grunt.");
+		Destroy(uniqueGeo);
 		Destroy(this);
 		return downgrade;
 	}
@@ -217,6 +237,20 @@ public class Leader : Unit
 		return commander.GetTeamID();
 	}
 	
+	protected void ValidateUnits()
+	{
+		List<int> removeUnits = new List<int>();
+		foreach(KeyValuePair<int,Unit> kvp in unitID)
+		{
+			if(kvp.Value == null)
+				removeUnits.Add(kvp.Key);
+		}
+		foreach(int uID in removeUnits.ToArray())
+		{
+			unitID.Remove(uID);
+		}
+	}
+	
 	/// <summary>
 	/// Gets the squad member count.
 	/// </summary>
@@ -225,12 +259,13 @@ public class Leader : Unit
 	/// </returns>
 	public int GetSquadMemberCount()
 	{
+		ValidateUnits();
 		return unitID.Count;
 	}
 	
 	public Unit[] GetSquadMembers()
 	{
-		Unit[] unitArray = new Unit[unitID.Count];
+		Unit[] unitArray = new Unit[GetSquadMemberCount()];
 		unitID.Values.CopyTo(unitArray,0);
 		return unitArray;
 	}

@@ -193,6 +193,7 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	public string enemyName = "";
 	
+	
 	// AI
 	/// <summary>
 	/// The Transform we are currently moving to.
@@ -297,11 +298,21 @@ public class Unit : MonoBehaviour
 	/// The noise made when we respawn.
 	/// </summary>
 	public AudioClip respawnBeep = null;
-	
+	/// <summary>
+	/// This is whatever piece of geometry makes a Unit "unique."
+	/// For example, Leaders could have crowns which make them stand out to the player.
+	/// </summary>
+	protected GameObject uniqueGeo = null;
+	protected static LayerMask defaultLayer = 0;
+	protected static LayerMask unitLayer = 0;
 	
 	
 	void Awake()
 	{
+		if(defaultLayer == 0)
+			defaultLayer = LayerMask.NameToLayer("Default");
+		if(unitLayer == 0)
+			unitLayer = LayerMask.NameToLayer("Units");
 		UnitSetup();
 		ClassSetup();
 	}
@@ -396,8 +407,7 @@ public class Unit : MonoBehaviour
 		ClassSpawn();
 		
 		// Makes sure the GameObject is the right color.
-		if(renderer != null)
-			renderer.material.color = teamColor;
+		SetTeamColor();
 		
 		// Move it to the spawn point.
 		if(spawnPoint == Vector3.zero)
@@ -409,11 +419,18 @@ public class Unit : MonoBehaviour
 				transform.position = spawnPoint;
 				if(commander.attackObjective == null)
 				{
-					transform.rotation = commander.transform.rotation;
+					Vector3 ourRot = transform.rotation.eulerAngles;
+					float look = commander.transform.rotation.eulerAngles.y;
+					ourRot.y = look;
+					transform.rotation = Quaternion.Euler(ourRot);
 				}
 				else
 				{
-					transform.LookAt(commander.attackObjective.transform);
+					Vector3 objectivePos = commander.attackObjective.transform.position;
+					Vector3 ourRot = Quaternion.LookRotation(objectivePos - transform.position).eulerAngles;
+					float look = ourRot.y;
+					ourRot.y = look;
+					transform.rotation = Quaternion.Euler(ourRot);
 				}
 			}
 		}
@@ -437,6 +454,37 @@ public class Unit : MonoBehaviour
 	
 	protected virtual void ClassStart()
 	{}
+	
+	protected void SetTeamColor()
+	{
+		if(renderer != null)
+			renderer.material.color = teamColor;
+		if(uniqueGeo != null && uniqueGeo.renderer != null)
+		{
+			Material[] mats = uniqueGeo.renderer.materials;
+			mats[1].color = teamColor;
+			uniqueGeo.renderer.materials = mats;
+		}
+	}
+	
+	protected void SetOutlineColor(Color color)
+	{
+		Renderer[] renderers = transform.root.GetComponentsInChildren<Renderer>();
+		foreach(Renderer render in renderers)
+		{
+			if(render.GetComponent<Weapon>() != null)
+				continue;
+			Material[] mats = render.materials;
+			foreach(Material mat in mats)
+			{
+				if(mat.HasProperty("_OutlineColor"))
+				{
+					mat.SetColor("_OutlineColor",color);
+				}
+			}
+			render.materials = mats;
+		}
+	}
 	
 	protected void CanTakeDamage()
 	{
@@ -631,7 +679,7 @@ public class Unit : MonoBehaviour
 		teamColor = leader.teamColor;
 		leader.RegisterUnit(this);
 		renderer.material.color = teamColor;
-		renderer.material.SetColor("_OutlineColor",outlineColor);
+		SetOutlineColor(outlineColor);
 		if(IsOwnedByPlayer() && !IsLedByPlayer())
 			MessageList.Instance.AddMessage(uName+", acknowledging "+leader.name+" as my new leader.");
 	}
@@ -730,7 +778,7 @@ public class Unit : MonoBehaviour
 		if(!IsLedByPlayer() && !(selector is Commander))
 			return true;
 		CreateSelected();
-		renderer.material.SetColor("_OutlineColor",Color.green);
+		SetOutlineColor(Color.green);
 		return true;
 	}
 	
@@ -766,7 +814,7 @@ public class Unit : MonoBehaviour
 		if(!isSelectable)
 			return;
 		isSelected = false;
-		renderer.material.SetColor("_OutlineColor",outlineColor);
+		SetOutlineColor(outlineColor);
 		CreateSelected();
 		if(!IsLedByPlayer())
 			return;
@@ -853,13 +901,26 @@ public class Unit : MonoBehaviour
 		return health;
 	}
 	
+	public void ChangeLayer(LayerMask newLayer)
+	{
+		gameObject.layer = newLayer;
+		foreach(Transform child in transform)
+		{
+			if(child.gameObject.layer == raycastIgnoreLayers)
+				continue;
+			child.gameObject.layer = newLayer;
+		}
+	}
+	
 	public Leader UpgradeUnit(Commander commander)
 	{
 		Leader upgrade = gameObject.AddComponent<Leader>();
-		upgrade.renderer.material.SetColor("_OutlineColor",outlineColor);
+		upgrade.SetOutlineColor(outlineColor);
 		upgrade.CloneUnit(this);
 		upgrade.RegisterCommander(commander);
 		upgrade.CreateSelected();
+		if(IsOwnedByPlayer())
+			upgrade.ChangeLayer(defaultLayer);
 		if(IsOwnedByPlayer())
 			MessageList.Instance.AddMessage(uName+", acknowledging promotion to Leader.");
 		Destroy(this); // This script will not be destroyed until the end of this frame.
@@ -1117,8 +1178,8 @@ public class Unit : MonoBehaviour
 	
 	public Unit[] DetectUnits(string unitTag, float maxDistance)
 	{
-		if(agent != null)
-			return DetectUnits(agent,unitTag);
+		//if(agent != null)
+			//return DetectUnits(agent,unitTag);
 		GameObject[] gos = GameObject.FindGameObjectsWithTag(unitTag);
 		if(gos.Length == 0)
 			return new Unit[0];
@@ -1299,11 +1360,12 @@ public class Unit : MonoBehaviour
 		weapon.Pickup(this);
 		leader.ReplaceUnit(id, this);
 		if(isSelected)
-			renderer.material.SetColor("_OutlineColor",Color.green);
+			SetOutlineColor(Color.green);
 		else
-			renderer.material.SetColor("_OutlineColor",outlineColor);
+			SetOutlineColor(outlineColor);
 		skipSpawn = true;
 		ClassSpawn();
+		SetTeamColor();
 		Invoke("AllowSpawn",5.0f);
 	}
 	

@@ -91,8 +91,8 @@ public class Commander : Leader
 		}
 		currentOrder = Order.move;
 		currentOrderIndex = 0;
-		transform.position = transform.position + new Vector3(0.0f, 0.5f,0.0f);
-		transform.localScale = new Vector3(1.475f,1.475f,1.475f);
+		transform.position = transform.position + new Vector3(0.0f, 0.3f,0.0f);
+		transform.localScale = new Vector3(1.3f,1.3f,1.3f);
 	}
 	
 	/// <summary>
@@ -107,10 +107,12 @@ public class Commander : Leader
 		
 		if(!isPlayer)
 			return;
-		Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
-		CheckUnitLayerDiff(layerChange);
 		if(MapView.IsShown())
+		{
+			Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
+			CheckUnitLayerDiff(layerChange);
 			return;
+		}
 		// Everything below here only works on the player.
 		GetLookingAt();
 		// Selecting a unit:
