@@ -16,6 +16,8 @@ public class Leader : Unit
 	protected GameObject tempOrderTarget = null;
 	protected Commander commander = null;
 	protected float TEMP_GAMEOBJECT_REMOVE_TIME = 1.0f;
+	protected static Vector3 CROWN_OFFSET = new Vector3(0.0f, 0.35f, 0.0f);
+	protected static Vector3 LEADER_SCALE = new Vector3(1.2f, 1.2f, 1.2f);
 	protected Unit[] lastDetectedUnits = null;
 	public Unit[] ownedUnits;
 	protected static GameObject leaderCrown;
@@ -31,9 +33,10 @@ public class Leader : Unit
 			uniqueGeo.transform.localRotation = Quaternion.Euler(new Vector3(270,0,0));
 			uniqueGeo.transform.localPosition = new Vector3(0.0f, 0.5f, 0.0f);
 			uniqueGeo.layer = gameObject.layer;
+			label.ChangeOffset(label.offset + CROWN_OFFSET);
 		}
 		transform.position = transform.position + new Vector3(0, 0.2f, 0);
-		transform.localScale = new Vector3(1.2f,1.2f,1.2f);
+		transform.localScale = LEADER_SCALE;
 	}
 	
 	protected override void ClassUpdate ()
@@ -178,6 +181,7 @@ public class Leader : Unit
 				u.ChangeLayer(unitLayer);
 			}
 		}
+		label.ChangeOffset(label.offset);
 		if(IsLedByPlayer())
 			MessageList.Instance.AddMessage(uName+", acknowledging demotion to grunt.");
 		Destroy(uniqueGeo);

@@ -40,13 +40,9 @@ public class Flag : Objective {
 		if(carrying == null && !OwnsObjective(contestant))
 		{
 			CancelInvoke();
-			foreach(Transform child in transform)
-			{
-				child.parent = null;
-			}
 			transform.parent = contestant.transform;
-			transform.localPosition = Vector3.one;
-			transform.localRotation = Quaternion.identity;
+			transform.localPosition = new Vector3(-0.4f, -0.05f, 0.5f);
+			transform.localRotation = Quaternion.Euler(new Vector3(0, 180, 0));
 			contestant.currentObjective = this;
 			carrying = contestant;
 			carrying.aBase.captureIndex = 0;

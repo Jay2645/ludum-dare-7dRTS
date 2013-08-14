@@ -78,6 +78,12 @@ public class ObjectLabel : MonoBehaviour
 		textTransform.Rotate(0,180,0);
 	}
 	
+	public void ChangeOffset(Vector3 newOffset)
+	{
+		if(textTransform != null)
+			textTransform.localPosition = newOffset;
+	}
+	
 	public void SetLabelText(string newText)
 	{
 		label = newText;

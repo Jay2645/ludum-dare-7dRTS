@@ -148,6 +148,10 @@ public class Commander : Leader
 			}
 			currentOrder = orderList[currentOrderIndex];
 		}
+		if(Input.GetKeyDown(KeyCode.F9))
+		{
+			Application.CaptureScreenshot("screenshot.png");
+		}
 	}
 	
 	/// <summary>
