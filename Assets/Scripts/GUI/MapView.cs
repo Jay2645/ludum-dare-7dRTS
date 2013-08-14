@@ -13,7 +13,18 @@ public class MapView : MonoBehaviour {
 	public Texture boxTexture = null;
 	public float scrollSpeed = 2.0f;
 	public float deadZone = 10.0f;
+	private GUIStyle style;
 	
+	void Awake()
+	{
+		style = new GUIStyle();
+		Color color = Color.white;
+		color.a = 0.25f;
+		Texture2D texture = new Texture2D(1,1);
+		texture.SetPixel(1,1,color);
+		texture.Apply();
+		style.normal.background = texture;
+	}
 	
 	// Update is called once per frame
 	void LateUpdate () 
@@ -118,7 +129,7 @@ public class MapView : MonoBehaviour {
 	        if(width > MIN_BOX_SIZE && height > MIN_BOX_SIZE)
 			{
 				//GUI.DrawTexture(selectionBox, boxTexture, ScaleMode.StretchToFill, true);
-				GUI.Box(selectionBox,new GUIContent());
+				GUI.Box(selectionBox,new GUIContent(),style);
 			}
 		}
 	}
