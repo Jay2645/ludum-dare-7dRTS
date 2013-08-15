@@ -282,6 +282,14 @@ public class Unit : MonoBehaviour
 	/// The last time we rechecked our path.
 	/// </summary>
 	protected float lastPathRecheckTime = 0.0f;
+	/// <summary>
+	/// All areas where we can restore our HP.
+	/// </summary>
+	protected static GameObject[] regenZones;
+	/// <summary>
+	/// All temporary GameObjects we have created.
+	/// </summary>
+	protected List<GameObject> tempGameObjects = new List<GameObject>();
 	
 	
 	// VISUALS
@@ -347,6 +355,8 @@ public class Unit : MonoBehaviour
 			unitLayer = LayerMask.NameToLayer("Units");
 		if(hudLayer == 0)
 			hudLayer = LayerMask.NameToLayer("HUD Only");
+		if(regenZones == null)
+			regenZones = GameObject.FindGameObjectsWithTag("Regen");
 		UnitSetup();
 		ClassSetup();
 	}
@@ -761,10 +771,6 @@ public class Unit : MonoBehaviour
 				else if(order == Order.defend)
 					defendObjective = objective;
 			}
-			/*Transform newTarget = new GameObject(target.gameObject.name+"'s Transform Copy").transform;
-			newTarget.parent = target;
-			newTarget.localPosition = Vector3.zero;
-			orderTarget = newTarget;*/
 		}
 		MakeMoveTarget(target);
 		if(Vector3.Distance(moveTarget.position,transform.position) < MOVE_CLOSE_ENOUGH_DISTANCE)
@@ -785,7 +791,22 @@ public class Unit : MonoBehaviour
 	
 	public void MakeMoveTarget(Transform target)
 	{
+		
+		foreach(GameObject go in tempGameObjects.ToArray())
+		{
+			if(go == null)
+			{
+				tempGameObjects.Remove(go);
+				continue;
+			}
+			if(go.name.Contains("'s Current Target"))
+			{
+				Destroy(go);
+				break;
+			}
+		}
 		GameObject targetGO = new GameObject(uName+"'s Current Target");
+		tempGameObjects.Add(targetGO);
 		Vector3 targetLocation = target.position;
 		targetLocation.x += Random.Range(-RANDOM_TARGET_VARIATION,RANDOM_TARGET_VARIATION);
 		targetLocation.z += Random.Range(-RANDOM_TARGET_VARIATION,RANDOM_TARGET_VARIATION);
@@ -793,7 +814,10 @@ public class Unit : MonoBehaviour
 		target = targetGO.transform;
 		target.position = targetLocation;
 		target.parent = oldTarget;
-		moveTarget = target;
+		if(oldMoveTarget == null)
+			moveTarget = target;
+		else
+			oldMoveTarget = target;
 	}
 	
 	public Order GetOrder()
@@ -1095,29 +1119,14 @@ public class Unit : MonoBehaviour
 		{
 			if(isShooting)
 			{
-				moveTarget = oldMoveTarget;
-				oldMoveTarget = null;
 				isShooting = false;
-				currentOrder = oldOrder;
-				oldOrder = Order.attack;
 			}
 			return;
 		}
-		/*if(oldMoveTarget == null)
-			oldMoveTarget = moveTarget;
-		if(oldOrder == Order.attack)
-			oldOrder = currentOrder;
-		currentOrder = Order.attack;
-		moveTarget = bestUnit.transform;
-		isShooting = true;*/
 		RAIN.Action.Action.ActionResult result = Shoot(agent,Time.deltaTime,bestUnit);
 		if(result == RAIN.Action.Action.ActionResult.FAILURE)
 		{
-			moveTarget = oldMoveTarget;
-			oldMoveTarget = null;
 			isShooting = false;
-			currentOrder = oldOrder;
-			oldOrder = Order.attack;
 		}
 	}
 	
@@ -1382,6 +1391,44 @@ public class Unit : MonoBehaviour
 		return RAIN.Action.Action.ActionResult.RUNNING;
 	}
 	
+	public Transform FindHealth()
+	{
+		float dist = Mathf.Infinity;
+		Transform regen = null;
+		foreach(GameObject go in regenZones)
+		{
+			float gDist = Vector3.Distance(transform.position, go.transform.position);
+			if(gDist < dist)
+			{
+				regen = go.transform;
+				dist = gDist;
+			}
+		}
+		if(oldMoveTarget == null)
+		{
+			oldMoveTarget = moveTarget;
+			foreach(GameObject go in tempGameObjects.ToArray())
+			{
+				if(go == null)
+				{
+					tempGameObjects.Remove(go);
+					continue;
+				}
+				if(go.name.Contains("'s Regen Target"))
+				{
+					Destroy(go);
+					break;
+				}
+			}
+			moveTarget = new GameObject(uName+"'s Regen Target").transform;
+			tempGameObjects.Add(moveTarget.gameObject);
+			moveTarget.position = regen.position;
+			Destroy(moveTarget.gameObject,180.0f);
+		}
+		navigator.SetDestination(regen.position);
+		return regen;
+	}
+	
 	public bool RestoreHealth(int amount)
 	{
 		if(!IsAlive() || health >= 100)
@@ -1390,6 +1437,15 @@ public class Unit : MonoBehaviour
 		health = Mathf.Min(health, 100);
 		if(healthRegen != null)
 			gameObject.GetComponentInChildren<AudioSource>().PlayOneShot(healthRegen);
+		if(oldMoveTarget != null)
+		{
+			if(moveTarget.name.Contains("Regen Target"))
+			{
+				Destroy(moveTarget.gameObject);
+			}
+			moveTarget = oldMoveTarget;
+			oldMoveTarget = null;
+		}
 		return true;
 	}
 	
@@ -1455,8 +1511,16 @@ public class Unit : MonoBehaviour
 		}
 		if(moveTarget != null)
 		{
-			Destroy(moveTarget.gameObject);
-			moveTarget = null;
+			if(oldMoveTarget == null)
+			{
+				Destroy(moveTarget.gameObject);
+				moveTarget = null;
+			}
+			else
+			{
+				Destroy(oldMoveTarget.gameObject);
+				oldMoveTarget = null;
+			}
 			orderTarget = null;
 		}
 		if(effects)
@@ -1489,6 +1553,7 @@ public class Unit : MonoBehaviour
 		label = oldClone.label;
 		currentOrder = oldClone.currentOrder;
 		moveTarget = oldClone.moveTarget;
+		oldMoveTarget = oldClone.oldMoveTarget;
 		orderTarget = oldClone.orderTarget;
 		lastDamager = oldClone.lastDamager;
 		health = oldClone.health;

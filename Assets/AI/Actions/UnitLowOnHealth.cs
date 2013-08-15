@@ -16,7 +16,7 @@ public class UnitLowOnHealth : RAIN.Action.Action
 	
 	private Unit unit = null;
 	private int isHealthy = 0;
-	private const float DANGEROUS_HEALTH_PERCENT = 0.35f;
+	private const float DANGEROUS_HEALTH_PERCENT = 50.0f;
 	
     public override RAIN.Action.Action.ActionResult Start(RAIN.Core.Agent agent, float deltaTime)
     {
@@ -33,6 +33,8 @@ public class UnitLowOnHealth : RAIN.Action.Action
 					agent.actionContext.SetContextItem<Unit>("unit",unit);
 			}
 		}
+		if(!unit.IsAlive())
+			return RAIN.Action.Action.ActionResult.FAILURE;
 		unit.SetAgent(agent);
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
@@ -43,6 +45,7 @@ public class UnitLowOnHealth : RAIN.Action.Action
 		{
 			isHealthy = 0;
 			SetVariables(agent);
+			unit.FindHealth();
 			return RAIN.Action.Action.ActionResult.SUCCESS;
 		}
         return RAIN.Action.Action.ActionResult.FAILURE;
