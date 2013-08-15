@@ -1,38 +1,13 @@
 fileFormatVersion: 2
-guid: b5b839b2d7820b94394f3554d6e8a694
+guid: 4fcbd9a81f6348547b8dd682f3ce4cc1
 ModelImporter:
   serializedVersion: 15
   fileIDToRecycleName:
-    100000: Camera001
-    100002: Camera001.Target
-    100004: Camera002
-    100006: Camera002.Target
-    100008: //RootNode
-    100010: Plane001
-    100012: Sky001
-    100014: Plane002
-    100016: Unwalkable
-    400000: Camera001
-    400002: Camera001.Target
-    400004: Camera002
-    400006: Camera002.Target
-    400008: //RootNode
-    400010: Plane001
-    400012: Sky001
-    400014: Plane002
-    400016: Unwalkable
-    2300000: Plane001
-    2300002: Plane002
-    2300004: Unwalkable
-    3300000: Plane001
-    3300002: Plane002
-    3300004: Unwalkable
-    4300000: Plane001
-    4300002: Plane002
-    4300004: Unwalkable
-    6400000: Plane001
-    6400002: Plane002
-    6400004: Unwalkable
+    100000: //RootNode
+    400000: //RootNode
+    2300000: //RootNode
+    3300000: //RootNode
+    4300000: Box001
     7400000: Take 001
     9500000: //RootNode
   materials:
@@ -53,7 +28,7 @@ ModelImporter:
     lODScreenPercentages: []
     globalScale: .00999999978
     meshCompression: 0
-    addColliders: 1
+    addColliders: 0
     importBlendShapes: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
