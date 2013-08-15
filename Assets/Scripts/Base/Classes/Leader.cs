@@ -16,7 +16,7 @@ public class Leader : Unit
 	protected GameObject tempOrderTarget = null;
 	protected Commander commander = null;
 	protected const float TEMP_GAMEOBJECT_REMOVE_TIME = 1.0f;
-	protected static Vector3 CROWN_OFFSET = new Vector3(0.0f, 0.35f, 0.0f);
+	protected static Vector3 CROWN_OFFSET = new Vector3(0.0f, 0.3f, 0.0f);
 	protected static Vector3 LEADER_SCALE = new Vector3(1.2f, 1.2f, 1.2f);
 	protected const float RECHECK_LAYER_TIME = 5.0f;
 	protected Unit[] lastDetectedUnits = null;
@@ -151,6 +151,13 @@ public class Leader : Unit
 		{
 			ToggleOutlines(seen);
 		}
+	}
+	
+	public override string GenerateLabel()
+	{
+		string labelS = base.GenerateLabel();
+		labelS = labelS + "\nLeads "+GetSquadMemberCount()+" Units";
+		return labelS;
 	}
 	
 	protected void ToggleOutlines(bool visible)

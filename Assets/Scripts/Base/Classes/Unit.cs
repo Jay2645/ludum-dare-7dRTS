@@ -818,16 +818,23 @@ public class Unit : MonoBehaviour
 			label.SetLabelText(GenerateLabel());
 	}
 	
-	public string GenerateLabel()
+	public virtual string GenerateLabel()
 	{
+		if(label == null)
+			return "";
 		string labelS = uName+"\n";
-		labelS = labelS + GetClass()+"\n";
-		labelS = labelS + "Weapon: ";
-		if(weapon == null)
-			labelS = labelS + "None\n";
+		labelS = labelS + "Health: "+health+" / 100\n";
+		labelS = labelS + GetClass();
+		if(IsLedByPlayer())
+		{
+			if(uniqueGeo == null)
+				label.ChangeOffset(label.offset - new Vector3(0, 0.35f, 0));
+		}
 		else
-			labelS = labelS + weapon.weaponName+"\n";
-		labelS = labelS + "Health: "+health+" / 100";
+		{
+			label.ChangeOffset(label.offset);
+			labelS = labelS + "\nLeader: "+leader.name;
+		}
 		return labelS;
 	}
 	

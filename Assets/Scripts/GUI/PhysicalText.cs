@@ -381,6 +381,6 @@ public class PhysicalText
 	public void DestroyText()
 	{
 		if(text != null)
-			MonoBehaviour.DestroyImmediate(text);
+			MonoBehaviour.Destroy(text);
 	}
 }

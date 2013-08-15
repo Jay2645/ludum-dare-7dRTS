@@ -98,8 +98,16 @@ public class ObjectLabel : MonoBehaviour
 		text.zWrite = !visible;
 	}
 	
+	public GameObject GetText()
+	{
+		if(text == null)
+			return null;
+		return text.text;
+	}
+	
 	void OnDisable()
 	{
-		Destroy (text.text);
+		if(text != null)
+			text.DestroyText();
 	}
 }

@@ -525,6 +525,7 @@ public class Commander : Leader
 		{
 			backloggedUnits.Add(unit);
 			Invoke ("AddAllUnits",unit.GetTimeUntilRespawn() + 0.5f);
+			return;
 		}
 		int id = unit.GetID();
 		if(allUnits.ContainsKey(id))
