@@ -45,6 +45,7 @@ public class Commander : Leader
 	public int teamScore = 0;
 	public AudioClip goalScored = null;
 	protected List<Unit> backloggedUnits = new List<Unit>();
+	protected List<int> newlySelectedUnits = new List<int>();
 	protected static GameObject cardBackground = null;
 	
 	/// <summary>
@@ -142,8 +143,12 @@ public class Commander : Leader
 			else
 				SelectUnits();
 		}
+		else if(newlySelectedUnits.Count > 0)
+		{
+			newlySelectedUnits.Clear();
+		}
 		// Deselecting a unit:
-		else if(Input.GetButtonDown("Deselect"))
+		if(Input.GetButtonDown("Deselect"))
 		{
 			DeselectUnits();
 		}
@@ -289,13 +294,23 @@ public class Commander : Leader
 	/// </param>
 	public void SelectUnits(int selected)
 	{
-		if(!selectedUnits.Contains(selected) && unitID.ContainsKey(selected) && unitID[selected].Select(this))
+		if(!unitID.ContainsKey(selected) || newlySelectedUnits.Contains(selected))
+			return;
+		Unit unit = unitID[selected];
+		newlySelectedUnits.Add(selected);
+		if(selectedUnits.Contains(selected) && isPlayer)
 		{
-			selectedUnits.Add(selected);
-			if(guiCamera == null || !isPlayer)
-				return;
-			UpdateCards();
+			unit.Deselect();
+			selectedUnits.Remove(selected);
 		}
+		else
+		{
+			unit.Select(this);
+			selectedUnits.Add(selected);
+		}
+		if(guiCamera == null || !isPlayer)
+			return;
+		UpdateCards();
 	}
 	
 	protected void MakeCard(Unit unit, float count)
