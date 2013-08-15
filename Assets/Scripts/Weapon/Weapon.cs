@@ -54,6 +54,8 @@ public class Weapon : MonoBehaviour
 		physicsCollider.isTrigger = false;
 		triggerCollider.isTrigger = true;
 		triggerCollider.enabled = false;
+		if(_maxAmmoCount > 0)
+			ammo = _maxAmmoCount;
 	}
 	
 	void Start()

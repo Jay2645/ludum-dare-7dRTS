@@ -28,6 +28,7 @@ public class Commander : Leader
 	protected int teamID = -1;
 	protected static int nextTeamID = 0;
 	public MapView mapCamera;
+	public Camera guiCamera;
 	protected Vector3 cameraPosition;
 	public Vector3[] spawnPoints;
 	public float spawnTime = 8.0f;
@@ -35,6 +36,7 @@ public class Commander : Leader
 	protected List<Leader> leaders = new List<Leader>();
 	public Objective[] objectives;
 	protected Dictionary<int,Unit> allUnits = new Dictionary<int, Unit>();
+	protected Dictionary<int, GameObject> unitCards = new Dictionary<int, GameObject>();
 	protected static Order[] orderList = {Order.move,Order.attack,Order.defend,Order.stop};
 	protected int currentOrderIndex = 0;
 	protected float RANDOM_SPAWN_RANGE = 10.0f;
@@ -43,6 +45,7 @@ public class Commander : Leader
 	public int teamScore = 0;
 	public AudioClip goalScored = null;
 	protected List<Unit> backloggedUnits = new List<Unit>();
+	protected static GameObject cardBackground = null;
 	
 	/// <summary>
 	/// Called once, at the beginning of the game.
@@ -62,6 +65,8 @@ public class Commander : Leader
 			uName = "You";
 			gameObject.name = "Player";
 			Screen.showCursor = false;
+			if(cardBackground == null)
+				cardBackground = Resources.Load("Prefabs/Unit Card Background") as GameObject;
 		}
 		if(unitPrefab == null)
 			unitPrefab = Resources.Load ("Prefabs/Unit") as GameObject;
@@ -119,6 +124,7 @@ public class Commander : Leader
 			Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
 			CheckUnitLayerDiff(layerChange);
 			recheckLayerTimer = 0.0f;
+			UpdateCards();
 		}
 		if(MapView.IsShown())
 		{
@@ -284,7 +290,57 @@ public class Commander : Leader
 	public void SelectUnits(int selected)
 	{
 		if(!selectedUnits.Contains(selected) && unitID.ContainsKey(selected) && unitID[selected].Select(this))
+		{
 			selectedUnits.Add(selected);
+			if(guiCamera == null || !isPlayer)
+				return;
+			UpdateCards();
+		}
+	}
+	
+	protected void MakeCard(Unit unit, float count)
+	{
+		GameObject labelGO = unit.GetLabel();
+		if(labelGO == null)
+			return;
+		GameObject unitCard = Instantiate(labelGO) as GameObject;
+		unitCard.layer = hudLayer;
+		unitCard.transform.parent = guiCamera.transform;
+		unitCard.transform.localRotation = Quaternion.identity;
+		unitCard.transform.localScale = Vector3.one / 27.5f;
+		GameObject unitCardBG = Instantiate(cardBackground) as GameObject;
+		unitCardBG.transform.parent = unitCard.transform;
+		unitCardBG.transform.localScale = new Vector3(125.0f, 50.0f, 1.0f);
+		unitCardBG.transform.localPosition = new Vector3(60.0f,-25.0f,0.0f);
+		unitCardBG.transform.localRotation = Quaternion.identity;
+		float percentage = (count - 1.00f) / 10.00f;
+		unitCard.transform.position = guiCamera.ViewportToWorldPoint(new Vector3(0, 1 - percentage, 1));
+		int uID = unit.GetID();
+		if(unitCards.ContainsKey(uID))
+			Destroy (unitCards[uID]);
+		unitCards.Add(uID, unitCard);
+	}
+	
+	protected void UpdateCards()
+	{
+		if(!isPlayer)
+			return;
+		foreach(KeyValuePair<int,GameObject> kvp in unitCards)
+		{
+			Destroy(kvp.Value);
+		}
+		unitCards.Clear();
+		if(selectedUnits.Count == 0)
+			return;
+		float count = 1.00f;
+		foreach(int i in selectedUnits.ToArray())
+		{
+			Unit unit = unitID[i];
+			if(!unit.IsAlive())
+				continue;
+			MakeCard(unitID[i], count);
+			count++;
+		}
 	}
 	
 	/// <summary>
@@ -348,6 +404,9 @@ public class Commander : Leader
 				PromoteUnit(unit);
 			}
 		}
+		if(!isPlayer)
+			return GetLeaders();
+		UpdateCards();
 		return GetLeaders();
 	}
 	
@@ -373,6 +432,16 @@ public class Commander : Leader
 			unit = leader.DowngradeUnit();
 			unitID[unit.GetID()] = unit;
 			leaderCount--;
+		}
+	}
+	
+	public void ValidateSelected()
+	{
+		if(!isPlayer || selectedUnits.Count == 0)
+			return;
+		foreach(int u in selectedUnits.ToArray())
+		{
+			unitID[u].CreateSelected();
 		}
 	}
 	
@@ -423,6 +492,7 @@ public class Commander : Leader
 			unitID[sID].Deselect();
 		}
 		selectedUnits.Clear();
+		UpdateCards();
 	}
 	
 	/// <summary>
@@ -538,10 +608,17 @@ public class Commander : Leader
 		}
 		if(friendlyFire || unit == this)
 			return;
+		Collider[] cols = unit.GetComponents<Collider>();
+		foreach(Collider col in cols)
+		{
+			if(col.isTrigger || col.gameObject.GetComponent<Weapon>() != null)
+				continue;
+			col.enabled = true;
+		}
 		Unit[] allOurUnits = GetAllUnits();
 		foreach(Unit u in allOurUnits)
 		{
-			if(u == unit)
+			if(u == unit || !u.IsAlive())
 				continue;
 			Physics.IgnoreCollision(u.collider,unit.collider,true);
 		}

@@ -44,9 +44,15 @@ public class Unit : MonoBehaviour
 		"Dan",
 		"Bruce",
 		"Ken",
+		"Tyrone",
 		"Jeff",
 		"Edward",
-		"Jaime"
+		"Jaime",
+		"Edward",
+		"Robert",
+		"Jon",
+		"Brandon",
+		"Tony"
 	};
 	/// <summary>
 	/// A list of possible last names for each unit.
@@ -61,7 +67,8 @@ public class Unit : MonoBehaviour
 		"Dyer",
 		"Randall",
 		"Hunt",
-		"Clark"
+		"Clark",
+		"Stark"
 	};
 	/// <summary>
 	/// TRUE if we can hurt our teammates; FALSE if we cannot hurt them.
@@ -310,6 +317,7 @@ public class Unit : MonoBehaviour
 	protected static LayerMask defaultLayer = 0;
 	protected static LayerMask leaderLayer = 0;
 	protected static LayerMask unitLayer = 0;
+	protected static LayerMask hudLayer = 0;
 	protected List<Leader> visibleBy = new List<Leader>();
 	
 	
@@ -321,6 +329,8 @@ public class Unit : MonoBehaviour
 			leaderLayer = LayerMask.NameToLayer("Leaders");
 		if(unitLayer == 0)
 			unitLayer = LayerMask.NameToLayer("Units");
+		if(hudLayer == 0)
+			hudLayer = LayerMask.NameToLayer("HUD Only");
 		UnitSetup();
 		ClassSetup();
 	}
@@ -581,15 +591,16 @@ public class Unit : MonoBehaviour
 	/// <summary>
 	/// Creates/Destroys the selection visuals.
 	/// </summary>
-	protected void CreateSelected()
+	public void CreateSelected()
 	{	
-		if(isSelected)
+		if(isSelected && selectEffect == null)
 		{
 			selectEffect = Instantiate(selectPrefab) as GameObject;
 			selectEffect.transform.parent = transform;
 			selectEffect.transform.localPosition = Vector3.zero;
+			selectEffect.layer = gameObject.layer;
 		}
-		else if(selectEffect != null)
+		else if(!isSelected && selectEffect != null)
 		{
 			Destroy(selectEffect);
 			selectEffect = null;
@@ -809,10 +820,15 @@ public class Unit : MonoBehaviour
 		}
 	}
 	
-	public void IsLookedAt(bool lookedAt)
+	public virtual void IsLookedAt(bool lookedAt)
 	{
 		if(label == null)
 			return;
+		if(MapView.IsShown())
+		{
+			label.isLookedAt = false;
+			return;
+		}
 		label.isLookedAt = lookedAt;
 		if(lookedAt)
 			label.SetLabelText(GenerateLabel());
@@ -822,6 +838,8 @@ public class Unit : MonoBehaviour
 	{
 		if(label == null)
 			return "";
+		if(uName != "")
+			gameObject.name = uName;
 		string labelS = uName+"\n";
 		labelS = labelS + "Health: "+health+" / 100\n";
 		labelS = labelS + GetClass();
@@ -841,6 +859,14 @@ public class Unit : MonoBehaviour
 	protected virtual string GetClass()
 	{
 		return "Grunt";
+	}
+	
+	public GameObject GetLabel()
+	{
+		if(label == null)
+			return null;
+		label.SetLabelText(GenerateLabel());
+		return label.GetText();
 	}
 	
 	public void Deselect()
@@ -1395,7 +1421,7 @@ public class Unit : MonoBehaviour
 			DestroyImmediate(moveEffect);
 			moveEffect = null;
 		}
-		if(selectEffect != null)
+		if(!isSelected && selectEffect != null)
 		{
 			DestroyImmediate(selectEffect);
 			selectEffect = null;

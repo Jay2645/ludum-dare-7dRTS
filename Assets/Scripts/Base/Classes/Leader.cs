@@ -153,6 +153,13 @@ public class Leader : Unit
 		}
 	}
 	
+	public override void IsLookedAt (bool lookedAt)
+	{
+		base.IsLookedAt (lookedAt);
+		if(IsOwnedByPlayer())
+			ToggleOutlines(true);
+	}
+	
 	public override string GenerateLabel()
 	{
 		string labelS = base.GenerateLabel();
@@ -160,11 +167,11 @@ public class Leader : Unit
 		return labelS;
 	}
 	
-	protected void ToggleOutlines(bool visible)
+	protected void ToggleOutlines(bool unitIsVisible)
 	{
-		if(outlines == null || visible != outlinesActive)
+		if(outlines == null || unitIsVisible != outlinesActive)
 			return;
-		outlinesActive = !visible;
+		outlinesActive = !unitIsVisible;
 		Color currentColor = outlineColor;
 		if(isSelected)
 			currentColor = selectedColor;

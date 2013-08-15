@@ -148,7 +148,7 @@ public class MapView : MonoBehaviour {
 			if(player == null)
 				return;
 		}
-	 	player.Deselect();
+	 	player.DeselectUnits();
 
 		if (dist >= MIN_BOX_SIZE && lastCursorPosition != Vector3.zero) // big enough to warrant making a square and lastCursorPosition exists
 		{
@@ -215,6 +215,7 @@ public class MapView : MonoBehaviour {
 			}
 		}
 		int[] actual = actualList.ToArray();
+		player.Deselect();
 		if(actual.Length == 0)
 			return;
 		player.SelectUnits(actual);
@@ -251,6 +252,7 @@ public class MapView : MonoBehaviour {
 			}
 			camera.depth = 1;
 			Screen.showCursor = true;
+			Commander.player.ValidateSelected();
 		}
 		isShown = camera.depth == 1;
 	}

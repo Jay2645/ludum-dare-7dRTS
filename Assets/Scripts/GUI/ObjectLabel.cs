@@ -45,6 +45,7 @@ public class ObjectLabel : MonoBehaviour
 		{
 			text.font = font;
 		}
+		text.text.layer = LayerMask.NameToLayer("Units");
 		textTransform = text.text.transform;
 		textTransform.parent = target;
 		textTransform.localPosition = offset;

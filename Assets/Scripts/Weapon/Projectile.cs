@@ -15,6 +15,7 @@ public class Projectile : MonoBehaviour {
 	public Unit owner;
 	private const float PROJECTILE_DESTROY_TIME = 30.0f;
 	private const float PROJECTILE_MAX_TRAVEL_DISTANCE = 1500.0f;
+	private const float DUD_PROJECTILE_DESTROY_TIME = 0.5f;
 	public float minLightIntensity = 0.25f;
 	public float maxLightIntensity = 1.0f;
 	public bool lightEnabled = true;
@@ -53,7 +54,7 @@ public class Projectile : MonoBehaviour {
 		if(Physics.Raycast(groundDetection,out hitInfo,speed,owner.raycastIgnoreLayers))
 		{
 			if(hitInfo.transform.tag == "Ground")
-				Destroy(gameObject,0.4f);
+				Destroy(gameObject,DUD_PROJECTILE_DESTROY_TIME);
 		}
 	}
 	
@@ -90,7 +91,7 @@ public class Projectile : MonoBehaviour {
 		if(Physics.Raycast(groundDetection,out hitInfo,speed,owner.raycastIgnoreLayers))
 		{
 			if(hitInfo.transform.tag == "Ground")
-				Destroy(gameObject,0.3f);
+				Destroy(gameObject,DUD_PROJECTILE_DESTROY_TIME);
 		}
 		if(	Mathf.Abs(transform.position.x) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
 			Mathf.Abs(transform.position.y) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
