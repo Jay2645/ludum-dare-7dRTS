@@ -42,6 +42,7 @@ public class Commander : Leader
 	protected int MAX_LEADER_COUNT = 4;
 	public int teamScore = 0;
 	public AudioClip goalScored = null;
+	protected List<Unit> backloggedUnits = new List<Unit>();
 	
 	/// <summary>
 	/// Called once, at the beginning of the game.
@@ -69,6 +70,7 @@ public class Commander : Leader
 			GenerateUnit(unitPrefab);
 			unitsToGenerate--;
 		}
+		raycastIncrementRate = 5.0f;
 	}
 	
 	/// <summary>
@@ -88,6 +90,10 @@ public class Commander : Leader
 		{
 			Camera.main.transform.parent = transform;
 			Camera.main.transform.localPosition = cameraPosition;
+			if(weapon != null)
+			{
+				weapon.gameObject.layer = leaderLayer;
+			}
 		}
 		currentOrder = Order.move;
 		currentOrderIndex = 0;
@@ -107,10 +113,15 @@ public class Commander : Leader
 		
 		if(!isPlayer)
 			return;
-		if(MapView.IsShown())
+		recheckLayerTimer += Time.time;
+		if(recheckLayerTimer > RECHECK_LAYER_TIME)
 		{
 			Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
 			CheckUnitLayerDiff(layerChange);
+			recheckLayerTimer = 0.0f;
+		}
+		if(MapView.IsShown())
+		{
 			return;
 		}
 		// Everything below here only works on the player.
@@ -174,7 +185,7 @@ public class Commander : Leader
 		{
 			Ray selectRay = Camera.main.ViewportPointToRay(new Vector3(selectRadius, selectRadius, 0));
 			RaycastHit hit;
-			if (Physics.Raycast(selectRay, out hit,Mathf.Infinity,raycastIgnoreLayers))
+			if (Physics.Raycast(selectRay, out hit,Mathf.Infinity,player.raycastIgnoreLayers))
 			{
 				hitUnit = hit.transform.GetComponentInChildren<Unit>();
 				if(hitUnit != null)
@@ -208,6 +219,8 @@ public class Commander : Leader
 		}
 		lookingAt = visibleUnits;
 	}
+	
+	public override void IsSeen (Leader seer, bool seen) {}
 	
 	/// <summary>
 	/// Selects all Units we are currently looking at.
@@ -403,7 +416,7 @@ public class Commander : Leader
 			return;
 		Ray selectRay = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
 		RaycastHit hit;
-		if (Physics.Raycast(selectRay, out hit,Mathf.Infinity,raycastIgnoreLayers))
+		if (Physics.Raycast(selectRay, out hit,Mathf.Infinity,player.raycastIgnoreLayers))
 		{
 			Unit hitUnit = hit.transform.GetComponentInChildren<Unit>();
 			if(hitUnit != null)
@@ -467,8 +480,33 @@ public class Commander : Leader
 		}
 	}
 	
+	protected void AddAllUnits()
+	{
+		if(backloggedUnits.Count == 0)
+			return;
+		Unit[] units = backloggedUnits.ToArray();
+		foreach(Unit u in units)
+		{
+			if(!u.IsAlive())
+				continue;
+			AddUnit(u);
+			backloggedUnits.Remove(u);
+		}
+	}
+	
 	public void AddUnit(Unit unit)
 	{
+		if(!IsAlive())
+		{
+			backloggedUnits.Add(unit);
+			Invoke ("AddAllUnits",timeToOurRespawn + 0.5f);
+			return;
+		}
+		if(!unit.IsAlive())
+		{
+			backloggedUnits.Add(unit);
+			Invoke ("AddAllUnits",unit.GetTimeUntilRespawn() + 0.5f);
+		}
 		int id = unit.GetID();
 		if(allUnits.ContainsKey(id))
 		{
@@ -478,7 +516,7 @@ public class Commander : Leader
 		{
 			allUnits.Add(id,unit);
 		}
-		if(friendlyFire)
+		if(friendlyFire || unit == this)
 			return;
 		Unit[] allOurUnits = GetAllUnits();
 		foreach(Unit u in allOurUnits)
@@ -621,7 +659,7 @@ public class Commander : Leader
 			}
 			Ray findFloorRay = new Ray(randomPos,Vector3.down);
 			RaycastHit floor;
-			if(Physics.Raycast(findFloorRay, out floor, Mathf.Infinity,raycastIgnoreLayers))
+			if(Physics.Raycast(findFloorRay, out floor, Mathf.Infinity,player.raycastIgnoreLayers))
 			{
 				return floor.point + Vector3.up;
 			}

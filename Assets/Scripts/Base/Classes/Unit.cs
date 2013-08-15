@@ -100,10 +100,6 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected const float AI_FOV_VERTICAL_RANGE = 60.0f;
 	/// <summary>
-	/// How much to increment the raycast by when calculating FOV.
-	/// </summary>
-	protected const float FOV_RAYCAST_INCREMENT_RATE = 15.0f;
-	/// <summary>
 	/// We will detect any enemy which is this close to us.
 	/// </summary>
 	protected const float CLOSE_ENEMY_DETECT_RANGE = 5.0f;
@@ -123,6 +119,10 @@ public class Unit : MonoBehaviour
 	/// Are we currently selected?
 	/// </summary>
 	protected bool isSelected = false;
+	/// <summary>
+	/// How much to increment the raycast by when calculating FOV.
+	/// </summary>
+	protected float raycastIncrementRate = 15.0f;
 	
 	// GAMEPLAY
 	/// <summary>
@@ -291,6 +291,10 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected static Color outlineColor = Color.clear;
 	/// <summary>
+	/// What color are we when we're selected?
+	/// </summary>
+	protected static Color selectedColor = Color.green;
+	/// <summary>
 	/// The noise made every second before we respawn.
 	/// </summary>
 	public AudioClip respawnBlip = null;
@@ -304,13 +308,17 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected GameObject uniqueGeo = null;
 	protected static LayerMask defaultLayer = 0;
+	protected static LayerMask leaderLayer = 0;
 	protected static LayerMask unitLayer = 0;
+	protected List<Leader> visibleBy = new List<Leader>();
 	
 	
 	void Awake()
 	{
 		if(defaultLayer == 0)
 			defaultLayer = LayerMask.NameToLayer("Default");
+		if(leaderLayer == 0)
+			leaderLayer = LayerMask.NameToLayer("Leaders");
 		if(unitLayer == 0)
 			unitLayer = LayerMask.NameToLayer("Units");
 		UnitSetup();
@@ -364,7 +372,7 @@ public class Unit : MonoBehaviour
 			Camera.main.audio.PlayOneShot(respawnBeep);
 		// Make the GameObject visible.
 		gameObject.SetActive(true);
-		gameObject.layer = LayerMask.NameToLayer("Units");
+		gameObject.layer = unitLayer;
 		foreach(Transform child in transform)
 		{
 			child.gameObject.SetActive(true);
@@ -778,8 +786,27 @@ public class Unit : MonoBehaviour
 		if(!IsLedByPlayer() && !(selector is Commander))
 			return true;
 		CreateSelected();
-		SetOutlineColor(Color.green);
+		SetOutlineColor(selectedColor);
 		return true;
+	}
+	
+	public virtual void IsSeen(Leader seer, bool seen)
+	{
+		if(seen && seer.IsAlive())
+		{
+			if(!visibleBy.Contains(seer))
+			{
+				visibleBy.Add(seer);
+				ChangeLayer(defaultLayer);
+			}
+		}
+		else
+		{
+			if(visibleBy.Contains(seer))
+				visibleBy.Remove(seer);
+			if(visibleBy.Count == 0)
+				ChangeLayer(unitLayer);
+		}
 	}
 	
 	public void IsLookedAt(bool lookedAt)
@@ -903,10 +930,13 @@ public class Unit : MonoBehaviour
 	
 	public void ChangeLayer(LayerMask newLayer)
 	{
+		LayerMask gameObjectLayer = gameObject.layer;
+		if(gameObjectLayer == leaderLayer || gameObjectLayer == raycastIgnoreLayers)
+			return;
 		gameObject.layer = newLayer;
 		foreach(Transform child in transform)
 		{
-			if(child.gameObject.layer == raycastIgnoreLayers)
+			if(child.gameObject.layer == 2 || child.gameObject.layer == raycastIgnoreLayers || child.gameObject.layer == leaderLayer)
 				continue;
 			child.gameObject.layer = newLayer;
 		}
@@ -1090,17 +1120,17 @@ public class Unit : MonoBehaviour
 		if(weapon == null)
 			return new Unit[0];
 		float maxVerticalFOV = AI_FOV_VERTICAL_RANGE / 2;
-		float currentVerticalFOV = -maxVerticalFOV - FOV_RAYCAST_INCREMENT_RATE;
+		float currentVerticalFOV = -maxVerticalFOV - raycastIncrementRate;
 		Vector3 position = transform.position;
 		float sightRange = weapon.range + 15.0f;
 		Vector3 fovDirection = transform.forward;
 		RaycastHit hitInfo;
 		List<Unit> detectedUnits = new List<Unit>();
-		for(; currentVerticalFOV <= maxVerticalFOV; currentVerticalFOV += FOV_RAYCAST_INCREMENT_RATE)
+		for(; currentVerticalFOV <= maxVerticalFOV; currentVerticalFOV += raycastIncrementRate)
 		{
 			float maxFOV = AI_FOV_HORIZONTAL_RANGE / 2;
 			float currentFOV = -maxFOV;
-			for(;currentFOV <= maxFOV; currentFOV += FOV_RAYCAST_INCREMENT_RATE)
+			for(;currentFOV <= maxFOV; currentFOV += raycastIncrementRate)
 			{
 				fovDirection = Quaternion.Euler(currentVerticalFOV,currentFOV,0) * transform.forward;
 				if(Physics.Raycast(position,fovDirection,out hitInfo,sightRange,raycastIgnoreLayers))
@@ -1113,7 +1143,7 @@ public class Unit : MonoBehaviour
 				Debug.DrawRay(position,fovDirection,Color.magenta);
 			}
 		}
-		for(float closeDetectAmount = 0; closeDetectAmount < 360; closeDetectAmount += FOV_RAYCAST_INCREMENT_RATE)
+		for(float closeDetectAmount = 0; closeDetectAmount < 360; closeDetectAmount += raycastIncrementRate)
 		{
 			fovDirection = Quaternion.Euler(0,closeDetectAmount,0) * transform.forward;
 			if(Physics.Raycast(position,fovDirection,out hitInfo,CLOSE_ENEMY_DETECT_RANGE,raycastIgnoreLayers))
@@ -1178,9 +1208,29 @@ public class Unit : MonoBehaviour
 	
 	public Unit[] DetectUnits(string unitTag, float maxDistance)
 	{
-		//if(agent != null)
-			//return DetectUnits(agent,unitTag);
-		GameObject[] gos = GameObject.FindGameObjectsWithTag(unitTag);
+		List<Unit> detectedUnits = new List<Unit>();
+		Vector3 position = transform.position;
+		float maxY = AI_FOV_VERTICAL_RANGE / 2;
+		for(float currentYAngle = -maxY; currentYAngle <= maxY; currentYAngle += raycastIncrementRate)
+		{
+			for(float i = 0; i < 360; i += raycastIncrementRate)
+			{
+				Vector3 fovDirection = Quaternion.Euler(currentYAngle,i,0) * transform.forward;
+				RaycastHit hitInfo;
+				if(Physics.Raycast(position,fovDirection,out hitInfo,maxDistance,raycastIgnoreLayers))
+				{
+					Unit unit = hitInfo.transform.GetComponent<Unit>();
+					if(unit == null || detectedUnits.Contains(unit) || unitTag != "" && unit.tag != unitTag || !unit.IsAlive())
+						continue;
+					detectedUnits.Add(unit);
+				}
+				Debug.DrawRay(position,fovDirection,Color.yellow);
+			}
+		}
+		return detectedUnits.ToArray();
+		/*
+		 * OLD WAY
+		 * GameObject[] gos = GameObject.FindGameObjectsWithTag(unitTag);
 		if(gos.Length == 0)
 			return new Unit[0];
 		Vector3 cachedPosition = transform.position;
@@ -1195,7 +1245,7 @@ public class Unit : MonoBehaviour
 				continue;
 			closestUnits.Add(u);
 		}
-		return closestUnits.ToArray();
+		return closestUnits.ToArray();*/
 	}
 	
 	/// <summary>
@@ -1212,7 +1262,7 @@ public class Unit : MonoBehaviour
 	/// </param>
 	public RAIN.Action.Action.ActionResult Shoot(RAIN.Core.Agent agent, float deltaTime, Unit enemy)
 	{
-		if(enemy == null || !enemy.IsAlive())
+		if(enemy == null || !enemy.IsAlive() || weapon == null)
 			return RAIN.Action.Action.ActionResult.FAILURE;
 		if(weapon.ammo <= 0)
 			return RAIN.Action.Action.ActionResult.FAILURE;
@@ -1295,6 +1345,11 @@ public class Unit : MonoBehaviour
 		return false;
 	}
 	
+	public float GetTimeUntilRespawn()
+	{
+		return timeToOurRespawn;
+	}
+	
 	protected void AllowSpawn()
 	{
 		skipSpawn = false;
@@ -1357,10 +1412,11 @@ public class Unit : MonoBehaviour
 		health = oldClone.health;
 		weapon = oldClone.weapon;
 		aBase = oldClone.aBase;
+		raycastIgnoreLayers = Commander.player.raycastIgnoreLayers;
 		weapon.Pickup(this);
 		leader.ReplaceUnit(id, this);
 		if(isSelected)
-			SetOutlineColor(Color.green);
+			SetOutlineColor(selectedColor);
 		else
 			SetOutlineColor(outlineColor);
 		skipSpawn = true;

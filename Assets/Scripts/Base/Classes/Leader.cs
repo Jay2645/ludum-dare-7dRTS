@@ -15,17 +15,29 @@ public class Leader : Unit
 	protected List<int> selectedUnits = new List<int>();
 	protected GameObject tempOrderTarget = null;
 	protected Commander commander = null;
-	protected float TEMP_GAMEOBJECT_REMOVE_TIME = 1.0f;
+	protected const float TEMP_GAMEOBJECT_REMOVE_TIME = 1.0f;
 	protected static Vector3 CROWN_OFFSET = new Vector3(0.0f, 0.35f, 0.0f);
 	protected static Vector3 LEADER_SCALE = new Vector3(1.2f, 1.2f, 1.2f);
+	protected const float RECHECK_LAYER_TIME = 5.0f;
 	protected Unit[] lastDetectedUnits = null;
 	public Unit[] ownedUnits;
+	protected List<GameObject> outlines;
+	protected bool outlinesActive = true;
 	protected static GameObject leaderCrown;
+	protected static Material outlineMat;
+	protected float recheckLayerTimer = 0.0f;
+	
+	protected override void ClassSetup ()
+	{
+		raycastIncrementRate = 10.0f;
+	}
 	
 	protected override void ClassSpawn ()
 	{
 		if(leaderCrown == null)
 			leaderCrown = Resources.Load("Prefabs/Leader Crown") as GameObject;
+		if(outlineMat == null)
+			outlineMat = Resources.Load("Materials/Outline Only") as Material;
 		if(uniqueGeo == null)
 		{
 			uniqueGeo = Instantiate(leaderCrown) as GameObject;
@@ -33,9 +45,39 @@ public class Leader : Unit
 			uniqueGeo.transform.localRotation = Quaternion.Euler(new Vector3(270,0,0));
 			uniqueGeo.transform.localPosition = new Vector3(0.0f, 0.5f, 0.0f);
 			uniqueGeo.layer = gameObject.layer;
-			label.ChangeOffset(label.offset + CROWN_OFFSET);
+			if(label != null)
+				label.ChangeOffset(label.offset + CROWN_OFFSET);
 		}
-		transform.position = transform.position + new Vector3(0, 0.2f, 0);
+		if(outlines == null)
+		{
+			outlines = new List<GameObject>();
+			MeshFilter[] meshes = transform.root.GetComponentsInChildren<MeshFilter>();
+			foreach(MeshFilter render in meshes)
+			{
+				if(render.GetComponent<Weapon>() != null)
+					continue;
+				GameObject outline = new GameObject(render.name+" Outline");
+				outline.transform.parent = render.transform;
+				outline.transform.localPosition = Vector3.zero;
+				outline.transform.localRotation = Quaternion.identity;
+				outline.transform.localScale = Vector3.one;
+				outline.layer = leaderLayer;
+				outline.AddComponent<MeshRenderer>();
+				MeshFilter mesh = outline.AddComponent<MeshFilter>();
+				mesh.mesh = Instantiate(render.mesh) as Mesh;
+				outline.renderer.material = Instantiate(outlineMat) as Material;
+				if(outlineMat.HasProperty("_OutlineColor") && renderer.material.HasProperty("_OutlineColor"))
+				{
+					outline.renderer.material.SetColor("_OutlineColor",renderer.material.GetColor("_OutlineColor"));
+				}
+				outlines.Add(outline);
+			}
+		}
+		if(label != null)
+		{
+			label.SetVisibleThroughWalls(true);
+		}
+		transform.position = transform.position + new Vector3(0, LEADER_SCALE.y - 1, 0);
 		transform.localScale = LEADER_SCALE;
 	}
 	
@@ -46,9 +88,18 @@ public class Leader : Unit
 		// Everything below here only affects the player's team.
 		if(MapView.IsShown())
 		{
-			Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
-			CheckUnitLayerDiff(layerChange);
-			return;
+			recheckLayerTimer += Time.deltaTime;
+			if(recheckLayerTimer > RECHECK_LAYER_TIME)
+			{
+				Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
+				CheckUnitLayerDiff(layerChange);
+				recheckLayerTimer = 0.0f;
+				return;
+			}
+		}
+		else if(recheckLayerTimer > 0.0f)
+		{
+			recheckLayerTimer = 0.0f;
 		}
 	}
 	
@@ -62,7 +113,7 @@ public class Leader : Unit
 		}
 		foreach(Unit unit in detectedUnits)
 		{
-			unit.ChangeLayer(defaultLayer);
+			unit.IsSeen(this, true);
 		}
 		return detectedUnits;
 	}
@@ -85,13 +136,36 @@ public class Leader : Unit
 				oldDetectedUnitSet.CopyTo(notDetectedAnymore);
 				foreach(Unit u in notDetectedAnymore)
 				{
-					if(u == null || u is Leader)
+					if(u == null)
 						continue;
-					u.ChangeLayer(unitLayer);
+					u.IsSeen(this, false);
 				}
 			}
 		}
 		lastDetectedUnits = newDetectedUnits;
+	}
+	
+	public override void IsSeen (Leader seer, bool seen)
+	{
+		if(seer.IsPlayer())
+		{
+			ToggleOutlines(seen);
+		}
+	}
+	
+	protected void ToggleOutlines(bool visible)
+	{
+		if(outlines == null || visible != outlinesActive)
+			return;
+		outlinesActive = !visible;
+		Color currentColor = outlineColor;
+		if(isSelected)
+			currentColor = selectedColor;
+		foreach(GameObject go in outlines.ToArray())
+		{
+			go.SetActive(outlinesActive);
+			go.renderer.material.SetColor("_OutlineColor",currentColor);
+		}
 	}
 	
 	public void RegisterUnit(Unit unit)
@@ -124,6 +198,14 @@ public class Leader : Unit
 		this.commander = commander;
 		RegisterLeader(this);
 		commander.RegisterUnit(this);
+		if(outlines != null && !commander.IsPlayer())
+		{
+			foreach(GameObject outline in outlines.ToArray())
+			{
+				Destroy(outline);
+			}
+			outlines = null;
+		}
 	}
 	
 	public override void RegisterLeader (Leader leader)
@@ -181,7 +263,20 @@ public class Leader : Unit
 				u.ChangeLayer(unitLayer);
 			}
 		}
-		label.ChangeOffset(label.offset);
+		if(label != null)
+		{
+			label.ChangeOffset(label.offset);
+			label.SetVisibleThroughWalls(false);
+		}
+		if(outlines != null)
+		{
+			GameObject[] outlinedObjects = outlines.ToArray();
+			foreach(GameObject outline in outlinedObjects)
+			{
+				Destroy(outline);
+			}
+			outlines = null;
+		}
 		if(IsLedByPlayer())
 			MessageList.Instance.AddMessage(uName+", acknowledging demotion to grunt.");
 		Destroy(uniqueGeo);

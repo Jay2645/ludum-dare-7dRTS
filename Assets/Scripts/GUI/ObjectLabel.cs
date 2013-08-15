@@ -91,6 +91,13 @@ public class ObjectLabel : MonoBehaviour
 			text.textString = label;
 	}
 	
+	public void SetVisibleThroughWalls(bool visible)
+	{
+		if(text == null)
+			return;
+		text.zWrite = !visible;
+	}
+	
 	void OnDisable()
 	{
 		Destroy (text.text);

@@ -214,7 +214,7 @@ public class Weapon : MonoBehaviour
 		Vector3 shotDirection = ShootError();
 		Ray directionRay = new Ray(transform.position,shotDirection);
 		Debug.DrawRay(transform.position + transform.up,shotDirection, Color.blue);
-		if (Physics.Raycast(directionRay, out hit,Mathf.Infinity,owner.raycastIgnoreLayers))
+		if (Physics.Raycast(directionRay, out hit,Mathf.Infinity,Commander.player.raycastIgnoreLayers))
 		{
 			if(Random.value * (4 / 3) <= 1)
 			{

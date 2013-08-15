@@ -128,6 +128,36 @@ public class PhysicalText
 	private bool buttonClicked = false;
 	private float maxWidth = Mathf.Infinity;
 	private float maxHeight = Mathf.Infinity;
+	public bool zWrite
+	{
+		get
+		{
+			return _zWrite;
+		}
+		set
+		{
+			_zWrite = value;
+			if(mat != null)
+			{
+				if(_zWrite)
+				{
+					if(texture == null)
+					{
+						mat.shader = Shader.Find("GUI/3D Text Shader");
+					}
+					else
+					{
+						mat.shader = Shader.Find("Unlit/Transparent ZWrite");
+					}
+				}
+				else
+				{
+					mat.shader = Shader.Find("GUI/Text Shader");
+				}
+			}
+		}
+	}
+	private bool _zWrite = false;
 	
 	private void MakeTextObject()
 	{
@@ -170,10 +200,18 @@ public class PhysicalText
 	private void MakeTextureMaterial()
 	{
 		if(mat == null && texture == null)
-			mat = new Material(Shader.Find("GUI/3D Text Shader"));
+		{
+			if(_zWrite)
+				mat = new Material(Shader.Find("GUI/3D Text Shader"));
+			else
+				mat = new Material(Shader.Find("GUI/Text Shader"));
+		}
 		else if(mat == null && texture != null)
 		{	
-			mat = new Material(Shader.Find("Unlit/Transparent ZWrite"));
+			if(_zWrite)
+				mat = new Material(Shader.Find("Unlit/Transparent ZWrite"));
+			else
+				mat = new Material(Shader.Find("GUI/Text Shader"));
 			mat.mainTexture = texture;
 		}
 		color = buttonNormalColor;
@@ -190,7 +228,10 @@ public class PhysicalText
 			{
 				newFont = Resources.Load("Fonts/arial") as Font;
 			}
-			newFont.material.shader = Shader.Find("GUI/3D Text Shader");
+			if(_zWrite)
+				newFont.material.shader = Shader.Find("GUI/3D Text Shader");
+			else
+				newFont.material.shader = Shader.Find("GUI/Text Shader");
 			mesh.font = newFont;
 			render.material = newFont.material;
 		}
