@@ -5,6 +5,7 @@ Future Import/
 Assets/Profiles/
 Heatmaps/*.png
 Raw/
+*.png
 *.bat
 *.svd
 sysinfo.txt
