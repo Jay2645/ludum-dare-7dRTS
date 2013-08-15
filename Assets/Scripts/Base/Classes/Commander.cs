@@ -184,19 +184,38 @@ public class Commander : Leader
 		while(scan && selectRadius < 0.56f && IsAlive())
 		{
 			Ray selectRay = Camera.main.ViewportPointToRay(new Vector3(selectRadius, selectRadius, 0));
-			RaycastHit hit;
-			if (Physics.Raycast(selectRay, out hit,Mathf.Infinity,player.raycastIgnoreLayers))
+			RaycastHit[] hits = Physics.RaycastAll(selectRay, 1000.0f, raycastIgnoreLayers);
+			if(hits != null && hits.Length > 0)
 			{
-				hitUnit = hit.transform.GetComponentInChildren<Unit>();
-				if(hitUnit != null)
+				foreach(RaycastHit h in hits)
 				{
-					id = hitUnit.GetID();
-					if(unitID.ContainsKey(id))
+					Leader hitLeader = h.transform.GetComponentInChildren<Leader>();
+					if(hitLeader != null)
 					{
-						hitUnit.IsLookedAt(true);
-						visibleUnits.Add(id);
+						id = hitLeader.GetID();
+						if(unitID.ContainsKey(id))
+						{
+							hitLeader.IsLookedAt(true);
+							visibleUnits.Add(id);
+						}
+						scan = false;
+						break;
 					}
-					scan = false;
+				}
+				RaycastHit hit;
+				if (scan && Physics.Raycast(selectRay, out hit,Mathf.Infinity,raycastIgnoreLayers))
+				{
+					hitUnit = hit.transform.GetComponentInChildren<Unit>();
+					if(hitUnit != null)
+					{
+						id = hitUnit.GetID();
+						if(unitID.ContainsKey(id))
+						{
+							hitUnit.IsLookedAt(true);
+							visibleUnits.Add(id);
+						}
+						scan = false;
+					}
 				}
 			}
 			Debug.DrawRay(selectRay.origin,selectRay.direction);
