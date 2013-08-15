@@ -73,6 +73,7 @@
      <Compile Include="Assets\Scripts\GUI\PauseMenu.cs" />
      <Compile Include="Assets\Scripts\GUI\PhysicalText.cs" />
      <Compile Include="Assets\Scripts\GUI\TimedFadeText.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Healthpack.cs" />
      <Compile Include="Assets\Scripts\Import\ExternalDL.cs" />
      <Compile Include="Assets\Scripts\Import\PhotoshopGUIMaker.cs" />
      <Compile Include="Assets\Scripts\Import\PrimitiveMaker.cs" />

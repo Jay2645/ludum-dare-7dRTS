@@ -314,6 +314,10 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected static Color selectedColor = Color.green;
 	/// <summary>
+	/// The sound we make when collecting health.
+	/// </summary>
+	public AudioClip healthRegen;
+	/// <summary>
 	/// The noise made every second before we respawn.
 	/// </summary>
 	public AudioClip respawnBlip = null;
@@ -736,6 +740,8 @@ public class Unit : MonoBehaviour
 	public virtual void RecieveOrder(Order order, Transform target, Leader giver)
 	{
 		if(target == null || target == transform && order != Order.stop || order == currentOrder && target == orderTarget)
+			return;
+		if(navigator == null || !navigator.enabled)
 			return;
 		//Debug.Log (this+" has recieved "+order);
 		ResetTarget();
@@ -1374,6 +1380,17 @@ public class Unit : MonoBehaviour
 			}*/
 		}
 		return RAIN.Action.Action.ActionResult.RUNNING;
+	}
+	
+	public bool RestoreHealth(int amount)
+	{
+		if(!IsAlive() || health >= 100)
+			return false;
+		health += amount;
+		health = Mathf.Min(health, 100);
+		if(healthRegen != null)
+			gameObject.GetComponentInChildren<AudioSource>().PlayOneShot(healthRegen);
+		return true;
 	}
 	
 	public void Score()
