@@ -114,6 +114,10 @@ public class Unit : MonoBehaviour
 	/// How long it takes after spawning before we take damage.
 	/// </summary>
 	protected const float RESPAWN_BLINK_TIME = 3.0f;
+	/// <summary>
+	/// How often do we recalculate our path to compensate for movement in our target?
+	/// </summary>
+	protected const float MIN_PATH_RECALC_TIME = 3.0f;
 	
 	// Unit variables //
 	
@@ -270,6 +274,14 @@ public class Unit : MonoBehaviour
 	/// The last unit which damaged us.
 	/// </summary>
 	protected Unit lastDamager;
+	/// <summary>
+	/// Unity's navigation system.
+	/// </summary>
+	protected NavMeshAgent navigator;
+	/// <summary>
+	/// The last time we rechecked our path.
+	/// </summary>
+	protected float lastPathRecheckTime = 0.0f;
 	
 	
 	// VISUALS
@@ -348,6 +360,11 @@ public class Unit : MonoBehaviour
 		_maxHealth = health;
 		if(renderer != null && outlineColor == Color.clear)
 			outlineColor = renderer.material.GetColor("_OutlineColor");
+		if(IsPlayer())
+			return;
+		navigator = gameObject.GetComponent<NavMeshAgent>();
+		if(navigator == null)
+			navigator = gameObject.AddComponent<NavMeshAgent>();
 	}
 	
 	/// <summary>
@@ -559,6 +576,15 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected void UnitUpdate()
 	{
+		if(moveTarget != null)
+		{
+			lastPathRecheckTime += Time.deltaTime;
+			if(lastPathRecheckTime > MIN_PATH_RECALC_TIME)
+			{
+				lastPathRecheckTime = 0.0f;
+				navigator.SetDestination(moveTarget.position);
+			}
+		}
 		CheckHealth();
 	}
 	
@@ -744,6 +770,7 @@ public class Unit : MonoBehaviour
 			}
 			return;
 		}
+		navigator.SetDestination(target.position);
 		CreateSelected();
 		// This is a quick-and-dirty way for players to see that the unit has recieved orders correctly.
 		if(lastOrderer == (Leader)Commander.player)
@@ -1340,10 +1367,11 @@ public class Unit : MonoBehaviour
 		}
 		else
 		{
-			if(agent.MoveTo(enemy.transform.position,deltaTime))
+			navigator.SetDestination(enemy.transform.position);
+			/*if(agent.MoveTo(enemy.transform.position,deltaTime))
 			{
 				return RAIN.Action.Action.ActionResult.SUCCESS;
-			}
+			}*/
 		}
 		return RAIN.Action.Action.ActionResult.RUNNING;
 	}

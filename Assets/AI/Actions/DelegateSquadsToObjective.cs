@@ -352,7 +352,10 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		{
 			if(unit == null)
 				continue;
-			unitsByDistance.Add(Mathf.Pow(target.x - unit.transform.position.x,2) + Mathf.Pow(target.z - unit.transform.position.z,2),unit);
+			float dist = Mathf.Pow(target.x - unit.transform.position.x,2) + Mathf.Pow(target.z - unit.transform.position.z,2);
+			if(unitsByDistance.ContainsKey(dist))
+				continue;
+			unitsByDistance.Add(dist,unit);
 		}
 		if(nearTarget)
 			return FindClosestUnits(unitsByDistance,unitNumber);

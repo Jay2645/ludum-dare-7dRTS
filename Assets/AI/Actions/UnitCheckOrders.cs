@@ -53,30 +53,29 @@ public class UnitCheckOrders : RAIN.Action.Action
 		SetVariables(agent);
 		if(isPlayer == 1)
 			return RAIN.Action.Action.ActionResult.SUCCESS;
-		/*if(unit == null)
+		if(unit == null)
 			unit = agent.Avatar.GetComponent<Unit>();
 		Unit nearestEnemy = unit.DetectEnemies(agent,enemy);
 		if(nearestEnemy != null)
 		{
-			Action.ActionResult shootResult = unit.Shoot(agent,deltaTime,nearestEnemy);
-			if(shootResult == Action.ActionResult.SUCCESS || shootResult == Action.ActionResult.RUNNING)
-				return RAIN.Action.Action.ActionResult.RUNNING;
-		}*/
-		
+			unit.Shoot(agent,deltaTime,nearestEnemy);
+		}
+		/*
 		if(orders == Order.stop)
 		{
 			agent.MoveTo(agent.Avatar.transform.position,deltaTime);
 			return RAIN.Action.Action.ActionResult.FAILURE;
-		}
-		Transform target = unit.GetMoveTarget();
-		if(target == null)
+		}*/
+		/*Transform target = unit.GetMoveTarget();
+		if(target != null)
 		{
-			agent.MoveTo(agent.Avatar.transform.position,deltaTime);
-			return RAIN.Action.Action.ActionResult.FAILURE;
-		}
-		if(agent.MoveTo(target.position,deltaTime))
+			
+			//agent.MoveTo(agent.Avatar.transform.position,deltaTime);
+			//return RAIN.Action.Action.ActionResult.FAILURE;
+		}*/
+		//if(agent.MoveTo(target.position,deltaTime))
 			return RAIN.Action.Action.ActionResult.SUCCESS;
-		return RAIN.Action.Action.ActionResult.RUNNING;
+		//return RAIN.Action.Action.ActionResult.RUNNING;
 	}
 
     public override RAIN.Action.Action.ActionResult Stop(RAIN.Core.Agent agent, float deltaTime)

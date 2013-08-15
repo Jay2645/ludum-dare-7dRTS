@@ -322,6 +322,8 @@ public class Weapon : MonoBehaviour
 	
 	public void Pickup(Unit owner)
 	{
+		if(this == null)
+			return;
 		CancelInvoke();
 		rigidbody.isKinematic = true;
 		rigidbody.useGravity = false;
