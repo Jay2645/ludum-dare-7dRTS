@@ -29,14 +29,22 @@ public class Healthpack : MonoBehaviour {
 			return;
 		isEnabled = false;
 		tag = "Untagged";
-		renderer.enabled = false;
+		Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>();
+		foreach(Renderer render in renderers)
+		{
+			renderer.enabled = false;
+		}
 		Invoke("Respawn", RESPAWN_TIME);
 	}
 	
 	private void Respawn()
 	{
-		renderer.enabled = true;
-		isEnabled = true;
+		Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>();
+		foreach(Renderer render in renderers)
+		{
+			renderer.enabled = true;
+		}
 		tag = "Regen";
+		isEnabled = true;
 	}
 }
