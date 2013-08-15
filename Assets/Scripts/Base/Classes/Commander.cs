@@ -119,6 +119,10 @@ public class Commander : Leader
 		
 		if(!isPlayer)
 			return;
+		if(Input.GetKeyDown(KeyCode.F5))
+			Time.timeScale += 1.0f;
+		if(Input.GetKeyDown(KeyCode.F6))
+			Time.timeScale /= 2;
 		recheckLayerTimer += Time.time;
 		if(recheckLayerTimer > RECHECK_LAYER_TIME)
 		{

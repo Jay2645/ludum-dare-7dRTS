@@ -70,11 +70,14 @@
      <Compile Include="Assets\Scripts\GUI\MapView.cs" />
      <Compile Include="Assets\Scripts\GUI\MessageList.cs" />
      <Compile Include="Assets\Scripts\GUI\ObjectLabel.cs" />
+     <Compile Include="Assets\Scripts\GUI\PauseMenu.cs" />
      <Compile Include="Assets\Scripts\GUI\PhysicalText.cs" />
      <Compile Include="Assets\Scripts\GUI\TimedFadeText.cs" />
      <Compile Include="Assets\Scripts\Import\ExternalDL.cs" />
      <Compile Include="Assets\Scripts\Import\PhotoshopGUIMaker.cs" />
      <Compile Include="Assets\Scripts\Import\PrimitiveMaker.cs" />
+     <Compile Include="Assets\Scripts\Input\CharacterInput.cs" />
+     <Compile Include="Assets\Scripts\Input\MouseLook.cs" />
      <Compile Include="Assets\Scripts\Weapon\Projectile.cs" />
      <Compile Include="Assets\Scripts\Weapon\Rocket.cs" />
      <Compile Include="Assets\Scripts\Weapon\Weapon.cs" />

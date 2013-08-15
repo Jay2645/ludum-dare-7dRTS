@@ -544,7 +544,11 @@ public class Unit : MonoBehaviour
 	
 	void Update()
 	{
-		if(!IsAlive())
+		if(Input.GetButtonDown("Pause") && IsPlayer())
+		{
+			PauseMenu.Pause();
+		}
+		if(!IsAlive() || PauseMenu.IsPaused())
 			return;
 		UnitUpdate();
 		ClassUpdate();

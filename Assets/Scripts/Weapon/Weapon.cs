@@ -155,7 +155,7 @@ public class Weapon : MonoBehaviour
 	/// </summary>
 	public void Shoot()
 	{
-		if(this == null || gameObject == null || owner == null) // For some reason, we keep trying to shoot after we've been destroyed.
+		if(this == null || gameObject == null || owner == null || PauseMenu.IsPaused()) // For some reason, we keep trying to shoot after we've been destroyed.
 			return;
 		if(reloading || ammo <= 0 || lastShotTime > 0 && Time.time - lastShotTime < timeBetweenShots)
 			return;

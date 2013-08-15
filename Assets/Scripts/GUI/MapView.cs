@@ -29,6 +29,8 @@ public class MapView : MonoBehaviour {
 	// Update is called once per frame
 	void LateUpdate () 
 	{
+		if(PauseMenu.IsPaused())
+			return;
 		if(Input.GetButtonUp("ShowMap"))
 		{
 			ShowMap();
