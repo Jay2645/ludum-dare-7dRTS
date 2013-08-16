@@ -3,17 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// All possible orders that can be given to units.
-/// </summary>
-public enum Order
-{
-	move,
-	attack,
-	defend,
-	stop
-}
-
-/// <summary>
 /// Commander is the class that the player defaults to.
 /// It is capable of promoting and demoting units, and all units answer to it.
 /// There should only ever be one commander per team.
@@ -30,7 +19,7 @@ public class Commander : Leader
 	public MapView mapCamera;
 	public Camera guiCamera;
 	protected Vector3 cameraPosition;
-	public Vector3[] spawnPoints;
+	public Transform[] spawnPoints;
 	public float spawnTime = 8.0f;
 	protected float _spawnTime;
 	protected List<Leader> leaders = new List<Leader>();
@@ -319,6 +308,8 @@ public class Commander : Leader
 	
 	protected void MakeCard(Unit unit, float count)
 	{
+		if(!isPlayer)
+			return;
 		GameObject labelGO = unit.GetLabel();
 		if(labelGO == null)
 			return;
@@ -543,6 +534,7 @@ public class Commander : Leader
 			{
 				GiveOrder(currentOrder,hit.point);
 			}
+			Debug.Log("Giving "+currentOrder+" order.");
 		}
 	}
 	
@@ -568,6 +560,7 @@ public class Commander : Leader
 	
 	public override void GiveOrder(Order order, Transform target, Unit unit)
 	{
+		Debug.Log ("Sending order to "+unit);
 		unit.RecieveOrder(order,target,this);
 	}
 	
@@ -743,7 +736,7 @@ public class Commander : Leader
 		if(unitScript == null)
 			unitScript = unitInstance.AddComponent<Unit>();
 		unitScript.RegisterLeader(this);
-		unitInstance.transform.position = GetSpawnPoint();
+		//unitInstance.transform.position = GetSpawnPoint();
 	}
 	
 	public bool IsEnemy(Unit unit)
@@ -781,7 +774,7 @@ public class Commander : Leader
 			}
 			else return Vector3.zero;
 		}
-		return spawnPoints[Mathf.RoundToInt(Random.Range(0,spawnPoints.Length - 1))];
+		return spawnPoints[Mathf.RoundToInt(Random.Range(0,spawnPoints.Length - 1))].position;
 	}
 	
 	public void OnScore()

@@ -48,7 +48,7 @@ public class Leader : Unit
 			if(label != null)
 				label.ChangeOffset(label.offset + CROWN_OFFSET);
 		}
-		if(outlines == null)
+		if(outlines == null && (commander == null || IsOwnedByPlayer()))
 		{
 			outlines = new List<GameObject>();
 			MeshFilter[] meshes = transform.root.GetComponentsInChildren<MeshFilter>();
@@ -194,7 +194,7 @@ public class Leader : Unit
 		leaderLookup.Add(id,this);
 		if(currentOrder != Order.stop)
 		{
-			GiveOrder(currentOrder,moveTarget,unit);
+			GiveOrder(currentOrder,orderTarget,unit);
 		}
 		ownedUnits = new Unit[unitID.Count];
 		unitID.Values.CopyTo(ownedUnits,0);

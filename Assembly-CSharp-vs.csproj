@@ -60,12 +60,6 @@
      <Compile Include="Assets\AI\Actions\UnitLowOnHealth.cs" />
      <Compile Include="Assets\Scripts\Analytics\GameMetrics.cs" />
      <Compile Include="Assets\Scripts\Analytics\HeatmapBlock.cs" />
-     <Compile Include="Assets\Scripts\Base\Classes\Commander.cs" />
-     <Compile Include="Assets\Scripts\Base\Classes\Leader.cs" />
-     <Compile Include="Assets\Scripts\Base\Classes\Unit.cs" />
-     <Compile Include="Assets\Scripts\Base\Objectives\Base.cs" />
-     <Compile Include="Assets\Scripts\Base\Objectives\Flag.cs" />
-     <Compile Include="Assets\Scripts\Base\Objectives\Objective.cs" />
      <Compile Include="Assets\Scripts\GUI\MakeButton.cs" />
      <Compile Include="Assets\Scripts\GUI\MapView.cs" />
      <Compile Include="Assets\Scripts\GUI\MessageList.cs" />
@@ -79,6 +73,13 @@
      <Compile Include="Assets\Scripts\Import\PrimitiveMaker.cs" />
      <Compile Include="Assets\Scripts\Input\CharacterInput.cs" />
      <Compile Include="Assets\Scripts\Input\MouseLook.cs" />
+     <Compile Include="Assets\Scripts\Objectives\Base.cs" />
+     <Compile Include="Assets\Scripts\Objectives\Flag.cs" />
+     <Compile Include="Assets\Scripts\Objectives\Objective.cs" />
+     <Compile Include="Assets\Scripts\Unit\Classes\Commander.cs" />
+     <Compile Include="Assets\Scripts\Unit\Classes\Leader.cs" />
+     <Compile Include="Assets\Scripts\Unit\Classes\Unit.cs" />
+     <Compile Include="Assets\Scripts\Unit\UnitMotor.cs" />
      <Compile Include="Assets\Scripts\Weapon\Projectile.cs" />
      <Compile Include="Assets\Scripts\Weapon\Rocket.cs" />
      <Compile Include="Assets\Scripts\Weapon\Weapon.cs" />
