@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 /// <summary>
 /// A generic weapon class.
@@ -42,6 +43,11 @@ public class Weapon : MonoBehaviour
 	
 	protected float WEAPON_DESPAWN_TIME = 30.0f;
 	protected float RECENT_SHOT_TIME = 7.0f;
+	/// <summary>
+	/// This is a list containing a bunch of projectiles already loaded into memory.
+	/// This avoids the lag caused by many successive Instantiate calls -- when we shoot, we only instantiate the first few projectiles.
+	/// </summary>
+	protected List<Projectile> projectilePool = new List<Projectile>();
 	
 	void Awake()
 	{
@@ -201,7 +207,10 @@ public class Weapon : MonoBehaviour
 	/// </summary>
 	protected virtual void OnShootProjectile()
 	{
-		Projectile proj = Instantiate(projectile,transform.position + (transform.up * 0.5f),transform.rotation) as Projectile;
+		Projectile proj = GetProjectile();
+		proj.transform.position = transform.position + (transform.up * 0.5f);
+		proj.transform.rotation = transform.rotation;
+		proj.gameObject.layer = gameObject.layer;
 		proj.damage = damage;
 		proj.SetOwner(owner);
 		proj.MoveForward(ShootError());
@@ -220,10 +229,12 @@ public class Weapon : MonoBehaviour
 		{
 			if(Random.value * (4 / 3) <= 1)
 			{
-				GameObject tracerInstance = Instantiate(tracer) as GameObject;
-				tracerInstance.layer = gameObject.layer;
-				tracerInstance.transform.position = transform.position;
-				tracerInstance.GetComponent<Projectile>().MoveForward(shotDirection);
+				Projectile tracerInstance = GetProjectile();
+				tracerInstance.gameObject.layer = gameObject.layer;
+				tracerInstance.transform.position = transform.position + (transform.up * 0.5f);
+				tracerInstance.damage = 0;
+				tracerInstance.SetOwner(owner);
+				tracerInstance.MoveForward(shotDirection);
 			}
 			Unit hitUnit = hit.transform.root.gameObject.GetComponentInChildren<Unit>();
 			if(hitUnit != null)
@@ -373,8 +384,47 @@ public class Weapon : MonoBehaviour
 		Destroy(gameObject);
 	}
 	
+	protected Projectile GetProjectile()
+	{
+		foreach(Projectile p in projectilePool.ToArray())
+		{
+			if(p.gameObject.activeInHierarchy)
+				continue;
+			p.gameObject.SetActive(true);
+			return p;
+		}
+		// If we've gotten this far, we don't have any valid projectiles in the pool.
+		Projectile proj = Instantiate(projectile) as Projectile;
+		projectilePool.Add(proj);
+		return proj;
+	}
+	
+	public void RecycleProjectile(Projectile recycle)
+	{
+		recycle.gameObject.SetActive(false);
+		// Make sure it's inside the projectile pool.
+		foreach(Projectile p in projectilePool.ToArray())
+		{
+			if(recycle == p)
+			{
+				return;
+			}
+		}
+		// If we've gotten this far, for some reason the projectile was not included in the pool.
+		projectilePool.Add(recycle);
+	}
+	
 	void OnDisable()
 	{
 		CancelInvoke();
+	}
+	
+	void OnDestroy()
+	{
+		foreach(Projectile p in projectilePool.ToArray())
+		{
+			if(p != null)
+				Destroy(p.gameObject);
+		}
 	}
 }

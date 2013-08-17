@@ -7,7 +7,6 @@ using System.Collections;
 /// Different types of projectiles should inherit from this class to do unique things (such as blowing up and causing splash damage).
 /// </summary>
 [RequireComponent (typeof (Rigidbody))]
-[RequireComponent (typeof (ConstantForce))]
 public class Projectile : MonoBehaviour {
 	
 	public int damage = 25;
@@ -21,11 +20,20 @@ public class Projectile : MonoBehaviour {
 	public bool lightEnabled = true;
 	private TrailRenderer trailRenderer = null;
 	private MeshRenderer meshRenderer = null;
+	private bool disabled = false;
+	
 	
 	void Awake()
 	{
+		trailRenderer = gameObject.GetComponent<TrailRenderer>();
+		meshRenderer = gameObject.GetComponent<MeshRenderer>();
+	}
+	
+	void OnEnable()
+	{
+		disabled = false;
 		// Destroys the projectile if we can safely assume it won't hit anything.
-		Destroy (gameObject,PROJECTILE_DESTROY_TIME);
+		Invoke("Recycle",PROJECTILE_DESTROY_TIME);
 		if(light != null)
 		{
 			if(Random.value * 3 > 1)
@@ -38,23 +46,9 @@ public class Projectile : MonoBehaviour {
 				light.intensity = Random.Range(minLightIntensity,maxLightIntensity);
 			}
 		}
-		trailRenderer = gameObject.GetComponent<TrailRenderer>();
-		meshRenderer = gameObject.GetComponent<MeshRenderer>();
-	}
-	
-	void Start()
-	{
-		if(owner == null)
+		if(particleSystem != null)
 		{
-			Destroy(gameObject);
-			return;
-		}
-		Ray groundDetection = new Ray(transform.position,transform.forward);
-		RaycastHit hitInfo;
-		if(Physics.Raycast(groundDetection,out hitInfo,speed,owner.raycastIgnoreLayers))
-		{
-			if(hitInfo.transform.tag == "Ground")
-				Destroy(gameObject,DUD_PROJECTILE_DESTROY_TIME);
+			particleSystem.Play(true);
 		}
 	}
 	
@@ -67,6 +61,10 @@ public class Projectile : MonoBehaviour {
 			meshRenderer.material.color = owner.teamColor;
 		if(light != null)
 			light.color = owner.teamColor;
+		if(particleSystem != null)
+		{
+			gameObject.GetComponent<ParticleSystemRenderer>().material.color = owner.teamColor;
+		}
 	}
 	
 	public void MoveForward(Vector3 direction)
@@ -76,6 +74,12 @@ public class Projectile : MonoBehaviour {
 	
 	public void MoveForward(Vector3 direction, float moveSpeed)
 	{
+		if(moveSpeed > 0 && direction != Vector3.zero)
+		{
+			disabled = false;
+		}
+		if(constantForce == null)
+			gameObject.AddComponent<ConstantForce>();
 		constantForce.force = Vector3.Normalize(direction) * moveSpeed;
 	}
 	
@@ -83,7 +87,7 @@ public class Projectile : MonoBehaviour {
 	{
 		if(owner == null)
 		{
-			Destroy(gameObject);
+			Recycle();
 			return;
 		}
 		Ray groundDetection = new Ray(transform.position,transform.forward);
@@ -91,13 +95,13 @@ public class Projectile : MonoBehaviour {
 		if(Physics.Raycast(groundDetection,out hitInfo,speed,owner.raycastIgnoreLayers))
 		{
 			if(hitInfo.transform.tag == "Ground")
-				Destroy(gameObject,DUD_PROJECTILE_DESTROY_TIME);
+				Invoke("Recycle",DUD_PROJECTILE_DESTROY_TIME);
 		}
 		if(	Mathf.Abs(transform.position.x) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
 			Mathf.Abs(transform.position.y) > PROJECTILE_MAX_TRAVEL_DISTANCE || 
 			Mathf.Abs(transform.position.z) > PROJECTILE_MAX_TRAVEL_DISTANCE)
 		{
-			DestroyImmediate(gameObject);
+			Recycle();
 			return;
 		}
 		if(owner == null)
@@ -139,14 +143,14 @@ public class Projectile : MonoBehaviour {
 		if(collision.gameObject.GetComponent<Weapon>() == null)
 			DamageGameObject(collision.gameObject);
 		if(collision.gameObject.tag == "Ground")
-			Destroy(gameObject);
+			Recycle();
 	}
 	
 	void OnTriggerEnter(Collider trigger)
 	{
 		DamageGameObject(trigger.gameObject);
 		if(trigger.tag == "Ground")
-			Destroy(gameObject);
+			Recycle();
 	}
 	
 	/// <summary>
@@ -158,6 +162,8 @@ public class Projectile : MonoBehaviour {
 	/// </param>
 	private void DamageGameObject(GameObject collide)
 	{
+		if(disabled)
+			return;
 		// Never collide with certain layers.
 		LayerMask layer = collide.layer;
 		if(	layer == LayerMask.NameToLayer("Ignore Raycast") ||
@@ -177,7 +183,7 @@ public class Projectile : MonoBehaviour {
 			// If we hit a weapon, we don't damage the unit holding it.
 			if(unit.weapon != null && collide == unit.weapon.gameObject)
 			{
-				Destroy(gameObject);
+				Recycle();
 				return;
 			}
 			// Let the weapon that shot us know we hit something.
@@ -188,6 +194,24 @@ public class Projectile : MonoBehaviour {
 				unit.Damage(damage,owner);
 		}
 		// Make sure we don't hit someone else afterward.
-		Destroy(gameObject);
+		Recycle();
+	}
+	
+	private void Recycle()
+	{
+		CancelInvoke();
+		disabled = true;
+		if(owner == null || owner.weapon == null)
+		{
+			Destroy(gameObject);
+			return;
+		}
+		if(particleSystem != null)
+		{
+			particleSystem.Stop(true);
+		}
+		rigidbody.velocity = Vector3.zero;
+		rigidbody.angularVelocity = Vector3.zero;
+		owner.weapon.RecycleProjectile(this);
 	}
 }
