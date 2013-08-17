@@ -22,7 +22,7 @@ public class Commander : Leader
 	public Transform[] spawnPoints;
 	public float spawnTime = 8.0f;
 	protected float _spawnTime;
-	protected List<Leader> leaders = new List<Leader>();
+	protected Dictionary<int, Leader> leaders = new Dictionary<int, Leader>();
 	public Objective[] objectives;
 	protected Dictionary<int,Unit> allUnits = new Dictionary<int, Unit>();
 	protected Dictionary<int, GameObject> unitCards = new Dictionary<int, GameObject>();
@@ -30,7 +30,7 @@ public class Commander : Leader
 	protected int currentOrderIndex = 0;
 	protected float RANDOM_SPAWN_RANGE = 10.0f;
 	protected int leaderCount = 0;
-	protected int MAX_LEADER_COUNT = 4;
+	protected int MAX_LEADER_COUNT = 9;
 	public int teamScore = 0;
 	public AudioClip goalScored = null;
 	protected List<Unit> backloggedUnits = new List<Unit>();
@@ -108,11 +108,18 @@ public class Commander : Leader
 		
 		if(!isPlayer)
 			return;
-		if(Input.GetKeyDown(KeyCode.F5))
-			Time.timeScale += 1.0f;
-		if(Input.GetKeyDown(KeyCode.F6))
-			Time.timeScale /= 2;
 		recheckLayerTimer += Time.time;
+		foreach(KeyValuePair<int,Leader> kvp in leaders)
+		{
+			Leader currentLeader = kvp.Value;
+			if(currentLeader == null || !currentLeader.IsAlive())
+				continue;
+			int leaderID = kvp.Key;
+			string id = "Select Group "+leaderID.ToString();
+			if(!Input.GetButtonDown(id))
+				continue;
+			SelectUnits(currentLeader.GetID());
+		}
 		if(recheckLayerTimer > RECHECK_LAYER_TIME)
 		{
 			Unit[] layerChange = ChangeNearbyUnitLayers(gameObject.tag);
@@ -427,7 +434,13 @@ public class Commander : Leader
 		if(leaderCount >= MAX_LEADER_COUNT)
 			return null;
 		Leader leader = unit.UpgradeUnit(this);
-		leaders.Add(leader);
+		for(int i = 1; i <= MAX_LEADER_COUNT; i++)
+		{
+			if(leaders.ContainsKey(i))
+				continue;
+			leaders.Add(i,leader);
+			break;
+		}
 		unitID[leader.GetID()] = leader;
 		leaderCount++;
 		return leader;
@@ -438,7 +451,15 @@ public class Commander : Leader
 		if(unit is Leader)
 		{
 			Leader leader = (Leader)unit;
-			leaders.Remove(leader);
+			int i = -1;
+			foreach(KeyValuePair<int, Leader> kvp in leaders)
+			{
+				if(kvp.Value != leader)
+					continue;
+				i = kvp.Key;
+				break;
+			}
+			leaders.Remove(i);
 			unit = leader.DowngradeUnit();
 			unitID[unit.GetID()] = unit;
 			leaderCount--;
@@ -715,7 +736,7 @@ public class Commander : Leader
 	
 	public Leader[] GetLeaders()
 	{
-		List<Leader> leaderList = leaders;
+		List<Leader> leaderList = new List<Leader>(leaders.Values);
 		if(GetNonAssignedUnits().Length > 0)
 			leaderList.Add(this);
 		return leaderList.ToArray();

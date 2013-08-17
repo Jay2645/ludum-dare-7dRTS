@@ -97,6 +97,8 @@ public class UnitMotor : MonoBehaviour {
 	
 	protected void RecalculatePaths()
 	{
+		if(navigator == null || !navigator.enabled)
+			return;
 		if(moveTarget != null)
 		{
 			if(navigator.hasPath && Vector3.Distance(navigator.pathEndPosition,transform.position) <= MOVE_CLOSE_ENOUGH_DISTANCE)
