@@ -29,23 +29,32 @@ public class Healthpack : MonoBehaviour {
 			return;
 		isEnabled = false;
 		tag = "Untagged";
-		Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>();
+		//Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>();
 		/*foreach(Renderer render in renderers)
 		{
 			render.enabled = false;
 		}*/
 		renderer.enabled = false;
+		if(particleSystem != null)
+			particleSystem.Stop(true);
 		Invoke("Respawn", RESPAWN_TIME);
+	}
+	
+	public bool IsDisabled()
+	{
+		return !isEnabled;
 	}
 	
 	private void Respawn()
 	{
-		Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>();
+		//Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>();
 		/*foreach(Renderer render in renderers)
 		{
 			render.enabled = true;
 		}*/
 		renderer.enabled = true;
+		if(particleSystem != null)
+			particleSystem.Play(true);
 		tag = "Regen";
 		isEnabled = true;
 	}

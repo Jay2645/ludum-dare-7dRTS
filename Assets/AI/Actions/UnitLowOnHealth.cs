@@ -35,7 +35,7 @@ public class UnitLowOnHealth : RAIN.Action.Action
 		}
 		if(!unit.IsAlive())
 			return RAIN.Action.Action.ActionResult.FAILURE;
-		unit.SetAgent(agent);
+		//unit.SetAgent(agent);
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 

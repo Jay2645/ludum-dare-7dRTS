@@ -24,6 +24,7 @@ public class Commander : Leader
 	protected float _spawnTime;
 	protected Dictionary<int, Leader> leaders = new Dictionary<int, Leader>();
 	public Objective[] objectives;
+	protected Order currentOrder = Order.move;
 	protected Dictionary<int,Unit> allUnits = new Dictionary<int, Unit>();
 	protected Dictionary<int, GameObject> unitCards = new Dictionary<int, GameObject>();
 	protected static Order[] orderList = {Order.move,Order.attack,Order.defend,Order.stop};
@@ -555,7 +556,6 @@ public class Commander : Leader
 			{
 				GiveOrder(currentOrder,hit.point);
 			}
-			Debug.Log("Giving "+currentOrder+" order.");
 		}
 	}
 	
@@ -577,12 +577,6 @@ public class Commander : Leader
 				GiveOrder(order,target,unit);
 			}
 		}
-	}
-	
-	public override void GiveOrder(Order order, Transform target, Unit unit)
-	{
-		Debug.Log ("Sending order to "+unit);
-		unit.RecieveOrder(order,target,this);
 	}
 	
 	protected override void CreateWeapon(Weapon weapon)

@@ -35,12 +35,13 @@ public class ShootEnemy : RAIN.Action.Action
 
     public override RAIN.Action.Action.ActionResult Execute(RAIN.Core.Agent agent, float deltaTime)
     {
-		RAIN.Action.Action.ActionResult result = us.Shoot(agent,deltaTime,enemy);
+		/*RAIN.Action.Action.ActionResult result = us.Shoot(agent,deltaTime,enemy);
 		if(!enemy.IsAlive())
 		{
 			agent.actionContext.SetContextItem<int>("hasEnemy",0);
 		}
-		return result;
+		return result;*/
+		return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 
     public override RAIN.Action.Action.ActionResult Stop(RAIN.Core.Agent agent, float deltaTime)

@@ -11,6 +11,7 @@ using System.Collections.Generic;
 public class Leader : Unit 
 {
 	protected Dictionary<int,Unit> unitID = new Dictionary<int, Unit>();
+	protected Dictionary<Unit,OrderData> unitCommands = new Dictionary<Unit, OrderData>();
 	protected static Dictionary<int, Leader> leaderLookup = new Dictionary<int, Leader>();
 	protected List<int> selectedUnits = new List<int>();
 	protected GameObject tempOrderTarget = null;
@@ -192,8 +193,10 @@ public class Leader : Unit
 		unitID.Add(id,unit);
 		commander.AddUnit(unit);
 		leaderLookup.Add(id,this);
-		if(currentOrder != Order.stop)
+		if(orderData != null)
 		{
+			Order currentOrder = orderData.GetOrder();
+			Transform orderTarget = orderData.GetOrderTarget();
 			GiveOrder(currentOrder,orderTarget,unit);
 		}
 		ownedUnits = new Unit[unitID.Count];
@@ -249,11 +252,11 @@ public class Leader : Unit
 		RegisterUnit(newUnit);
 	}
 	
-	public override void RecieveOrder (Order order, Transform target, Leader giver)
+	public override void RecieveOrder (OrderData data)
 	{
 		//Debug.Log ("Recieved order from "+giver+": "+order.ToString()+" "+target.position);
-		base.RecieveOrder (order, target, giver);
-		GiveOrder(order,target);
+		base.RecieveOrder (data);
+		GiveOrder(data.GetOrder(),data.GetOrderTarget());
 	}
 	
 	public Unit DowngradeUnit()
@@ -266,6 +269,7 @@ public class Leader : Unit
 			u.RegisterLeader(commander);
 		}
 		Unit downgrade = gameObject.AddComponent<Unit>();
+		downgrade.JustPromoted();
 		downgrade.renderer.material.SetColor("_OutlineColor",outlineColor);
 		leader = (Leader)commander;
 		downgrade.CloneUnit(this);
@@ -317,11 +321,49 @@ public class Leader : Unit
 		}
 	}
 	
-	public virtual void GiveOrder(Order order, Transform target, Unit unit)
+	public void GiveOrder(Order order, Transform target, Unit unit)
 	{
-		if(unit.GetOrder() != Order.stop && unit.GetLastOrderer() == Commander.player)
+		if(!IsPlayer() && unit.GetOrder() != Order.stop && unit.GetLastOrderer() == Commander.player)
 			return;
-		unit.RecieveOrder(order,target,this);
+		Debug.Log("Giving "+order+" order.");
+		OrderData data = new OrderData(this,unit);
+		data.SetOrder(order,true);
+		data.SetTarget(target);
+		unit.RecieveOrder(data);
+		if(unitCommands.ContainsKey(unit))
+		{
+			unitCommands[unit] = data;
+		}
+		else
+		{
+			unitCommands.Add(unit,data);
+		}
+	}
+	
+	public void UnitUpdateOrder(Unit unit, OrderData data)
+	{
+		if(unitCommands.ContainsKey(unit))
+		{
+			unitCommands[unit] = data;
+		}
+		else
+		{
+			unitCommands.Add(unit,data);
+		}
+	}
+	
+	public void OnUnitReachedTarget(Unit unit)
+	{
+		if(!unitID.ContainsValue(unit))
+			return;
+		Debug.LogWarning("TODO");
+	}
+	
+	public void UnitRequestOrders(Unit unit)
+	{
+		if(!unitID.ContainsValue(unit))
+			return;
+		Debug.LogWarning("TODO.");
 	}
 	
 	protected Objective GetAttackObjective()

@@ -41,7 +41,7 @@ public class DetectEnemy : RAIN.Action.Action
     public override RAIN.Action.Action.ActionResult Execute(RAIN.Core.Agent agent, float deltaTime)
     {
 		
-		bestUnit = us.DetectEnemies(agent,enemy);
+		bestUnit = us.DetectEnemies(enemy);
 		if(bestUnit == null)
 			return RAIN.Action.Action.ActionResult.FAILURE;
 		hasEnemy = 1;

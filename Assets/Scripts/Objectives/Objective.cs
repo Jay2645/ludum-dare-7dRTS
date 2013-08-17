@@ -36,17 +36,39 @@ public class Objective : MonoBehaviour {
 	
 	void OnTriggerEnter(Collider other)
 	{
-		if(captureIndex != 0)
+		if(captureIndex != 0 && !(this is Base))
 			return;
 		Unit unitEntered = other.gameObject.GetComponent<Unit>();
 		if(unitEntered == null)
 			return;
 		if(OwnsObjective(unitEntered))
+		{
+			Debug.Log ("Adding "+unitEntered+" to defending units.");
 			defendingContestants.Add(unitEntered);
+		}
 		else
+		{
+			unitEntered.OnCapturingObjective(this);
 			attackingContestants.Add(unitEntered);
+		}
 		unitEntered.isCapturing = true;
 		OnContestantEnter(unitEntered);
+	}
+	
+	void OnTriggerExit(Collider other)
+	{
+		Unit unitExited = other.gameObject.GetComponent<Unit>();
+		if(unitExited == null)
+			return;
+		if(defendingContestants.Contains(unitExited))
+		{
+			Debug.Log ("Removing "+unitExited+" from defending units.");
+			defendingContestants.Remove(unitExited);
+		}
+		else if(attackingContestants.Contains(unitExited))
+		{
+			attackingContestants.Remove(unitExited);
+		}
 	}
 	
 	/// <summary>

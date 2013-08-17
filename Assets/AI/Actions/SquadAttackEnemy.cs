@@ -31,7 +31,10 @@ public class SquadAttackEnemy : RAIN.Action.Action
 
     public override RAIN.Action.Action.ActionResult Execute(RAIN.Core.Agent agent, float deltaTime)
     {
-		leader.RecieveOrder(Order.attack,unitTarget.transform,leader);
+		OrderData data = new OrderData(leader,leader);
+		data.SetOrder(Order.attack,true);
+		data.SetTarget(unitTarget.transform);
+		leader.RecieveOrder(data);
         return RAIN.Action.Action.ActionResult.SUCCESS;
     }
 

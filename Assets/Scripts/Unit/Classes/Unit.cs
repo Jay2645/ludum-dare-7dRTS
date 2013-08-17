@@ -3,17 +3,190 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
+/// All possible orders that can be given to units.
+/// </summary>
+public enum Order
+{
+	move,
+	attack,
+	defend,
+	stop
+}
+
+/// <summary>
+/// All data about our current order.
+/// </summary>
+public class OrderData
+{
+	/// <summary>
+	/// Initializes a new instance of the <see cref="OrderData"/> class.
+	/// The simplest way to initialize. Requires a Leader which gave the orders and a Unit to recieve them.
+	/// If nothing is changed, this will give the unit a "stop" command.
+	/// </summary>
+	/// <param name='leader'>
+	/// Who is giving the orders?
+	/// </param>
+	/// <param name='unit'>
+	/// Who is recieving the orders?
+	/// </param>
+	public OrderData(Leader leader, Unit unit)
+	{
+		this.leader = leader;
+		this.unit = unit;
+	}
+	/// <summary>
+	/// Where is this telling the Unit to be sent to?
+	/// </summary>
+	private Transform orderTarget = null;
+	/// <summary>
+	/// Where are we actually being sent to?
+	/// </summary>
+	private Transform moveTarget = null;
+	/// <summary>
+	/// How are we supposed to act along the way?
+	/// </summary>
+	private Order order = Order.stop;
+	/// <summary>
+	/// What Unit are we giving these orders to?
+	/// </summary>
+	private Unit unit = null;
+	/// <summary>
+	/// Who created this order?
+	/// </summary>
+	private Leader leader = null;
+	/// <summary>
+	/// How this Unit should move on the way to fulfilling the order.
+	/// </summary>
+	private MoveType moveType = MoveType.Strict;
+	/// <summary>
+	/// Has the movement type been changed from its default state?
+	/// </summary>
+	private bool moveTypeChanged = false;
+	/// <summary>
+	/// Has the Unit updated this?
+	/// </summary>
+	private bool updatedByUnit = false;
+	
+	/// <summary>
+	/// Sets the order target (the general location we're going to).
+	/// </summary>
+	/// <param name='target'>
+	/// The transform that we're moving towards.
+	/// </param>
+	public void SetTarget(Transform target)
+	{
+		orderTarget = target;
+	}
+	/// <summary>
+	/// Gets our order target (the general location we're going to).
+	/// </summary>
+	/// <returns>
+	/// The order target that we're moving to.
+	/// </returns>
+	public Transform GetOrderTarget()
+	{
+		return orderTarget;
+	}
+	
+	/// <summary>
+	/// Sets the exact location that we're moving towards.
+	/// If this is set by the Unit that we're giving the orders, it automatically sends the updated location to the lader.
+	/// </summary>
+	/// <param name='moveTarget'>
+	/// The exact Transform we're moving to.
+	/// </param>
+	/// <param name='setter'>
+	/// The Unit setting this move target.
+	/// </param>
+	public void SetMoveTarget(Transform moveTarget, Unit setter)
+	{
+		this.moveTarget = moveTarget;
+		if(setter == unit)
+		{
+			updatedByUnit = true;
+			leader.UnitUpdateOrder(unit, this);
+		}
+	}
+	public Transform GetMoveTarget()
+	{
+		if(moveTarget == null)
+			return orderTarget;
+		return moveTarget;
+	}
+	
+	public void SetOrder(Order order, bool autoMoveType)
+	{
+		this.order = order;
+		if(!autoMoveType)
+			return;
+		if(order == Order.attack || order == Order.defend)
+		{
+			SetMoveType(MoveType.Loose);
+		}
+		else if(order == Order.stop)
+		{
+			SetMoveType(MoveType.DefendSelf);
+		}
+		else if(order == Order.move)
+		{
+			SetMoveType(MoveType.Strict);
+		}
+	}
+	public Order GetOrder()
+	{
+		return order;
+	}
+	
+	public void SetMoveType(MoveType movementType)
+	{
+		moveTypeChanged = true;
+		moveType = movementType;
+	}
+	public bool MoveTypeWasChanged()
+	{
+		return moveTypeChanged;
+	}
+	public MoveType GetMoveType()
+	{
+		return moveType;
+	}
+	
+	public void UpdatedByUnit()
+	{
+		updatedByUnit = true;
+		leader.UnitUpdateOrder(unit,this);
+	}
+	public bool WasUpdatedByUnit()
+	{
+		return updatedByUnit;
+	}
+	
+	public Leader GetLeader()
+	{
+		return leader;
+	}
+}
+
+/// <summary>
 /// What is this Unit currently doing?
-/// Idle means we are not doing anything of note.
-/// Moving means we are moving to an objective.
-/// InCombat means we are being shot at or are in pursuit of an enemy.
-/// CapturingObjective means we are presently capturing an objective.
 /// </summary>
 public enum UnitStatus
 {
+	/// <summary>
+	/// Idle means we are not doing anything of note.
+	/// </summary>
 	Idle,
+	/// <summary>
+	/// Moving means we are moving to an objective.
+	/// </summary>
 	Moving,
+	/// <summary>
+	/// InCombat means we are being shot at or are in pursuit of an enemy.
+	/// </summary>
 	InCombat,
+	/// <summary>
+	/// CapturingObjective means we are presently capturing an objective.
+	/// </summary>
 	CapturingObjective
 }
 
@@ -96,7 +269,7 @@ public class Unit : MonoBehaviour
 	/// <summary>
 	/// How far away do we have to be from our leader to move towards it.
 	/// </summary>
-	protected const float MOVE_TO_LEADER_DISTANCE = 50.0f;
+	protected const float MOVE_TO_LEADER_DISTANCE = 25.0f;
 	/// <summary>
 	/// How long to wait between rechecking for enemies.
 	/// </summary>
@@ -124,7 +297,11 @@ public class Unit : MonoBehaviour
 	/// <summary>
 	/// How often the AI forces a repath when going to an objective.
 	/// </summary>
-	private const float AI_REPATH_TIME = 9.0f;
+	protected const float AI_REPATH_TIME = 9.0f;
+	/// <summary>
+	/// The maximum distance a health pack can be before we hunt it down.
+	/// </summary>
+	protected const float MAX_HEALTH_DISTANCE = 100.0f; 
 	
 	// Unit variables //
 	
@@ -183,6 +360,7 @@ public class Unit : MonoBehaviour
 	/// Is this unit currently capturing an objective?
 	/// </summary>
 	public bool isCapturing = false;
+	protected Objective capturingObjective = null;
 	/// <summary>
 	/// Does this unit avoid all damage?
 	/// </summary>
@@ -191,6 +369,7 @@ public class Unit : MonoBehaviour
 	/// How much longer until we respawn?
 	/// </summary>
 	protected float timeToOurRespawn = 0.0f;
+	protected bool justPromoted = false;
 	
 	
 	// IDENTIFICATION
@@ -222,13 +401,9 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected Leader lastOrderer = null;
 	/// <summary>
-	/// Our AI agent.
+	/// All information about our current order.
 	/// </summary>
-	protected RAIN.Core.Agent agent = null;
-	/// <summary>
-	/// Our current order.
-	/// </summary>
-	public Order currentOrder = Order.attack;
+	protected OrderData orderData;
 	/// <summary>
 	/// The objective we're currently defending.
 	/// </summary>
@@ -294,13 +469,9 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected float timeSinceLastRepath = 0.0f;
 	/// <summary>
-	/// The Transform we were ordered to go to.
-	/// </summary>
-	protected Transform orderTarget = null;
-	/// <summary>
 	/// What type of movement do we use?
 	/// </summary>
-	protected MoveType movementType = MoveType.Loose;
+	protected MoveType movementType = MoveType.DefendSelf;
 	
 	
 	// VISUALS
@@ -457,9 +628,9 @@ public class Unit : MonoBehaviour
 		Debug.Log ("Resetting variables on "+this);
 		if(!IsPlayer())
 		{
-			currentOrder = Order.stop;
 			SetOutlineColor(outlineColor);
 		}
+		justPromoted = false;
 		ResetTarget();
 		health = _maxHealth;
 		if(_initialWeapon != null)
@@ -471,10 +642,20 @@ public class Unit : MonoBehaviour
 			}
 		}
 		
+		Commander commander = GetCommander();
+		foreach(Unit unit in commander.GetAllUnits())
+		{
+			if(unit == this || !unit.IsAlive())
+				continue;
+			Physics.IgnoreCollision(collider,unit.collider,true);
+		}
+		if(!(this is Commander))
+		{
+			Physics.IgnoreCollision(collider,commander.collider,true);
+		}
 		// Move it to the spawn point.
 		if(spawnPoint == Vector3.zero)
 		{
-			Commander commander = GetCommander();
 			if(commander != null)
 			{
 				spawnPoint = commander.GetSpawnPoint();
@@ -611,14 +792,14 @@ public class Unit : MonoBehaviour
 	protected void UnitUpdate()
 	{
 		CheckHealth();
-		if(running)
+		if(running || justPromoted && IsOwnedByPlayer())
 			return;
 		Commander commander = GetCommander();
 		if(spawnPoint == Vector3.zero && commander != null)
 		{
 			spawnPoint = commander.GetSpawnPoint();
 		}
-			transform.position = spawnPoint;
+		transform.position = spawnPoint;
 		if(frameCount >= 2)
 			running = true;
 		frameCount++;
@@ -671,35 +852,6 @@ public class Unit : MonoBehaviour
 		}
 		else if(!isSelected && selectEffect != null)
 		{
-			Destroy(selectEffect);
-			selectEffect = null;
-		}
-		Transform moveTarget =  motor.GetTarget();
-		if(isSelected && currentOrder != Order.stop && moveTarget != null)
-		{
-			if(moveEffect == null)
-			{
-				if(currentOrder == Order.move)
-				{
-					moveEffect = (GameObject)Instantiate(movePrefab);
-				}
-				else if(currentOrder == Order.defend)
-				{
-					moveEffect = (GameObject)Instantiate(defendPrefab);
-				}
-				else if(currentOrder == Order.attack)
-				{
-					moveEffect = (GameObject)Instantiate(attackPrefab);
-				}
-				if(moveEffect != null)
-				{
-					moveEffect.transform.parent = moveTarget;
-					moveEffect.transform.localPosition = Vector3.zero;
-				}
-			}
-		}
-		else
-		{
 			ResetEffects();
 		}
 	}
@@ -713,8 +865,7 @@ public class Unit : MonoBehaviour
 			return;
 		if(status != UnitStatus.InCombat && status != UnitStatus.CapturingObjective)
 		{
-			lastStatus = status;
-			status = UnitStatus.InCombat;
+			SetStatus(UnitStatus.InCombat);
 		}
 		combatTime = 0.0f;
 		lastDamager = damager;
@@ -763,6 +914,14 @@ public class Unit : MonoBehaviour
 	
 	public void SetStatus(UnitStatus uStatus)
 	{
+		if(uStatus == UnitStatus.InCombat)
+		{
+			if(movementType == MoveType.Strict || status == UnitStatus.InCombat)
+				return;
+			lastStatus = status;
+			status = uStatus;
+			return;
+		}
 		if(status == uStatus || status == UnitStatus.InCombat || status == UnitStatus.CapturingObjective)
 			return;
 		status = uStatus;
@@ -811,90 +970,123 @@ public class Unit : MonoBehaviour
 		if(!leader.IsOwnedByPlayer())
 			Destroy(label);
 		Deselect();
-		currentOrder = Order.stop;
 		ResetTarget();
 		lastOrderer = null;
-		float distanceFromLeader = Vector3.Distance(transform.position,leader.transform.position);
-		if(distanceFromLeader >= MOVE_TO_LEADER_DISTANCE)
-		{
-			RecieveOrder(Order.move,leader.transform,null);
-		}
 		aBase = leader.aBase;
 		teamColor = leader.teamColor;
 		leader.RegisterUnit(this);
 		renderer.material.color = teamColor;
 		SetOutlineColor(outlineColor);
+		float distanceFromLeader = Vector3.Distance(transform.position,leader.transform.position);
+		if(distanceFromLeader >= MOVE_TO_LEADER_DISTANCE)
+		{
+			OrderData supportLeader = new OrderData(leader,this);
+			supportLeader.SetOrder(Order.move,false);
+			supportLeader.SetMoveType(MoveType.DefendSelf);
+			supportLeader.SetTarget(leader.transform);
+			RecieveOrder(supportLeader);
+		}
+		else
+		{
+			leader.UnitRequestOrders(this);
+		}
 		if(IsOwnedByPlayer() && !IsLedByPlayer())
 			MessageList.Instance.AddMessage(uName+", acknowledging "+leader.name+" as my new leader.");
 	}
 	
-	public void MoveTo(GameObject target, string targetName, bool parent, bool useRandom, MoveType moveType)
+	public void MoveTo(GameObject target, string targetName, bool parent, bool useRandom, MoveType moveType, string reason, bool debug)
 	{
 		timeSinceLastRepath = 0.0f;
-		motor.MoveTo(target,targetName,parent,useRandom,moveType);
+		motor.MoveTo(target,targetName,parent,useRandom,moveType, reason, debug);
 		CreateSelected();
 	}
 	
-	public void MoveTo(Transform target, MoveType moveType)
+	public void MoveTo(Transform target, MoveType moveType, string reason, bool debug)
 	{
-		if(target == orderTarget)
+		if(orderData == null)
+			return;
+		if(target == orderData.GetOrderTarget())
 		{
 			target = motor.MakeMoveTarget(target);
+			orderData.SetMoveTarget(target,this);
 		}
 		timeSinceLastRepath = 0.0f;
-		motor.MoveTo(target,moveType);
+		motor.MoveTo(target,moveType, reason, debug);
 		CreateSelected();
 	}
 	
-	public virtual void RecieveOrder(Order order, Transform target, Leader giver)
+	public virtual void RecieveOrder(OrderData data)
 	{
-		if(target == null || target == transform && order != Order.stop)
+		if(motor == null || !motor.enabled || IsPlayer())
 			return;
-		if(motor == null || !motor.enabled || IsPlayer() || order == currentOrder && target == orderTarget)
-			return;
-		Debug.Log (this+" has recieved "+order);
-		ResetTarget();
-		lastOrderer = giver;
-		currentOrder = order;
-		if(order == Order.stop)
+		Order order = data.GetOrder();
+		if(data.MoveTypeWasChanged())
+		{
+			movementType = data.GetMoveType();
+		}
+		Transform target = data.GetOrderTarget();
+		if(order == Order.stop || target == null)
 		{
 			motor.StopNavigation();
 			return;
 		}
-		orderTarget = target;
+		if(target == transform || orderData != null && order == orderData.GetOrder() && target == orderData.GetOrderTarget())
+			return;
+		Debug.Log (this+" has recieved "+order);
+		ResetTarget();
+		orderData = data;
+		lastOrderer = orderData.GetLeader();
 		Objective objective = target.GetComponent<Objective>();
-		if(target.GetComponent<Unit>() != null || objective != null)
+		if(objective != null)
 		{
-			if(objective != null)
-			{
-				currentObjective = objective;
-				if(order == Order.attack)
-					attackObjective = objective;
-				else if(order == Order.defend)
-					defendObjective = objective;
-			}
+			currentObjective = objective;
+			if(order == Order.attack)
+				attackObjective = objective;
+			else if(order == Order.defend)
+				defendObjective = objective;
 		}
-		target = motor.MakeMoveTarget(target);
+		if(target.GetComponent<Unit>() == null)
+		{
+			target = motor.MakeMoveTarget(target);
+		}
+		else
+		{
+			target = motor.MakeMoveTarget(target.gameObject,uName+"'s Attack Target",true,false);
+		}
 		if(Vector3.Distance(target.position,transform.position) < UnitMotor.MOVE_CLOSE_ENOUGH_DISTANCE)
 		{
 			if(order != Order.defend)
 			{
-				currentOrder = Order.stop;
+				orderData.SetTarget(null);
+				orderData.SetOrder(Order.stop,true);
+				orderData.UpdatedByUnit();
 				ResetTarget();
+				motor.StopNavigation();
 			}
 			return;
 		}
-		MoveTo(target,MoveType.Strict);
+		orderData.SetMoveTarget(target,this);
+		MoveTo(target,movementType,uName+" is moving due to order recieved by "+lastOrderer,true);
 		// This is a quick-and-dirty way for players to see that the unit has recieved orders correctly.
 		if(lastOrderer == (Leader)Commander.player)
+		{
+			Debug.Log (this+" is moving to "+target);
 			MessageList.Instance.AddMessage(uName+", acknowledging "+order.ToString()+" order.");
+		}
+	}
+	
+	public MoveType GetMoveType()
+	{
+		return movementType;
 	}
 	
 	public Order GetOrder()
 	{
 		if(status == UnitStatus.InCombat)
 			return Order.attack;
-		return currentOrder;
+		if(orderData == null)
+			return Order.stop;
+		return orderData.GetOrder();
 	}
 	
 	public Leader GetLastOrderer()
@@ -1023,6 +1215,8 @@ public class Unit : MonoBehaviour
 			leader.RemoveUnit(id);
 		if(currentObjective != null)
 			currentObjective.RemovePlayer(this);
+		if(capturingObjective != null)
+			capturingObjective.RemovePlayer(this);
 		IsLookedAt(false);
 		gameObject.SetActive(false);
 		if(leader != null)
@@ -1070,17 +1264,25 @@ public class Unit : MonoBehaviour
 		}
 	}
 	
-	public void OnCapturingObjective()
+	public void OnTargetReached()
+	{
+		leader.OnUnitReachedTarget(this);
+		SetStatus(UnitStatus.Idle);
+	}
+	
+	public void OnCapturingObjective(Objective objective)
 	{
 		if(status != UnitStatus.InCombat)
 		{
 			lastStatus = status;
 		}
+		capturingObjective = objective;
 		status = UnitStatus.CapturingObjective;
 	}
 	
 	public void OnCapturedObjective()
 	{
+		capturingObjective = null;
 		status = lastStatus;
 	}
 	
@@ -1093,7 +1295,7 @@ public class Unit : MonoBehaviour
 	
 	public bool IsAlive()
 	{
-		bool isAlive = gameObject != null && gameObject.activeInHierarchy;
+		bool isAlive = this != null && gameObject != null && gameObject.activeInHierarchy;
 		if(isAlive && weapon == null && health <= 0) // Useful for debugging; automatically spawns the GameObject if we re-enable it from the inspector.
 			Spawn();
 		return isAlive;
@@ -1122,9 +1324,15 @@ public class Unit : MonoBehaviour
 		}
 	}
 	
+	public void JustPromoted()
+	{
+		justPromoted = true;
+	}
+	
 	public Leader UpgradeUnit(Commander commander)
 	{
 		Leader upgrade = gameObject.AddComponent<Leader>();
+		upgrade.JustPromoted();
 		upgrade.SetOutlineColor(outlineColor);
 		upgrade.CloneUnit(this);
 		upgrade.RegisterCommander(commander);
@@ -1167,17 +1375,13 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected void HandleUniversalAI(bool force)
 	{
-		//if(force || timeSinceLastDetect > ENEMY_RECHECK_TIME || isShooting)
-		//{
+		if(status == UnitStatus.Idle || movementType == MoveType.Loose || status == UnitStatus.InCombat && movementType == MoveType.DefendSelf)
 			FindShootTargets();
-			//timeSinceLastDetect = 0.0f;
-		//}
-		if(force || status == UnitStatus.InCombat && timeSinceLastRepath > AI_REPATH_TIME)
+		if(force || status != UnitStatus.InCombat && timeSinceLastRepath > AI_REPATH_TIME)
 		{
 			if(currentObjective != null)
 				RepathToObjective();
 		}
-		//timeSinceLastDetect += Time.deltaTime;
 		timeSinceLastRepath += Time.deltaTime;
 	}
 	
@@ -1198,28 +1402,17 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected void FindShootTargets()
 	{
-		if(agent == null)
-			return;
-		DetectEnemies(agent,enemyName);
+		bestUnit = null;
+		DetectEnemies(enemyName);
 		if(bestUnit == null)
 		{
 			if(status == UnitStatus.InCombat)
 			{
 				LeaveCombat();
 			}
-			/*if(currentOrder != Order.stop && orderTarget != null)
-			{
-				MoveTo(orderTarget,movementType);
-			}*/
 			return;
 		}
-		//RAIN.Action.Action.ActionResult result = 
-		Shoot(agent,Time.deltaTime,bestUnit);
-		/*if(result == RAIN.Action.Action.ActionResult.FAILURE)
-		{
-			isShooting = false;
-			RecalculatePaths();
-		}*/
+		Shoot(bestUnit);
 	}
 	
 	/// <summary>
@@ -1240,7 +1433,7 @@ public class Unit : MonoBehaviour
 		if(currentObjective == null)
 			return;
 		ResetTarget();
-		MoveTo(motor.MakeMoveTarget(currentObjective.transform),movementType);
+		MoveTo(motor.MakeMoveTarget(currentObjective.transform),movementType,uName+" is responding to a repath call.",false);
 	}
 	
 	/// <summary>
@@ -1255,12 +1448,12 @@ public class Unit : MonoBehaviour
 	/// <param name='enemy'>
 	/// A string representing the aspect owned by our enemy.
 	/// </param>
-	public Unit DetectEnemies(RAIN.Core.Agent rAgent,string enemyAspect)
+	public Unit DetectEnemies(string enemyAspect)
 	{
 		if(bestUnit != null && bestUnit.IsAlive() && Vector3.Distance(bestUnit.transform.position,transform.position) <= weapon.range)
 			return bestUnit;
 		lastDetectTime = Time.time;
-		Unit[] units = DetectUnits(rAgent,enemyAspect);
+		Unit[] units = DetectUnits(enemyAspect);
 		if(units.Length == 0)
 		{
 			bestUnit = null;
@@ -1286,7 +1479,7 @@ public class Unit : MonoBehaviour
 		return bestUnit;
 	}
 	
-	public Unit[] DetectUnits(RAIN.Core.Agent rAgent, string unitTag)
+	public Unit[] DetectUnits(string unitTag)
 	{
 		if(weapon == null)
 			return new Unit[0];
@@ -1328,54 +1521,6 @@ public class Unit : MonoBehaviour
 		}
 		return detectedUnits.ToArray();
 	}
-		/*if(rAgent == null)
-			return DetectUnits(unitTag,50.0f);
-		agent = rAgent;
-		// Sense any nearby enemies:
-		agent.GainInterestIn(unitTag);
-		agent.GainInterestIn(unitTag+" Gunshot");
-		agent.BeginSense();
-		agent.Sense();
-		// Fetch all GameObjects sensed:
-		GameObject[] gos = new GameObject[10];
-		agent.GetAllObjectsWithAspect(unitTag,out gos);
-		
-		// Narrow the list down to just our living enemies:
-		List<Unit> unitList = new List<Unit>();
-		foreach(GameObject go in gos)
-		{
-			Unit unit = go.GetComponent<Unit>();
-			if(unit == null || !unit.IsAlive())
-				continue;
-			Debug.Log (this+" detected "+unit);
-			unitList.Add(unit);
-		}
-		
-		gos = new GameObject[10];
-		agent.GetAllObjectsWithAspect(unitTag+" Gunshot",out gos);
-		foreach(GameObject go in gos)
-		{
-			if(go.audio == null)
-				continue;
-			Weapon gun = go.GetComponent<Weapon>();
-			if(gun == null || !gun.HasShotRecently())
-				continue;
-			Unit unit = gun.GetOwner();
-			if(unit == null || !unit.IsAlive())
-				continue;
-			Debug.Log (this+" heard "+unit+"'s gunshot.");
-			unitList.Add(unit);
-		}
-		
-		if(unitList.Count == 0)
-			return new Unit[0];
-		return unitList.ToArray();*/
-	//}
-	
-	public void SetAgent(RAIN.Core.Agent agent)
-	{
-		this.agent = agent;
-	}
 	
 	public Unit[] DetectUnits(string unitTag, float maxDistance)
 	{
@@ -1399,49 +1544,18 @@ public class Unit : MonoBehaviour
 			}
 		}
 		return detectedUnits.ToArray();
-		/*
-		 * OLD WAY
-		 * GameObject[] gos = GameObject.FindGameObjectsWithTag(unitTag);
-		if(gos.Length == 0)
-			return new Unit[0];
-		Vector3 cachedPosition = transform.position;
-		List<Unit> closestUnits = new List<Unit>();
-		foreach(GameObject go in gos)
-		{
-			Unit u = go.GetComponent<Unit>();
-			if(u == null || go == gameObject)
-				continue;
-			float distance = Vector3.Distance(cachedPosition,go.transform.position);
-			if(distance > maxDistance)
-				continue;
-			closestUnits.Add(u);
-		}
-		return closestUnits.ToArray();*/
 	}
 	
-	/// <summary>
-	/// Allows the AI to aim and shoot at a target.
-	/// </summary>
-	/// <param name='agent'>
-	/// The AI agent.
-	/// </param>
-	/// <param name='deltaTime'>
-	/// The time it's taken since the last step in the behavior tree, as reported by the agent.
-	/// </param>
-	/// <param name='enemy'>
-	/// The enemy we're trying to shoot at.
-	/// </param>
-	public RAIN.Action.Action.ActionResult Shoot(RAIN.Core.Agent agent, float deltaTime, Unit enemy)
+	public bool Shoot(Unit enemy)
 	{
 		if(enemy == null || !enemy.IsAlive() || weapon == null)
-			return RAIN.Action.Action.ActionResult.FAILURE;
+			return false;
 		if(weapon.ammo <= 0)
-			return RAIN.Action.Action.ActionResult.FAILURE;
+			return false;
 		float range = weapon.range;
 		if(range < Vector3.Distance(enemy.transform.position,transform.position))
-			return RAIN.Action.Action.ActionResult.FAILURE;
-		Quaternion rot = Quaternion.LookRotation(enemy.transform.position - transform.position);
-		transform.rotation = Quaternion.Slerp(transform.rotation,rot,Time.deltaTime * 4);
+			return false;
+		motor.LookAt(enemy.transform.position);
 		Vector3 weaponForward = weapon.transform.up;
 		Ray shotRay = new Ray(weapon.transform.position,weaponForward);
 		Debug.DrawRay(weapon.transform.position,weaponForward,Color.red);
@@ -1450,7 +1564,7 @@ public class Unit : MonoBehaviour
 		{
 			if(hitInfo.transform.tag == "Ground")
 			{
-				return RAIN.Action.Action.ActionResult.FAILURE;
+				return false;
 			}
 			/*Unit unit = hitInfo.collider.gameObject.GetComponent<Unit>();
 			if(unit != null)
@@ -1467,25 +1581,24 @@ public class Unit : MonoBehaviour
 			//return RAIN.Action.Action.ActionResult.FAILURE;
 		if(status != UnitStatus.InCombat && status != UnitStatus.CapturingObjective)
 		{
-			lastStatus = status;
-			status = UnitStatus.InCombat;
+			SetStatus(UnitStatus.InCombat);
 		}
 		combatTime = 0.0f;
 		weapon.Shoot();
 		float accuracy = weapon.GetAccuracy();
-		if(accuracy > 0.65f)
+		if(accuracy > 0.65f || movementType == MoveType.Strict)
 		{
-			return RAIN.Action.Action.ActionResult.SUCCESS;
+			return true;
 		}
 		else
 		{
-			MoveTo(enemy.gameObject,uName+"'s Attack Target",true,false,movementType);
+			MoveTo(enemy.gameObject,uName+"'s Attack Target",true,false,movementType,uName+" is moving to shoot at "+enemy,true);
 			/*if(agent.MoveTo(enemy.transform.position,deltaTime))
 			{
 				return RAIN.Action.Action.ActionResult.SUCCESS;
 			}*/
 		}
-		return RAIN.Action.Action.ActionResult.RUNNING;
+		return true;
 	}
 	
 	public Transform FindHealth()
@@ -1494,6 +1607,12 @@ public class Unit : MonoBehaviour
 		Transform regen = null;
 		foreach(GameObject go in regenZones)
 		{
+			Healthpack healthPack = go.GetComponent<Healthpack>();
+			if(healthPack != null)
+			{
+				if(healthPack.IsDisabled())
+					continue;
+			}
 			float gDist = Vector3.Distance(transform.position, go.transform.position);
 			if(gDist < dist)
 			{
@@ -1501,7 +1620,14 @@ public class Unit : MonoBehaviour
 				dist = gDist;
 			}
 		}
-		MoveTo(regen.gameObject,uName+"'s Regen Target",true,false,MoveType.DefendSelf);
+		float bDist = Vector3.Distance(transform.position, aBase.transform.position);
+		if(bDist < dist)
+		{
+			regen = aBase.transform;
+			dist = bDist;
+		}
+		if(dist < MAX_HEALTH_DISTANCE)
+			MoveTo(regen.gameObject,uName+"'s Regen Target",true,false,MoveType.DefendSelf,uName+" is trying to restore its health.",false);
 		return regen;
 	}
 	
@@ -1513,7 +1639,8 @@ public class Unit : MonoBehaviour
 		health = Mathf.Min(health, 100);
 		if(healthRegen != null)
 			gameObject.GetComponentInChildren<AudioSource>().PlayOneShot(healthRegen);
-		MoveTo(orderTarget,movementType);
+		if(orderData != null)
+			MoveTo(orderData.GetMoveTarget(),movementType,uName+" is returning from restoring its health.",false);
 		return true;
 	}
 	
@@ -1521,7 +1648,7 @@ public class Unit : MonoBehaviour
 	{
 		captures++;
 		GetCommander().OnScore();
-		status = lastStatus;
+		OnCapturedObjective();
 	}
 	
 	protected void PlayRespawn()
@@ -1576,10 +1703,8 @@ public class Unit : MonoBehaviour
 	{
 		if(motor != null)
 			motor.StopNavigation();
-		if(orderTarget != null && orderTarget.name.Contains("Copy"))
-		{
-			Destroy(orderTarget.gameObject);
-		}
+		//Debug.Log ("Resetting target.");
+		orderData = null;
 		if(effects)
 			ResetEffects();
 	}
@@ -1608,10 +1733,9 @@ public class Unit : MonoBehaviour
 		uName = oldClone.uName;
 		teamColor = oldClone.teamColor;
 		label = oldClone.label;
-		currentOrder = oldClone.currentOrder;
+		orderData = oldClone.orderData;
 		status = oldClone.status;
 		movementType = oldClone.movementType;
-		orderTarget = oldClone.orderTarget;
 		kills = oldClone.kills;
 		lastDamager = oldClone.lastDamager;
 		health = oldClone.health;

@@ -53,14 +53,14 @@ public class UnitCheckOrders : RAIN.Action.Action
 		SetVariables(agent);
 		if(isPlayer == 1)
 			return RAIN.Action.Action.ActionResult.SUCCESS;
-		if(unit == null)
+		/*if(unit == null)
 			unit = agent.Avatar.GetComponent<Unit>();
 		Unit nearestEnemy = unit.DetectEnemies(agent,enemy);
 		if(nearestEnemy != null)
 		{
 			unit.Shoot(agent,deltaTime,nearestEnemy);
 		}
-		/*
+		
 		if(orders == Order.stop)
 		{
 			agent.MoveTo(agent.Avatar.transform.position,deltaTime);

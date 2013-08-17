@@ -3,17 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// All possible orders that can be given to units.
-/// </summary>
-public enum Order
-{
-	move,
-	attack,
-	defend,
-	stop
-}
-
-/// <summary>
 /// How should we behave while moving?
 /// Strict means that we will ignore everything while going to our target.
 /// DefendSelf means we will only fight back after we've been shot at.
@@ -78,6 +67,14 @@ public class UnitMotor : MonoBehaviour {
 	/// How far we have to be from our goal to be "close enough".
 	/// </summary>
 	public const float MOVE_CLOSE_ENOUGH_DISTANCE = 2.0f;
+	/// <summary>
+	/// How fast we look at something.
+	/// </summary>
+	protected const float LOOK_AT_SPEED = 4.0f;
+	/// <summary>
+	/// The reason why we're moving.
+	/// </summary>
+	public string moveReason = "";
 	
 	
 	void Start()
@@ -118,7 +115,7 @@ public class UnitMotor : MonoBehaviour {
 			moveTarget = oldMoveTarget;
 			//Debug.Log (unit+" is returning to old target: "+oldMoveTarget);
 			oldMoveTarget = null;
-			MoveTo(moveTarget,moveType);
+			MoveTo(moveTarget,moveType,unit+"'s motor is recalculting paths.",false);
 		}
 		else if(tempGameObjects.Count > 0)
 		{
@@ -131,28 +128,76 @@ public class UnitMotor : MonoBehaviour {
 					continue;
 				}
 				moveTarget = go.transform;
-				MoveTo(moveTarget,moveType);
+				MoveTo(moveTarget,moveType,unit+"'s motor is recalculting paths.",false);
 				break;
 			}
 		}
 	}
 	
-	public void MoveTo(GameObject target, MoveType movementType)
+	public void MoveTo(GameObject target, MoveType movementType, string reason, bool debug)
 	{
-		MoveTo(target,gameObject.name+"'s Move Target",movementType);
+		MoveTo(target,gameObject.name+"'s Move Target",movementType, reason, debug);
 	}
 	
-	public void MoveTo(GameObject target, string targetName, MoveType movementType)
+	public void MoveTo(GameObject target, string targetName, MoveType movementType, string reason, bool debug)
 	{
-		MoveTo (target,targetName,false,movementType);
+		MoveTo (target,targetName,false,movementType, reason, debug);
 	}
 	
-	public void MoveTo(GameObject target, string targetName, bool useRandom, MoveType movementType)
+	public void MoveTo(GameObject target, string targetName, bool useRandom, MoveType movementType, string reason, bool debug)
 	{
-		MoveTo(target, targetName, false, useRandom, movementType);
+		MoveTo(target, targetName, false, useRandom, movementType, reason, debug);
 	}
 	
-	public void MoveTo(GameObject target, string targetName, bool parent, bool useRandom, MoveType movementType)
+	public void MoveTo(GameObject target, string targetName, bool parent, bool useRandom, MoveType movementType, string reason, bool debug)
+	{
+		Transform targetTfm = MakeMoveTarget(target,targetName,parent,useRandom);
+		MoveTo (targetTfm,movementType, reason, debug);
+	}
+	
+	public void MoveTo(Transform target, MoveType movementType, string reason, bool debug)
+	{
+		if(navigator == null || !navigator.enabled)
+			return;
+		if(target == transform || target == null)
+		{
+			StopNavigation();
+			unit.SetStatus(UnitStatus.Idle);
+			return;
+		}
+		moveType = movementType;
+		if(moveType == MoveType.Strict && oldMoveTarget != null)
+		{
+			tempGameObjects.Remove(oldMoveTarget.gameObject);
+			Destroy(oldMoveTarget.gameObject);
+		}
+		if(moveTarget == null || moveType == MoveType.Strict || moveType == MoveType.DefendSelf && unit.GetStatus() != UnitStatus.InCombat)
+		{
+			moveTarget = target;
+		}
+		else
+		{
+			SetTemporaryTarget(target);
+		}
+		//Debug.Log (unit+" is pathfinding to "+moveTarget+" at "+moveTarget.position);
+		moveReason = reason;
+		if(debug)
+			Debug.Log (unit+" is moving to "+moveTarget+".\nReason: "+reason);
+		unit.SetStatus(UnitStatus.Moving);
+		navigator.SetDestination(moveTarget.position);
+	}
+	
+	private void SetTemporaryTarget(Transform target)
+	{
+		if(oldMoveTarget == null)
+		{
+			//Debug.Log (unit+" is storing "+moveTarget+" as our old move target.");
+			oldMoveTarget = moveTarget;
+		}
+		moveTarget = target;
+	}
+	
+	public Transform MakeMoveTarget(GameObject target, string targetName, bool parent, bool useRandom)
 	{
 		foreach(GameObject go in tempGameObjects.ToArray())
 		{
@@ -168,16 +213,14 @@ public class UnitMotor : MonoBehaviour {
 					float dist = Vector3.Distance(go.transform.position,target.transform.position);
 					if(dist <= Mathf.Pow(RANDOM_TARGET_VARIATION, 3))
 					{
-						MoveTo(go.transform,movementType);
-						return;
+						return go.transform;
 					}
 				}
 				else
 				{
 					if(go.transform.position == target.transform.position)
 					{
-						MoveTo(go.transform,movementType);
-						return;
+						return go.transform;
 					}
 				}
 				Destroy(go);
@@ -200,41 +243,7 @@ public class UnitMotor : MonoBehaviour {
 			targetGO.transform.parent = target.transform;
 		}
 		tempGameObjects.Add(targetGO);
-		MoveTo (targetGO.transform,movementType);
-	}
-	
-	public void MoveTo(Transform target, MoveType movementType)
-	{
-		if(navigator == null || !navigator.enabled)
-			return;
-		if(target == transform || target == null)
-		{
-			StopNavigation();
-			unit.SetStatus(UnitStatus.Idle);
-			return;
-		}
-		moveType = movementType;
-		if(moveType == MoveType.Strict && oldMoveTarget != null)
-		{
-			tempGameObjects.Remove(oldMoveTarget.gameObject);
-			Destroy(oldMoveTarget.gameObject);
-		}
-		if(moveTarget == null || moveType == MoveType.Strict || moveType == MoveType.DefendSelf && unit.GetStatus() != UnitStatus.InCombat)
-		{
-			moveTarget = target;
-		}
-		else
-		{
-			if(oldMoveTarget == null)
-			{
-				//Debug.Log (unit+" is storing "+moveTarget+" as our old move target.");
-				oldMoveTarget = moveTarget;
-			}
-			moveTarget = target;
-		}
-		//Debug.Log (unit+" is pathfinding to "+moveTarget+" at "+moveTarget.position);
-		unit.SetStatus(UnitStatus.Moving);
-		navigator.SetDestination(moveTarget.position);
+		return targetGO.transform;
 	}
 	
 	public Transform MakeMoveTarget(Transform target)
@@ -266,6 +275,12 @@ public class UnitMotor : MonoBehaviour {
 		return target;
 	}
 	
+	public void LookAt(Vector3 position)
+	{
+		Quaternion rot = Quaternion.LookRotation(position - transform.position);
+		transform.rotation = Quaternion.Slerp(transform.rotation,rot,Time.deltaTime * LOOK_AT_SPEED);
+	}
+	
 	public Transform GetTarget()
 	{
 		RecalculatePaths();
@@ -282,6 +297,13 @@ public class UnitMotor : MonoBehaviour {
 	public void UpdateMoveType(MoveType type)
 	{
 		moveType = type;
+	}
+	
+	private void OnTargetReached()
+	{
+		Debug.Log(unit+" has successfully reached its target.");
+		StopNavigation();
+		unit.OnTargetReached();
 	}
 	
 	public void StopNavigation()

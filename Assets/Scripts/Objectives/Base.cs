@@ -7,7 +7,16 @@ using System.Collections;
 /// Extending Objective allows us access to all the neat helper functions that Objective uses.
 /// </summary>
 public class Base : Objective {
-
+	
+	protected float HEAL_REPEAT_TIME = 5.0f;
+	protected int HEAL_AMOUNT = 10;
+	protected int AMMO_AMOUNT = 15;
+	
+	protected override void ObjectiveAwake ()
+	{
+		InvokeRepeating("HealAllUnits",0.0f,HEAL_REPEAT_TIME);
+	}
+	
 	protected override void OnContestantEnter (Unit contestant)
 	{
 		if(contestant == null)
@@ -16,5 +25,18 @@ public class Base : Objective {
 		if(objective == null)
 			return;
 		objective.OnBaseEnter(contestant, this);
+	}
+	
+	protected void HealAllUnits()
+	{
+		foreach(Unit unit in defendingContestants.ToArray())
+		{
+			if(!unit.IsAlive())
+				continue;
+			if(unit.RestoreHealth(HEAL_AMOUNT))
+				Debug.Log ("Healing "+unit);
+			if(unit.weapon != null)
+				unit.weapon.AddAmmo(AMMO_AMOUNT);
+		}
 	}
 }

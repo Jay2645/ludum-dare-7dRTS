@@ -78,7 +78,9 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		{
 			Leader defenseLeader = AllocateToSingleObjective(defendObjectives[0],MIN_DEFENDERS_PERCENTAGE);
 			if(defenseLeader != null)
-				defenseLeader.RecieveOrder(Order.defend,defendObjectives[0].transform,commander);
+			{
+				commander.GiveOrder(Order.defend,defendObjectives[0].transform,defenseLeader);
+			}
 		}
 		else if(defendObjectives.Length > 1)
 		{
@@ -128,7 +130,9 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		{
 			Leader attackLeader = AllocateToSingleObjective(attackObjectives[0],MAX_ATTACKERS_PERCENTAGE);
 			if(attackLeader != null)
-				attackLeader.RecieveOrder(Order.attack,attackObjectives[0].transform,commander);
+			{
+				commander.GiveOrder(Order.attack,attackObjectives[0].transform,attackLeader);
+			}
 		}
 		else if(attackObjectives.Length > 1)
 		{
@@ -185,7 +189,10 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 			if(commander.GetHealthPercent() <= 0.5f || attackObjectives.Length == 0)
 			{
 				Objective objective = defendObjectives[0];
-				commander.RecieveOrder(Order.defend,objective.transform,commander);
+				OrderData data = new OrderData(commander,commander);
+				data.SetOrder(Order.defend,true);
+				data.SetTarget(objective.transform);
+				commander.RecieveOrder(data);
 				commander.defendObjective = objective;
 				commander.currentObjective = objective;
 			}
@@ -193,7 +200,10 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 		if(attackObjectives.Length == 1 && defendObjectives.Length == 0)
 		{
 			Objective objective = attackObjectives[0];
-			commander.RecieveOrder(Order.attack,objective.transform,commander);
+			OrderData data = new OrderData(commander,commander);
+			data.SetOrder(Order.attack,true);
+			data.SetTarget(objective.transform);
+			commander.RecieveOrder(data);
 			commander.attackObjective = objective;
 			commander.currentObjective = objective;
 		}
@@ -202,14 +212,20 @@ public class DelegateSquadsToObjective : RAIN.Action.Action
 			if(Random.value * 4 < 1)
 			{
 				Objective objective = defendObjectives[0];
-				commander.RecieveOrder(Order.defend,objective.transform,commander);
+				OrderData data = new OrderData(commander,commander);
+				data.SetOrder(Order.defend,true);
+				data.SetTarget(objective.transform);
+				commander.RecieveOrder(data);
 				commander.defendObjective = objective;
 				commander.currentObjective = objective;
 			}
 			else
 			{
 				Objective objective = attackObjectives[0];
-				commander.RecieveOrder(Order.attack,objective.transform,commander);
+				OrderData data = new OrderData(commander,commander);
+				data.SetOrder(Order.attack,true);
+				data.SetTarget(objective.transform);
+				commander.RecieveOrder(data);
 				commander.attackObjective = objective;
 				commander.currentObjective = objective;
 			}
