@@ -119,7 +119,18 @@ public class Commander : Leader
 			string id = "Select Group "+leaderID.ToString();
 			if(!Input.GetButtonDown(id))
 				continue;
-			SelectUnits(currentLeader.GetID());
+			if(Input.GetButton("Assign"))
+			{
+				foreach(int i in selectedUnits.ToArray())
+				{
+					if(unitID.ContainsKey(i))
+					{
+						unitID[i].RegisterLeader(currentLeader);
+					}
+				}
+			}
+			else
+				SelectUnits(currentLeader.GetID());
 		}
 		if(recheckLayerTimer > RECHECK_LAYER_TIME)
 		{
@@ -312,6 +323,15 @@ public class Commander : Leader
 		if(guiCamera == null || !isPlayer)
 			return;
 		UpdateCards();
+	}
+	
+	protected override void OnClassDie ()
+	{
+		DeselectUnits();
+		foreach(int i in lookingAt)
+		{
+			unitID[i].IsLookedAt(false);
+		}
 	}
 	
 	protected void MakeCard(Unit unit, float count)
@@ -789,7 +809,22 @@ public class Commander : Leader
 			}
 			else return Vector3.zero;
 		}
-		return spawnPoints[Mathf.RoundToInt(Random.Range(0,spawnPoints.Length - 1))].position;
+		Transform spawn = spawnPoints[Mathf.RoundToInt(Random.Range(0,spawnPoints.Length - 1))];
+		if(spawn == null)
+		{
+			for(int i = 0; i < spawnPoints.Length; i++)
+			{
+				if(spawn != null)
+					break;
+				spawn = spawnPoints[i];
+			}
+		}
+		if(spawn == null)
+		{
+			spawnPoints = null;
+			return GetSpawnPoint();
+		}
+		return spawn.position;
 	}
 	
 	public void OnScore()

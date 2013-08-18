@@ -51,7 +51,6 @@ public class Objective : MonoBehaviour {
 			unitEntered.OnCapturingObjective(this);
 			attackingContestants.Add(unitEntered);
 		}
-		unitEntered.isCapturing = true;
 		OnContestantEnter(unitEntered);
 	}
 	
@@ -60,15 +59,7 @@ public class Objective : MonoBehaviour {
 		Unit unitExited = other.gameObject.GetComponent<Unit>();
 		if(unitExited == null)
 			return;
-		if(defendingContestants.Contains(unitExited))
-		{
-			Debug.Log ("Removing "+unitExited+" from defending units.");
-			defendingContestants.Remove(unitExited);
-		}
-		else if(attackingContestants.Contains(unitExited))
-		{
-			attackingContestants.Remove(unitExited);
-		}
+		RemovePlayer(unitExited);
 	}
 	
 	/// <summary>
@@ -118,7 +109,6 @@ public class Objective : MonoBehaviour {
 		capturer.currentObjective = null;
 		capturer.attackObjective = null;
 		capturer.GetCommander().attackObjective = null;
-		capturer.isCapturing = false;
 	}
 	
 	public Unit[] GetAttackers()

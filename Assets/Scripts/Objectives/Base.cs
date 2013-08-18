@@ -8,9 +8,9 @@ using System.Collections;
 /// </summary>
 public class Base : Objective {
 	
-	protected float HEAL_REPEAT_TIME = 5.0f;
-	protected int HEAL_AMOUNT = 10;
-	protected int AMMO_AMOUNT = 15;
+	protected float HEAL_REPEAT_TIME = 4.0f;
+	protected int HEAL_AMOUNT = 25;
+	protected int AMMO_AMOUNT = 20;
 	
 	protected override void ObjectiveAwake ()
 	{

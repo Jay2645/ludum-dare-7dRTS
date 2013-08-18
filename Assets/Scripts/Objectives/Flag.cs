@@ -47,7 +47,9 @@ public class Flag : Objective {
 			carrying = contestant;
 			carrying.aBase.captureIndex = 0;
 			captureIndex = 1;
-			carrying.GetCommander().attackObjective = carrying.aBase;
+			Commander carryCommander = carrying.GetCommander();
+			if(carryCommander != null)
+				carryCommander.attackObjective = carrying.aBase;
 			carrying.attackObjective = carrying.aBase;
 			carrying.currentObjective = carrying.aBase;
 			carrying.OnPickupFlag();

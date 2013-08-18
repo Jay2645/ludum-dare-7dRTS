@@ -96,11 +96,23 @@ public class UnitMotor : MonoBehaviour {
 	{
 		if(navigator == null || !navigator.enabled)
 			return;
+		if(moveTarget != null && !moveTarget.gameObject.activeInHierarchy)
+		{
+			if(tempGameObjects.Contains(moveTarget.gameObject))
+				tempGameObjects.Remove(moveTarget.gameObject);
+			Destroy(moveTarget.gameObject);
+		}
+		if(oldMoveTarget != null && !oldMoveTarget.gameObject.activeInHierarchy)
+		{
+			if(tempGameObjects.Contains(oldMoveTarget.gameObject))
+				tempGameObjects.Remove(oldMoveTarget.gameObject);
+			Destroy(oldMoveTarget.gameObject);
+		}
 		if(moveTarget != null)
 		{
 			if(navigator.hasPath && Vector3.Distance(navigator.pathEndPosition,transform.position) <= MOVE_CLOSE_ENOUGH_DISTANCE)
 			{
-				StopNavigation();
+				OnTargetReached();
 				return;
 			}
 			lastPathRecheckTime += Time.fixedDeltaTime;
@@ -115,7 +127,7 @@ public class UnitMotor : MonoBehaviour {
 			moveTarget = oldMoveTarget;
 			//Debug.Log (unit+" is returning to old target: "+oldMoveTarget);
 			oldMoveTarget = null;
-			MoveTo(moveTarget,moveType,unit+"'s motor is recalculting paths.",false);
+			MoveTo(moveTarget,moveType,moveReason,false);
 		}
 		else if(tempGameObjects.Count > 0)
 		{
@@ -128,10 +140,56 @@ public class UnitMotor : MonoBehaviour {
 					continue;
 				}
 				moveTarget = go.transform;
-				MoveTo(moveTarget,moveType,unit+"'s motor is recalculting paths.",false);
+				MoveTo(moveTarget,moveType,moveReason,false);
 				break;
 			}
 		}
+		else
+		{
+			moveTarget = unit.GetMoveTarget();
+			if(moveTarget == null)
+			{
+				moveTarget = unit.RequestTarget();
+				if(moveTarget == null)
+				{
+					moveReason = "We can't find anywhere to move to.";
+					return;
+					/*Leader leader = unit.GetLeader();
+					if(leader == null)
+					{
+						leader = (Leader)unit.GetCommander();
+						if(leader == null)
+						{
+							moveReason = "We can't find anywhere to move to.";
+							return;
+						}
+					}
+					moveTarget = MakeMoveTarget(leader.gameObject,unit.name+"'s Leader Target",true,true);*/
+				}
+			}
+			MoveTo(moveTarget,moveType,moveReason,false);
+		}
+	}
+	
+	public void MoveTo(Vector3 position, string targetName, MoveType movementType, string reason, bool debug)
+	{
+		foreach(GameObject go in tempGameObjects.ToArray())
+		{
+			if(go == null)
+			{
+				tempGameObjects.Remove(go);
+				continue;
+			}
+			if(go.name.Contains(targetName))
+			{
+				Destroy(go);
+				break;
+			}
+		}
+		GameObject targetGO = new GameObject(targetName);
+		targetGO.transform.position = position;
+		tempGameObjects.Add(targetGO);
+		MoveTo(targetGO.transform,movementType,reason,debug);
 	}
 	
 	public void MoveTo(GameObject target, MoveType movementType, string reason, bool debug)
@@ -161,8 +219,13 @@ public class UnitMotor : MonoBehaviour {
 			return;
 		if(target == transform || target == null)
 		{
-			StopNavigation();
+			StopNavigation("We were told to move to ourselves or were otherwise not given a target.",false);
 			unit.SetStatus(UnitStatus.Idle);
+			return;
+		}
+		if(target.GetComponent<Objective>() != null || target.GetComponent<Unit>() != null)
+		{
+			MoveTo (target.gameObject,movementType,reason,debug);
 			return;
 		}
 		moveType = movementType;
@@ -248,6 +311,8 @@ public class UnitMotor : MonoBehaviour {
 	
 	public Transform MakeMoveTarget(Transform target)
 	{
+		if(target == null)
+			return null;
 		foreach(GameObject go in tempGameObjects.ToArray())
 		{
 			if(go == null)
@@ -299,21 +364,27 @@ public class UnitMotor : MonoBehaviour {
 		moveType = type;
 	}
 	
-	private void OnTargetReached()
+	public void OnTargetReached()
 	{
-		Debug.Log(unit+" has successfully reached its target.");
-		StopNavigation();
+		StopNavigation(unit+" has successfully reached its target.",false);
 		unit.OnTargetReached();
 	}
 	
-	public void StopNavigation()
+	public void StopNavigation(string reason, bool debug)
 	{
-		//Debug.Log ("Stopping navigation.");
 		if(moveTarget != null)
 		{
 			if(tempGameObjects.Contains(moveTarget.gameObject))
 				tempGameObjects.Remove(moveTarget.gameObject);
 			Destroy(moveTarget.gameObject);
+		}
+		if(oldMoveTarget != null)
+		{
+			if(tempGameObjects.Contains(oldMoveTarget.gameObject))
+				tempGameObjects.Remove(oldMoveTarget.gameObject);
+			if(oldMoveTarget.name.Contains(" Target"))
+				Destroy(oldMoveTarget.gameObject);
+			oldMoveTarget = null;
 		}
 		if(navigator == null)
 		{
@@ -323,7 +394,12 @@ public class UnitMotor : MonoBehaviour {
 				Destroy (this);
 			}
 		}
+		if(debug)
+			Debug.Log ("Stopping navigation. Reason: "+reason);
 		if(navigator.hasPath)
+		{
+			moveReason = reason;
 			navigator.Stop();
+		}
 	}
 }

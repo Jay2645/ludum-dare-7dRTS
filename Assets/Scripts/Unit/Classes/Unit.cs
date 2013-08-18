@@ -33,6 +33,7 @@ public class OrderData
 	{
 		this.leader = leader;
 		this.unit = unit;
+		SetOrder(Order.stop,false);
 	}
 	/// <summary>
 	/// Where is this telling the Unit to be sent to?
@@ -66,6 +67,10 @@ public class OrderData
 	/// Has the Unit updated this?
 	/// </summary>
 	private bool updatedByUnit = false;
+	/// <summary>
+	/// Where was the unit when it recieved this order?
+	/// </summary>
+	private Vector3 unitLocation = Vector3.zero;
 	
 	/// <summary>
 	/// Sets the order target (the general location we're going to).
@@ -75,6 +80,7 @@ public class OrderData
 	/// </param>
 	public void SetTarget(Transform target)
 	{
+		unitLocation = unit.transform.position;
 		orderTarget = target;
 	}
 	/// <summary>
@@ -103,8 +109,7 @@ public class OrderData
 		this.moveTarget = moveTarget;
 		if(setter == unit)
 		{
-			updatedByUnit = true;
-			leader.UnitUpdateOrder(unit, this);
+			UpdatedByUnit();
 		}
 	}
 	public Transform GetMoveTarget()
@@ -117,6 +122,7 @@ public class OrderData
 	public void SetOrder(Order order, bool autoMoveType)
 	{
 		this.order = order;
+		unitLocation = unit.transform.position;
 		if(!autoMoveType)
 			return;
 		if(order == Order.attack || order == Order.defend)
@@ -153,6 +159,7 @@ public class OrderData
 	
 	public void UpdatedByUnit()
 	{
+		unitLocation = unit.transform.position;
 		updatedByUnit = true;
 		leader.UnitUpdateOrder(unit,this);
 	}
@@ -164,6 +171,10 @@ public class OrderData
 	public Leader GetLeader()
 	{
 		return leader;
+	}
+	public Vector3 GetOrderLocation()
+	{
+		return unitLocation;
 	}
 }
 
@@ -271,6 +282,10 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected const float MOVE_TO_LEADER_DISTANCE = 25.0f;
 	/// <summary>
+	/// How far to chase our enemy.
+	/// </summary>
+	protected const float MAX_ENEMY_CHASE_RANGE = 35.0f;
+	/// <summary>
 	/// How long to wait between rechecking for enemies.
 	/// </summary>
 	protected const float ENEMY_RECHECK_TIME = 7.0f;
@@ -356,10 +371,6 @@ public class Unit : MonoBehaviour
 	/// The base this unit belongs to.
 	/// </summary>
 	public Base aBase = null;
-	/// <summary>
-	/// Is this unit currently capturing an objective?
-	/// </summary>
-	public bool isCapturing = false;
 	protected Objective capturingObjective = null;
 	/// <summary>
 	/// Does this unit avoid all damage?
@@ -370,7 +381,8 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected float timeToOurRespawn = 0.0f;
 	protected bool justPromoted = false;
-	
+	protected bool findingHealth = false;
+	protected Vector3 enterCombatPosition = Vector3.zero;
 	
 	// IDENTIFICATION
 	/// <summary>
@@ -643,15 +655,22 @@ public class Unit : MonoBehaviour
 		}
 		
 		Commander commander = GetCommander();
-		foreach(Unit unit in commander.GetAllUnits())
+		if(commander == null)
 		{
-			if(unit == this || !unit.IsAlive())
-				continue;
-			Physics.IgnoreCollision(collider,unit.collider,true);
+			Debug.Log (uName+"'s Commander is null!");
 		}
-		if(!(this is Commander))
+		else
 		{
-			Physics.IgnoreCollision(collider,commander.collider,true);
+			foreach(Unit unit in commander.GetAllUnits())
+			{
+				if(unit == this || !unit.IsAlive())
+					continue;
+				Physics.IgnoreCollision(collider,unit.collider,true);
+			}
+			if(!(this is Commander))
+			{
+				Physics.IgnoreCollision(collider,commander.collider,true);
+			}
 		}
 		// Move it to the spawn point.
 		if(spawnPoint == Vector3.zero)
@@ -869,6 +888,11 @@ public class Unit : MonoBehaviour
 		}
 		combatTime = 0.0f;
 		lastDamager = damager;
+		if(bestUnit == null)
+		{
+			bestUnit = damager;
+			Shoot (bestUnit);
+		}
 	}
 	
 	protected void CheckHealth()
@@ -918,6 +942,7 @@ public class Unit : MonoBehaviour
 		{
 			if(movementType == MoveType.Strict || status == UnitStatus.InCombat)
 				return;
+			enterCombatPosition = transform.position;
 			lastStatus = status;
 			status = uStatus;
 			return;
@@ -966,6 +991,8 @@ public class Unit : MonoBehaviour
 	
 	public virtual void RegisterLeader(Leader newLeader)
 	{
+		if(newLeader == null)
+			return;
 		leader = newLeader;
 		if(!leader.IsOwnedByPlayer())
 			Destroy(label);
@@ -1027,7 +1054,7 @@ public class Unit : MonoBehaviour
 		Transform target = data.GetOrderTarget();
 		if(order == Order.stop || target == null)
 		{
-			motor.StopNavigation();
+			motor.StopNavigation(uName+" recieved a stop order from its OrderData.",false);
 			return;
 		}
 		if(target == transform || orderData != null && order == orderData.GetOrder() && target == orderData.GetOrderTarget())
@@ -1061,7 +1088,7 @@ public class Unit : MonoBehaviour
 				orderData.SetOrder(Order.stop,true);
 				orderData.UpdatedByUnit();
 				ResetTarget();
-				motor.StopNavigation();
+				motor.OnTargetReached();
 			}
 			return;
 		}
@@ -1094,17 +1121,43 @@ public class Unit : MonoBehaviour
 		return lastOrderer;
 	}
 	
+	public Leader GetLeader()
+	{
+		return leader;
+	}
+	
+	public Transform RequestTarget()
+	{
+		orderData = leader.UnitRequestOrders(this);
+		if(orderData == null)
+			return null;
+		Transform moveTarget = orderData.GetOrderTarget();
+		if(moveTarget == null)
+		{
+			ResetTarget(true);
+			return null;
+		}
+		orderData.SetMoveTarget(motor.MakeMoveTarget(moveTarget),this);
+		return orderData.GetMoveTarget();
+	}
+	
 	public Transform GetMoveTarget()
 	{
-		if(this == null || motor == null)
+		if(this == null || motor == null || orderData == null)
 			return null;
 		if(status == UnitStatus.InCombat && bestUnit != null)
 			return bestUnit.transform;
-		Transform moveTarget = motor.GetTarget();
+		Transform moveTarget = orderData.GetMoveTarget();
 		if(moveTarget == null)
-			return null;
+		{
+			moveTarget = orderData.GetOrderTarget();
+			if(moveTarget == null)
+				return null;
+		}
 		if(Vector3.Distance(moveTarget.position,transform.position) < UnitMotor.MOVE_CLOSE_ENOUGH_DISTANCE)
 		{
+			orderData.SetOrder(Order.stop,true);
+			orderData.UpdatedByUnit();
 			ResetTarget();
 		}
 		return moveTarget;
@@ -1118,7 +1171,7 @@ public class Unit : MonoBehaviour
 			return false;
 		}
 		isSelected = true;
-		if(!IsLedByPlayer() && !(selector is Commander))
+		if(selector != (Leader)Commander.player)
 			return true;
 		CreateSelected();
 		SetOutlineColor(selectedColor);
@@ -1218,13 +1271,19 @@ public class Unit : MonoBehaviour
 		if(capturingObjective != null)
 			capturingObjective.RemovePlayer(this);
 		IsLookedAt(false);
-		gameObject.SetActive(false);
 		if(leader != null)
 			leader.RemoveUnit(id);
 		if(weapon != null)
 			weapon.Drop();
+		if(motor != null)
+		{
+			motor.StopNavigation(uName+" died.",false);
+		}
 		Deselect();
 		ResetEffects();
+		running = false;
+		findingHealth = false;
+		OnClassDie();
 		foreach(Transform child in transform)
 		{
 			if(child.GetComponent<Objective>() != null)
@@ -1239,11 +1298,9 @@ public class Unit : MonoBehaviour
 			}
 			child.gameObject.SetActive(false);
 		}
+		gameObject.SetActive(false);
 		// Reset spawn point.
 		Commander commander = GetCommander();
-		if(commander != this as Commander)
-			spawnPoint = Vector3.zero;
-		running = false;
 		if(commander != null)
 		{
 			if(IsLedByPlayer())
@@ -1264,6 +1321,11 @@ public class Unit : MonoBehaviour
 		}
 	}
 	
+	protected virtual void OnClassDie()
+	{
+		spawnPoint = Vector3.zero;
+	}
+	
 	public void OnTargetReached()
 	{
 		leader.OnUnitReachedTarget(this);
@@ -1272,6 +1334,8 @@ public class Unit : MonoBehaviour
 	
 	public void OnCapturingObjective(Objective objective)
 	{
+		if(objective is Base)
+			return;
 		if(status != UnitStatus.InCombat)
 		{
 			lastStatus = status;
@@ -1283,7 +1347,8 @@ public class Unit : MonoBehaviour
 	public void OnCapturedObjective()
 	{
 		capturingObjective = null;
-		status = lastStatus;
+		if(status == UnitStatus.CapturingObjective)
+			status = lastStatus;
 	}
 	
 	public void AddKill(Unit dead)
@@ -1297,7 +1362,10 @@ public class Unit : MonoBehaviour
 	{
 		bool isAlive = this != null && gameObject != null && gameObject.activeInHierarchy;
 		if(isAlive && weapon == null && health <= 0) // Useful for debugging; automatically spawns the GameObject if we re-enable it from the inspector.
+		{
+			Debug.LogWarning(this+" was re-enabled. Spawning.");
 			Spawn();
+		}
 		return isAlive;
 	}
 	
@@ -1375,6 +1443,12 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected void HandleUniversalAI(bool force)
 	{
+		if(bestUnit != null && !bestUnit.IsAlive())
+		{
+			bestUnit = null;
+			LeaveCombat();
+			force = true;
+		}
 		if(status == UnitStatus.Idle || movementType == MoveType.Loose || status == UnitStatus.InCombat && movementType == MoveType.DefendSelf)
 			FindShootTargets();
 		if(force || status != UnitStatus.InCombat && timeSinceLastRepath > AI_REPATH_TIME)
@@ -1402,7 +1476,43 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected void FindShootTargets()
 	{
+		float chaseRange = MAX_ENEMY_CHASE_RANGE;
+		if(bestUnit != null)
+		{
+			if(bestUnit.HasObjective())
+			{
+				chaseRange *= 1.5f;
+			}
+		}
 		bestUnit = null;
+		if(status == UnitStatus.InCombat && Vector3.Distance(transform.position,enterCombatPosition) > chaseRange)
+		{
+			LeaveCombat();
+			if(orderData == null)
+			{
+				motor.MoveTo(enterCombatPosition,uName+"'s Combat Return Target",MoveType.DefendSelf,"Returning to position where we entered combat.",false);
+			}
+			else
+			{
+				Transform moveTarget = orderData.GetMoveTarget();
+				if(moveTarget == null)
+				{
+					Transform orderTarget = orderData.GetOrderTarget();
+					if(orderTarget == null)
+					{
+						motor.MoveTo(enterCombatPosition,uName+"'s Combat Return Target",MoveType.DefendSelf,"Returning to position where we entered combat.",false);
+						return;
+					}
+					else
+					{
+						moveTarget = motor.MakeMoveTarget(orderTarget);
+						orderData.SetMoveTarget(moveTarget,this);
+					}
+				}
+				motor.MoveTo(moveTarget,MoveType.DefendSelf,"Returning to position where we entered combat.",false);
+			}
+			return;
+		}
 		DetectEnemies(enemyName);
 		if(bestUnit == null)
 		{
@@ -1434,6 +1544,11 @@ public class Unit : MonoBehaviour
 			return;
 		ResetTarget();
 		MoveTo(motor.MakeMoveTarget(currentObjective.transform),movementType,uName+" is responding to a repath call.",false);
+	}
+	
+	public bool HasObjective()
+	{
+		return capturingObjective != null; 
 	}
 	
 	/// <summary>
@@ -1548,7 +1663,7 @@ public class Unit : MonoBehaviour
 	
 	public bool Shoot(Unit enemy)
 	{
-		if(enemy == null || !enemy.IsAlive() || weapon == null)
+		if(enemy == null || !enemy.IsAlive() || weapon == null || IsPlayer())
 			return false;
 		if(weapon.ammo <= 0)
 			return false;
@@ -1627,8 +1742,21 @@ public class Unit : MonoBehaviour
 			dist = bDist;
 		}
 		if(dist < MAX_HEALTH_DISTANCE)
+		{
+			if(IsLedByPlayer() && !findingHealth && (regen != aBase.transform || dist > MAX_ENEMY_CHASE_RANGE))
+			{
+				Invoke ("CreateHealthPackMessage",1.0f);
+			}
+			findingHealth = true;
 			MoveTo(regen.gameObject,uName+"'s Regen Target",true,false,MoveType.DefendSelf,uName+" is trying to restore its health.",false);
+		}
 		return regen;
+	}
+	
+	public void CreateHealthPackMessage()
+	{
+		if(IsAlive())
+			MessageList.Instance.AddMessage(uName+" is low on health ("+health+" / 100). Moving to healthpack.");
 	}
 	
 	public bool RestoreHealth(int amount)
@@ -1640,7 +1768,29 @@ public class Unit : MonoBehaviour
 		if(healthRegen != null)
 			gameObject.GetComponentInChildren<AudioSource>().PlayOneShot(healthRegen);
 		if(orderData != null)
-			MoveTo(orderData.GetMoveTarget(),movementType,uName+" is returning from restoring its health.",false);
+		{
+			Order order = orderData.GetOrder();
+			if(order == Order.stop)
+			{
+				motor.MoveTo(orderData.GetOrderLocation(),uName+"'s Health Return Target",MoveType.DefendSelf,"Returning to location we recieved an order",false);
+				return true;
+			}
+			Transform moveTarget = orderData.GetMoveTarget();
+			if(moveTarget == null)
+			{
+				Transform orderTarget = orderData.GetOrderTarget();
+				if(orderTarget == null)
+				{
+					motor.MoveTo(orderData.GetOrderLocation(),uName+"'s Health Return Target",MoveType.DefendSelf,"Returning to location we recieved an order",false);
+					return true;
+				}
+				else
+				{
+					moveTarget = motor.MakeMoveTarget(orderTarget);
+				}
+			}
+			MoveTo(moveTarget,movementType,uName+" is returning from restoring its health.",false);
+		}
 		return true;
 	}
 	
@@ -1702,7 +1852,7 @@ public class Unit : MonoBehaviour
 	protected void ResetTarget(bool effects)
 	{
 		if(motor != null)
-			motor.StopNavigation();
+			motor.StopNavigation(uName+" reset its target.",false);
 		//Debug.Log ("Resetting target.");
 		orderData = null;
 		if(effects)
@@ -1713,12 +1863,12 @@ public class Unit : MonoBehaviour
 	{
 		if(moveEffect != null)
 		{
-			DestroyImmediate(moveEffect);
+			Destroy(moveEffect);
 			moveEffect = null;
 		}
 		if(!isSelected && selectEffect != null)
 		{
-			DestroyImmediate(selectEffect);
+			Destroy(selectEffect);
 			selectEffect = null;
 		}
 	}
@@ -1740,6 +1890,7 @@ public class Unit : MonoBehaviour
 		lastDamager = oldClone.lastDamager;
 		health = oldClone.health;
 		weapon = oldClone.weapon;
+		_initialWeapon = oldClone._initialWeapon;
 		aBase = oldClone.aBase;
 		raycastIgnoreLayers = Commander.player.raycastIgnoreLayers;
 		weapon.Pickup(this);

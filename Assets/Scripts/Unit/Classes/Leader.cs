@@ -359,11 +359,12 @@ public class Leader : Unit
 		Debug.LogWarning("TODO");
 	}
 	
-	public void UnitRequestOrders(Unit unit)
+	public OrderData UnitRequestOrders(Unit unit)
 	{
 		if(!unitID.ContainsValue(unit))
-			return;
-		Debug.LogWarning("TODO.");
+			return null;
+		//Debug.LogWarning("TODO.");
+		return null;
 	}
 	
 	protected Objective GetAttackObjective()
