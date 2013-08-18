@@ -704,7 +704,7 @@ public class Unit : MonoBehaviour
 		
 		immortal = true;
 		Invoke ("CanTakeDamage",RESPAWN_BLINK_TIME);
-		
+		weapon.ammo = _initialWeapon.ammo;
 		// Force a recheck of any AI functions.
 		HandleAI(true);
 	}
@@ -811,7 +811,7 @@ public class Unit : MonoBehaviour
 	protected void UnitUpdate()
 	{
 		CheckHealth();
-		if(running || justPromoted && IsOwnedByPlayer())
+		/*if(running || IsOwnedByPlayer())
 			return;
 		Commander commander = GetCommander();
 		if(spawnPoint == Vector3.zero && commander != null)
@@ -819,9 +819,10 @@ public class Unit : MonoBehaviour
 			spawnPoint = commander.GetSpawnPoint();
 		}
 		transform.position = spawnPoint;
-		if(frameCount >= 2)
+		if(frameCount >= 5)
 			running = true;
-		frameCount++;
+		else
+			frameCount++;*/
 	}
 	
 	/// <summary>
@@ -1059,7 +1060,7 @@ public class Unit : MonoBehaviour
 		}
 		if(target == transform || orderData != null && order == orderData.GetOrder() && target == orderData.GetOrderTarget())
 			return;
-		Debug.Log (this+" has recieved "+order);
+		//Debug.Log (this+" has recieved "+order);
 		ResetTarget();
 		orderData = data;
 		lastOrderer = orderData.GetLeader();
@@ -1093,7 +1094,7 @@ public class Unit : MonoBehaviour
 			return;
 		}
 		orderData.SetMoveTarget(target,this);
-		MoveTo(target,movementType,uName+" is moving due to order recieved by "+lastOrderer,true);
+		MoveTo(target,movementType,uName+" is moving due to order recieved by "+lastOrderer,false);
 		// This is a quick-and-dirty way for players to see that the unit has recieved orders correctly.
 		if(lastOrderer == (Leader)Commander.player)
 		{
@@ -1707,7 +1708,7 @@ public class Unit : MonoBehaviour
 		}
 		else
 		{
-			MoveTo(enemy.gameObject,uName+"'s Attack Target",true,false,movementType,uName+" is moving to shoot at "+enemy,true);
+			MoveTo(enemy.gameObject,uName+"'s Attack Target",true,false,movementType,uName+" is moving to shoot at "+enemy,false);
 			/*if(agent.MoveTo(enemy.transform.position,deltaTime))
 			{
 				return RAIN.Action.Action.ActionResult.SUCCESS;

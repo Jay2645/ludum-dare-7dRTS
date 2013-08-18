@@ -24,7 +24,7 @@ public class Healthpack : MonoBehaviour {
 		if(unit == null || !unit.IsAlive())
 			return;
 		float hpPercent = unit.GetHealthPercent();
-		Debug.Log(unit+": "+hpPercent);
+		//Debug.Log(unit+": "+hpPercent);
 		if(hpPercent >= 100 || !unit.RestoreHealth(RESTORE_AMOUNT))
 			return;
 		isEnabled = false;

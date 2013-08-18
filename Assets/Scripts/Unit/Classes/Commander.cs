@@ -336,7 +336,7 @@ public class Commander : Leader
 	
 	protected void MakeCard(Unit unit, float count)
 	{
-		if(!isPlayer)
+		if(!isPlayer || guiCamera == null || !unit.IsOwnedByPlayer())
 			return;
 		GameObject labelGO = unit.GetLabel();
 		if(labelGO == null)

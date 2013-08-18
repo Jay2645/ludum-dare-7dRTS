@@ -43,7 +43,7 @@ public class Objective : MonoBehaviour {
 			return;
 		if(OwnsObjective(unitEntered))
 		{
-			Debug.Log ("Adding "+unitEntered+" to defending units.");
+			//Debug.Log ("Adding "+unitEntered+" to defending units.");
 			defendingContestants.Add(unitEntered);
 		}
 		else

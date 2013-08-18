@@ -12,6 +12,9 @@ ModelImporter:
     100012: Sky001
     100014: Plane002
     100016: Unwalkable
+    100018: Object001
+    100020: Object002
+    100022: Object003
     400000: Camera001
     400002: Camera001.Target
     400004: Camera002
@@ -21,18 +24,33 @@ ModelImporter:
     400012: Sky001
     400014: Plane002
     400016: Unwalkable
+    400018: Object001
+    400020: Object002
+    400022: Object003
     2300000: Plane001
     2300002: Plane002
     2300004: Unwalkable
+    2300006: Object001
+    2300008: Object002
+    2300010: Object003
     3300000: Plane001
     3300002: Plane002
     3300004: Unwalkable
+    3300006: Object001
+    3300008: Object002
+    3300010: Object003
     4300000: Plane001
     4300002: Plane002
     4300004: Unwalkable
+    4300006: Object001
+    4300008: Object002
+    4300010: Object003
     6400000: Plane001
     6400002: Plane002
     6400004: Unwalkable
+    6400006: Object001
+    6400008: Object002
+    6400010: Object003
     7400000: Take 001
     9500000: //RootNode
   materials:

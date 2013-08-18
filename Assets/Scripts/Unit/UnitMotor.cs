@@ -76,6 +76,9 @@ public class UnitMotor : MonoBehaviour {
 	/// </summary>
 	public string moveReason = "";
 	
+	private int frameCount = 0;
+	private bool running = false;
+	
 	
 	void Start()
 	{
@@ -83,13 +86,24 @@ public class UnitMotor : MonoBehaviour {
 		navigator = gameObject.GetComponent<NavMeshAgent>();
 		// We always need to be attached to a unit and have a way of moving.
 		if(unit == null || navigator == null)
+		{
 			Destroy (this);
+		}
+		navigator.enabled = false;
 	}
 	
 	// Update is called once per frame
 	void FixedUpdate () 
 	{
 		RecalculatePaths();
+		if(running)
+			return;
+		frameCount++;
+		if(frameCount > 2)
+		{
+			running = true;
+			navigator.enabled = true;
+		}
 	}
 	
 	protected void RecalculatePaths()
@@ -376,7 +390,8 @@ public class UnitMotor : MonoBehaviour {
 		{
 			if(tempGameObjects.Contains(moveTarget.gameObject))
 				tempGameObjects.Remove(moveTarget.gameObject);
-			Destroy(moveTarget.gameObject);
+			if(moveTarget.name.Contains(" Target"))
+				Destroy(moveTarget.gameObject);
 		}
 		if(oldMoveTarget != null)
 		{
@@ -386,6 +401,12 @@ public class UnitMotor : MonoBehaviour {
 				Destroy(oldMoveTarget.gameObject);
 			oldMoveTarget = null;
 		}
+		foreach(GameObject go in tempGameObjects.ToArray())
+		{
+			if(go.name.Contains(" Target"))
+				Destroy(go);
+		}
+		tempGameObjects.Clear();
 		if(navigator == null)
 		{
 			navigator = gameObject.GetComponent<NavMeshAgent>();

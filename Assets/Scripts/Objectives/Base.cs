@@ -33,8 +33,8 @@ public class Base : Objective {
 		{
 			if(!unit.IsAlive())
 				continue;
-			if(unit.RestoreHealth(HEAL_AMOUNT))
-				Debug.Log ("Healing "+unit);
+			unit.RestoreHealth(HEAL_AMOUNT);
+				//Debug.Log ("Healing "+unit);
 			if(unit.weapon != null)
 				unit.weapon.AddAmmo(AMMO_AMOUNT);
 		}

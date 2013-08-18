@@ -325,7 +325,7 @@ public class Leader : Unit
 	{
 		if(!IsPlayer() && unit.GetOrder() != Order.stop && unit.GetLastOrderer() == Commander.player)
 			return;
-		Debug.Log("Giving "+order+" order.");
+		//Debug.Log("Giving "+order+" order.");
 		OrderData data = new OrderData(this,unit);
 		data.SetOrder(order,true);
 		data.SetTarget(target);
@@ -356,7 +356,7 @@ public class Leader : Unit
 	{
 		if(!unitID.ContainsValue(unit))
 			return;
-		Debug.LogWarning("TODO");
+		//Debug.LogWarning("TODO");
 	}
 	
 	public OrderData UnitRequestOrders(Unit unit)
