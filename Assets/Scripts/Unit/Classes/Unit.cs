@@ -119,6 +119,12 @@ public class OrderData
 		return moveTarget;
 	}
 	
+	public void SetUnit(Unit unit)
+	{
+		this.unit = unit;
+		UpdatedByUnit();
+	}
+	
 	public void SetOrder(Order order, bool autoMoveType)
 	{
 		this.order = order;
@@ -667,7 +673,7 @@ public class Unit : MonoBehaviour
 					continue;
 				Physics.IgnoreCollision(collider,unit.collider,true);
 			}
-			if(!(this is Commander))
+			if(!(this is Commander) && commander.IsAlive())
 			{
 				Physics.IgnoreCollision(collider,commander.collider,true);
 			}
@@ -863,14 +869,51 @@ public class Unit : MonoBehaviour
 	{	
 		if(!IsOwnedByPlayer() || IsPlayer())
 			return;
-		if(isSelected && selectEffect == null)
+		if(isSelected)
 		{
-			selectEffect = Instantiate(selectPrefab) as GameObject;
-			selectEffect.transform.parent = transform;
-			selectEffect.transform.localPosition = Vector3.zero;
-			selectEffect.layer = gameObject.layer;
+			if(selectEffect == null)
+			{
+				selectEffect = Instantiate(selectPrefab) as GameObject;
+				selectEffect.transform.parent = transform;
+				selectEffect.transform.localPosition = Vector3.zero;
+			}
+			if(moveEffect == null && orderData != null)
+			{
+				Order order = orderData.GetOrder();
+				Transform moveTarget = orderData.GetMoveTarget();
+				if(moveTarget == null)
+				{
+					moveTarget = orderData.GetOrderTarget();
+					if(moveTarget != null)
+					{
+						moveTarget = motor.MakeMoveTarget(moveTarget);
+						orderData.SetMoveTarget(moveTarget, this);
+					}
+				}
+				if(moveTarget != null)
+				{
+					if(order == Order.attack)
+					{
+						moveEffect = Instantiate(attackPrefab) as GameObject;
+					}
+					else if(order == Order.defend)
+					{
+						moveEffect = Instantiate(defendPrefab) as GameObject;
+					}
+					else if(order == Order.move)
+					{
+						moveEffect = Instantiate(movePrefab) as GameObject;
+					}
+					moveEffect.transform.parent = moveTarget;
+					moveEffect.transform.localPosition = Vector3.zero;
+				}
+			}
+			if(moveEffect != null)
+				moveEffect.layer = gameObject.layer;
+			if(selectEffect != null)
+				selectEffect.layer = gameObject.layer;
 		}
-		else if(!isSelected && selectEffect != null)
+		else if(selectEffect != null || moveEffect != null)
 		{
 			ResetEffects();
 		}
@@ -1284,22 +1327,6 @@ public class Unit : MonoBehaviour
 		ResetEffects();
 		running = false;
 		findingHealth = false;
-		OnClassDie();
-		foreach(Transform child in transform)
-		{
-			if(child.GetComponent<Objective>() != null)
-			{
-				child.parent = null;
-				continue;
-			}
-			if(child.GetComponent<AudioListener>() != null)
-			{
-				child.parent = null;
-				continue;
-			}
-			child.gameObject.SetActive(false);
-		}
-		gameObject.SetActive(false);
 		// Reset spawn point.
 		Commander commander = GetCommander();
 		if(commander != null)
@@ -1316,10 +1343,24 @@ public class Unit : MonoBehaviour
 			}
 			timeToOurRespawn = commander.GetTimeToRespawn();
 			Debug.Log ("Respawning in: "+timeToOurRespawn.ToString());
-			if(IsPlayer())
-				 InvokeRepeating("PlayRespawn",timeToOurRespawn - Mathf.Floor(timeToOurRespawn),1.0f);
 			Invoke("Spawn",timeToOurRespawn);
 		}
+		OnClassDie();
+		foreach(Transform child in transform)
+		{
+			if(child.GetComponent<Objective>() != null)
+			{
+				child.parent = null;
+				continue;
+			}
+			if(child.GetComponent<AudioListener>() != null)
+			{
+				child.parent = null;
+				continue;
+			}
+			child.gameObject.SetActive(false);
+		}
+		gameObject.SetActive(false);
 	}
 	
 	protected virtual void OnClassDie()
@@ -1802,11 +1843,6 @@ public class Unit : MonoBehaviour
 		OnCapturedObjective();
 	}
 	
-	protected void PlayRespawn()
-	{
-		Camera.main.audio.PlayOneShot(respawnBlip);
-	}
-	
 	public bool IsFriendly(Unit other)
 	{
 		return GetCommander() == other.GetCommander();
@@ -1884,7 +1920,6 @@ public class Unit : MonoBehaviour
 		uName = oldClone.uName;
 		teamColor = oldClone.teamColor;
 		label = oldClone.label;
-		orderData = oldClone.orderData;
 		status = oldClone.status;
 		movementType = oldClone.movementType;
 		kills = oldClone.kills;
@@ -1900,6 +1935,9 @@ public class Unit : MonoBehaviour
 			SetOutlineColor(selectedColor);
 		else
 			SetOutlineColor(outlineColor);
+		orderData = oldClone.orderData;
+		if(orderData != null)
+			orderData.SetUnit(this);
 		skipSpawn = true;
 		SetTeamColor();
 		Invoke("AllowSpawn",5.0f);

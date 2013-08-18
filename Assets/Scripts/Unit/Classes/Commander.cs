@@ -37,6 +37,8 @@ public class Commander : Leader
 	protected List<Unit> backloggedUnits = new List<Unit>();
 	protected List<int> newlySelectedUnits = new List<int>();
 	protected static GameObject cardBackground = null;
+	protected static PhysicalText respawnText;
+	public Font respawnFont;
 	
 	/// <summary>
 	/// Called once, at the beginning of the game.
@@ -58,6 +60,14 @@ public class Commander : Leader
 			Screen.showCursor = false;
 			if(cardBackground == null)
 				cardBackground = Resources.Load("Prefabs/Unit Card Background") as GameObject;
+			if(guiCamera != null)
+			{
+				respawnText = new PhysicalText(guiCamera.ViewportToWorldPoint(new Vector3(0.075f,0.8f,0.5f)));
+				respawnText.textString = "Respawn in: ";
+				respawnText.font = respawnFont;
+				respawnText.text.transform.localScale = new Vector3(0.2f,0.2f,0.2f);
+				respawnText.text.transform.localRotation = Quaternion.Euler(new Vector3(90.0f,0.0f,0.0f));
+			}
 		}
 		if(unitPrefab == null)
 			unitPrefab = Resources.Load ("Prefabs/Unit") as GameObject;
@@ -90,10 +100,15 @@ public class Commander : Leader
 			{
 				weapon.gameObject.layer = leaderLayer;
 			}
+			if(guiCamera != null)
+			{
+				guiCamera.clearFlags = CameraClearFlags.Nothing;
+				respawnText.text.layer = defaultLayer;
+			}
 		}
 		currentOrder = Order.move;
 		currentOrderIndex = 0;
-		transform.position = transform.position + new Vector3(0.0f, 0.3f,0.0f);
+		transform.position = spawnPoint + new Vector3(0.0f, 0.3f,0.0f);
 		transform.localScale = new Vector3(1.3f,1.3f,1.3f);
 	}
 	
@@ -327,11 +342,43 @@ public class Commander : Leader
 	
 	protected override void OnClassDie ()
 	{
+		if(!isPlayer)
+			return;
 		DeselectUnits();
 		foreach(int i in lookingAt)
 		{
 			unitID[i].IsLookedAt(false);
 		}
+		if(guiCamera != null)
+		{
+			guiCamera.clearFlags = CameraClearFlags.SolidColor;
+			respawnText.text.layer = hudLayer;
+			respawnText.textString = "Respawning in "+Mathf.RoundToInt(timeToOurRespawn)+" seconds.";
+		}
+		InvokeRepeating("PlayRespawn",timeToOurRespawn - Mathf.Floor(timeToOurRespawn),1.0f);
+	}
+	
+	protected void PlayRespawn()
+	{
+		Camera.main.audio.PlayOneShot(respawnBlip);
+		if(timeToOurRespawn > 0)
+			timeToOurRespawn--;
+		UpdateRespawnTimer();
+	}
+	
+	public void UpdateRespawnTimer()
+	{
+		float tempTime = timeToOurRespawn;
+		Debug.Log ("Respawning in "+tempTime+" seconds.");
+		respawnText.textString = "Respawning in "+Mathf.RoundToInt(tempTime)+" seconds.";
+	}
+	
+	protected string MakeDeathMessage ()
+	{
+		string respawnTime = "Respawning in "+Mathf.RoundToInt(timeToOurRespawn)+" seconds.";
+		string deathMessage = "You were killed by "+lastDamager.name+". " + respawnTime;
+		respawnText.textString = respawnTime;
+		return deathMessage;
 	}
 	
 	protected void MakeCard(Unit unit, float count)
@@ -793,6 +840,7 @@ public class Commander : Leader
 	{
 		if(spawnPoints == null || spawnPoints.Length == 0)
 		{
+			Debug.LogWarning("No spawn points set! Getting random spawn point.");
 			Vector3 randomPos = spawnPoint;
 			randomPos += new Vector3(Random.Range(-RANDOM_SPAWN_RANGE, RANDOM_SPAWN_RANGE), 1001, Random.Range(-RANDOM_SPAWN_RANGE, RANDOM_SPAWN_RANGE));
 			Vector3 ourPos = transform.position;

@@ -349,8 +349,6 @@ public class UnitMotor : MonoBehaviour {
 		target = targetGO.transform;
 		target.position = targetLocation;
 		target.parent = oldTarget;
-		if(unit.IsOwnedByPlayer())
-			Debug.Log ("Making target.");
 		return target;
 	}
 	
@@ -403,6 +401,8 @@ public class UnitMotor : MonoBehaviour {
 		}
 		foreach(GameObject go in tempGameObjects.ToArray())
 		{
+			if(go == null)
+				continue;
 			if(go.name.Contains(" Target"))
 				Destroy(go);
 		}
