@@ -43,17 +43,18 @@ public class Commander : Leader
 	protected Rect guiRect;
 	protected static string[] guiTooltips = new string[]
 	{
+		"Default Controls:",
 		"WASD: Move",
 		"Mouse1: Shoot",
 		"Mouse2: Give Orders",
 		"Scroll Wheel: Change Orders",
 		"E: Toggle Unit Selected",
 		"Q: Deselect all Units",
-		"Shift + E: Promote looked-at Unit to Leader",
-		"Ctrl + E: Assign selected Units to looked-at Leader",
+		"Shift + E: Promote the Unit you're looking at to Leader",
+		"Ctrl + E: Assign selected Units to be led by the Leader you're currently looking at",
 		"1-9: Quick-Select Leader",
 		"Ctrl + 1-9: Quick-Assign Units to Leader",
-		"M: Toggle Map View"
+		"M: Toggle RTS Map View"
 	};
 	
 	/// <summary>
