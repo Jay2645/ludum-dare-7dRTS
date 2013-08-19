@@ -1798,7 +1798,7 @@ public class Unit : MonoBehaviour
 	public void CreateHealthPackMessage()
 	{
 		if(IsAlive())
-			MessageList.Instance.AddMessage(uName+" is low on health ("+health+" / 100). Moving to healthpack.");
+			MessageList.Instance.AddMessage(uName+" is low on health ("+health+" HP). Moving to healthpack.");
 	}
 	
 	public bool RestoreHealth(int amount)
@@ -1807,7 +1807,7 @@ public class Unit : MonoBehaviour
 			return false;
 		health += amount;
 		health = Mathf.Min(health, 100);
-		if(healthRegen != null)
+		if(healthRegen != null && amount > 30)
 			gameObject.GetComponentInChildren<AudioSource>().PlayOneShot(healthRegen);
 		if(orderData != null)
 		{

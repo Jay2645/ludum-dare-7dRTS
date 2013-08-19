@@ -314,7 +314,8 @@ public class Weapon : MonoBehaviour
 			return false;
 		ammo += bulletAmount;
 		ammo = Mathf.Min(ammo,_maxAmmoCount);
-		audio.PlayOneShot(ammoPickup);
+		if(bulletAmount >= _maxClipSize)
+			audio.PlayOneShot(ammoPickup);
 		return true;
 	}
 	

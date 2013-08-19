@@ -13,7 +13,7 @@ public class Flag : Objective {
 	public override void RemovePlayer (Unit player)
 	{
 		base.RemovePlayer (player);
-		if(player != carrying)
+		if(player != carrying || carrying == null)
 			return;
 		carrying.GetCommander().attackObjective = null;
 		carrying.aBase.captureIndex = 1;

@@ -39,6 +39,22 @@ public class Commander : Leader
 	protected static GameObject cardBackground = null;
 	protected static PhysicalText respawnText;
 	public Font respawnFont;
+	public bool showTutorial = false;
+	protected Rect guiRect;
+	protected static string[] guiTooltips = new string[]
+	{
+		"WASD: Move",
+		"Mouse1: Shoot",
+		"Mouse2: Give Orders",
+		"Scroll Wheel: Change Orders",
+		"E: Toggle Unit Selected",
+		"Q: Deselect all Units",
+		"Shift + E: Promote looked-at Unit to Leader",
+		"Ctrl + E: Assign selected Units to looked-at Leader",
+		"1-9: Quick-Select Leader",
+		"Ctrl + 1-9: Quick-Assign Units to Leader",
+		"M: Toggle Map View"
+	};
 	
 	/// <summary>
 	/// Called once, at the beginning of the game.
@@ -68,6 +84,9 @@ public class Commander : Leader
 				respawnText.text.transform.localScale = new Vector3(0.2f,0.2f,0.2f);
 				respawnText.text.transform.localRotation = Quaternion.Euler(new Vector3(90.0f,0.0f,0.0f));
 			}
+			showTutorial = true;
+			guiRect = new Rect(0,0,500,Screen.height / guiTooltips.Length + 1);
+			Time.timeScale = 0.0f;
 		}
 		if(unitPrefab == null)
 			unitPrefab = Resources.Load ("Prefabs/Unit") as GameObject;
@@ -200,6 +219,23 @@ public class Commander : Leader
 		if(Input.GetKeyDown(KeyCode.F9))
 		{
 			Application.CaptureScreenshot("screenshot.png");
+		}
+	}
+	
+	void OnGUI()
+	{
+		if(!showTutorial)
+			return;
+		if(Input.anyKeyDown)
+		{
+			showTutorial = false;
+			Time.timeScale = 1.0f;
+			return;
+		}
+		for(int i = 0; i < guiTooltips.Length; i++)
+		{
+			guiRect.y = i * (guiTooltips.Length + 2);
+			GUI.Label(guiRect,guiTooltips[i]);
 		}
 	}
 	
@@ -360,9 +396,10 @@ public class Commander : Leader
 	
 	protected void PlayRespawn()
 	{
+		if(timeToOurRespawn <= 0)
+			return;
 		Camera.main.audio.PlayOneShot(respawnBlip);
-		if(timeToOurRespawn > 0)
-			timeToOurRespawn--;
+		timeToOurRespawn--;
 		UpdateRespawnTimer();
 	}
 	

@@ -86,7 +86,7 @@ public class Objective : MonoBehaviour {
 	/// </param>
 	protected bool OwnsObjective(Unit query)
 	{
-		return owner != null && query.GetCommander().GetTeamID() == owner.GetTeamID();
+		return query != null && owner != null && query.GetCommander() == owner;
 	}
 	
 	public virtual void OnBaseEnter(Unit contestant, Base uBase)

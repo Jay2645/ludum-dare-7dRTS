@@ -23,6 +23,7 @@ public class PauseMenu
 	
 	public static bool IsPaused()
 	{
-		return isPaused;
+		return Time.timeScale == 0.0f;
+		//return isPaused;
 	}
 }
