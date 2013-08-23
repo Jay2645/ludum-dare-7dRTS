@@ -30,6 +30,7 @@ public class Leader : Unit
 	
 	protected override void ClassSetup ()
 	{
+		unitType = UnitType.Leader;
 		raycastIncrementRate = 10.0f;
 	}
 	

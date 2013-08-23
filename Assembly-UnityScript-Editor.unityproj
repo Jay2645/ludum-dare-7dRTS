@@ -63,9 +63,7 @@
      <None Include="Assets\Standard Assets\Toon Shading\Sources\Shaders\Toony-Lighted.shader" />
      <None Include="Assets\Shaders\Toony-BasicTransparent.shader" />
      <None Include="Assets\Shaders\3DText.shader" />
-     <None Include="Assets\Audio\credit.txt" />
      <None Include="Assets\RAIN\Editor\ScriptTemplates\BehaviorTreeTemplate.xml" />
-     <None Include="Assets\TerrainToolkit\Read me.txt" />
  <Reference Include="RAINIndie">
  <HintPath>Assets\RAIN\RAINIndie.dll</HintPath>
  </Reference>
@@ -104,8 +102,6 @@
       <Project>{FB7DF121-BC53-FA39-E3CC-B701A6B30E65}</Project>      <Name>Assembly-UnityScript-firstpass</Name>    </ProjectReference>
     <ProjectReference Include="Assembly-CSharp.csproj">
       <Project>{D14AE1E0-42BB-6829-71DD-1BB78CDFD73A}</Project>      <Name>Assembly-CSharp</Name>    </ProjectReference>
-    <ProjectReference Include="Assembly-UnityScript.unityproj">
-      <Project>{553EC5E9-7705-63AB-16BC-3B26C2C71A9B}</Project>      <Name>Assembly-UnityScript</Name>    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

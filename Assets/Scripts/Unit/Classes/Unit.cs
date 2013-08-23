@@ -185,6 +185,27 @@ public class OrderData
 }
 
 /// <summary>
+/// The type of this Unit.
+/// This is mostly for the promotion code:
+/// MonoBehaviours can't be created using the "new" keyword, so we have to use an enum to specify what type of Unit is being made.
+/// </summary>
+public enum UnitType
+{
+	/// <summary>
+	/// Basic Unit.
+	/// </summary>
+	Unit,
+	/// <summary>
+	/// Basic Leader.
+	/// </summary>
+	Leader,
+	/// <summary>
+	/// Basic Commander.
+	/// </summary>
+	Commander
+}
+
+/// <summary>
 /// What is this Unit currently doing?
 /// </summary>
 public enum UnitStatus
@@ -322,7 +343,20 @@ public class Unit : MonoBehaviour
 	/// <summary>
 	/// The maximum distance a health pack can be before we hunt it down.
 	/// </summary>
-	protected const float MAX_HEALTH_DISTANCE = 100.0f; 
+	protected const float MAX_HEALTH_DISTANCE = 100.0f;
+	/// <summary>
+	/// How many resources does a base Unit cost?
+	/// </summary>
+	protected const float UNIT_COST = 20.0f;
+	/// <summary>
+	/// How many resources does a Leader cost?
+	/// </summary>
+	protected const float LEADER_COST = 100.0f;
+	/// <summary>
+	/// How many resources does a Commander cost?
+	/// Note: Currently, Commanders should be limited to 1 per team.
+	/// </summary>
+	protected const float COMMANDER_COST = Mathf.Infinity;
 	
 	// Unit variables //
 	
@@ -341,6 +375,10 @@ public class Unit : MonoBehaviour
 	protected float raycastIncrementRate = 15.0f;
 	
 	// GAMEPLAY
+	/// <summary>
+	/// The type of this Unit.
+	/// </summary>
+	protected UnitType unitType = UnitType.Unit;
 	/// <summary>
 	/// Our current health.
 	/// </summary>
@@ -566,6 +604,7 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected void UnitSetup()
 	{
+		unitType = UnitType.Unit;
 		CreateID();
 		if(weapon != null)
 		{
@@ -673,7 +712,7 @@ public class Unit : MonoBehaviour
 					continue;
 				Physics.IgnoreCollision(collider,unit.collider,true);
 			}
-			if(!(this is Commander) && commander.IsAlive())
+			if(!(unitType == UnitType.Commander) && commander.IsAlive())
 			{
 				Physics.IgnoreCollision(collider,commander.collider,true);
 			}
@@ -1368,6 +1407,23 @@ public class Unit : MonoBehaviour
 		spawnPoint = Vector3.zero;
 	}
 	
+	public static float GetCost(UnitType unitType)
+	{
+		if(unitType == UnitType.Unit)
+		{
+			return UNIT_COST;
+		}
+		else if(unitType == UnitType.Leader)
+		{
+			return LEADER_COST;
+		}
+		else if(unitType == UnitType.Commander)
+		{
+			return COMMANDER_COST;
+		}
+		return Mathf.Infinity;
+	}
+	
 	public void OnTargetReached()
 	{
 		leader.OnUnitReachedTarget(this);
@@ -1869,6 +1925,11 @@ public class Unit : MonoBehaviour
 	public float GetTimeUntilRespawn()
 	{
 		return timeToOurRespawn;
+	}
+	
+	public UnitType GetUnitType()
+	{
+		return unitType;
 	}
 	
 	protected void AllowSpawn()
