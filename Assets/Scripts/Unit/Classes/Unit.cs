@@ -1,6 +1,5 @@
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 /// <summary>
 /// All possible orders that can be given to units.
@@ -33,7 +32,7 @@ public class OrderData
 	{
 		this.leader = leader;
 		this.unit = unit;
-		SetOrder(Order.stop,false);
+		SetOrder(Order.stop, false);
 	}
 	/// <summary>
 	/// Where is this telling the Unit to be sent to?
@@ -71,7 +70,7 @@ public class OrderData
 	/// Where was the unit when it recieved this order?
 	/// </summary>
 	private Vector3 unitLocation = Vector3.zero;
-	
+
 	/// <summary>
 	/// Sets the order target (the general location we're going to).
 	/// </summary>
@@ -93,7 +92,7 @@ public class OrderData
 	{
 		return orderTarget;
 	}
-	
+
 	/// <summary>
 	/// Sets the exact location that we're moving towards.
 	/// If this is set by the Unit that we're giving the orders, it automatically sends the updated location to the lader.
@@ -107,39 +106,39 @@ public class OrderData
 	public void SetMoveTarget(Transform moveTarget, Unit setter)
 	{
 		this.moveTarget = moveTarget;
-		if(setter == unit)
+		if (setter == unit)
 		{
 			UpdatedByUnit();
 		}
 	}
 	public Transform GetMoveTarget()
 	{
-		if(moveTarget == null)
+		if (moveTarget == null)
 			return orderTarget;
 		return moveTarget;
 	}
-	
+
 	public void SetUnit(Unit unit)
 	{
 		this.unit = unit;
 		UpdatedByUnit();
 	}
-	
+
 	public void SetOrder(Order order, bool autoMoveType)
 	{
 		this.order = order;
 		unitLocation = unit.transform.position;
-		if(!autoMoveType)
+		if (!autoMoveType)
 			return;
-		if(order == Order.attack || order == Order.defend)
+		if (order == Order.attack || order == Order.defend)
 		{
 			SetMoveType(MoveType.Loose);
 		}
-		else if(order == Order.stop)
+		else if (order == Order.stop)
 		{
 			SetMoveType(MoveType.DefendSelf);
 		}
-		else if(order == Order.move)
+		else if (order == Order.move)
 		{
 			SetMoveType(MoveType.Strict);
 		}
@@ -148,7 +147,7 @@ public class OrderData
 	{
 		return order;
 	}
-	
+
 	public void SetMoveType(MoveType movementType)
 	{
 		moveTypeChanged = true;
@@ -162,18 +161,18 @@ public class OrderData
 	{
 		return moveType;
 	}
-	
+
 	public void UpdatedByUnit()
 	{
 		unitLocation = unit.transform.position;
 		updatedByUnit = true;
-		leader.UnitUpdateOrder(unit,this);
+		leader.UnitUpdateOrder(unit, this);
 	}
 	public bool WasUpdatedByUnit()
 	{
 		return updatedByUnit;
 	}
-	
+
 	public Leader GetLeader()
 	{
 		return leader;
@@ -233,7 +232,7 @@ public enum UnitStatus
 /// Units have a unique ID and a name so the player can tell them apart.
 /// Units can be promoted or demoted to Leader class by a Commander; however, there is only one Commander which can be active at any given time.
 /// </summary>
-public class Unit : MonoBehaviour 
+public class Unit : MonoBehaviour
 {
 	// Static variables //
 	/// <summary>
@@ -301,8 +300,8 @@ public class Unit : MonoBehaviour
 	/// If friendly fire is disabled, we can also move through our teammates.
 	/// </summary>
 	public static bool friendlyFire = false;
-	
-	
+
+
 	// Constants //
 	/// <summary>
 	/// How far away do we have to be from our leader to move towards it.
@@ -357,9 +356,9 @@ public class Unit : MonoBehaviour
 	/// Note: Currently, Commanders should be limited to 1 per team.
 	/// </summary>
 	protected const float COMMANDER_COST = Mathf.Infinity;
-	
+
 	// Unit variables //
-	
+
 	// SELECTION
 	/// <summary>
 	/// Are we able to be selected?
@@ -373,7 +372,7 @@ public class Unit : MonoBehaviour
 	/// How much to increment the raycast by when calculating FOV.
 	/// </summary>
 	protected float raycastIncrementRate = 15.0f;
-	
+
 	// GAMEPLAY
 	/// <summary>
 	/// The type of this Unit.
@@ -396,6 +395,10 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	protected Weapon _initialWeapon;
 	/// <summary>
+	/// Can we move?
+	/// </summary>
+	public bool movable = true;
+	/// <summary>
 	/// The number of kills we've earned.
 	/// </summary>
 	protected int kills = 0;
@@ -415,6 +418,9 @@ public class Unit : MonoBehaviour
 	/// The base this unit belongs to.
 	/// </summary>
 	public Base aBase = null;
+	/// <summary>
+	/// The objective we're currently capturing, if any.
+	/// </summary>
 	protected Objective capturingObjective = null;
 	/// <summary>
 	/// Does this unit avoid all damage?
@@ -424,10 +430,24 @@ public class Unit : MonoBehaviour
 	/// How much longer until we respawn?
 	/// </summary>
 	protected float timeToOurRespawn = 0.0f;
+	/// <summary>
+	/// Were we just promoted?
+	/// </summary>
 	protected bool justPromoted = false;
+	/// <summary>
+	/// Are we finding health?
+	/// </summary>
 	protected bool findingHealth = false;
+	/// <summary>
+	/// Where did we enter combat?
+	/// </summary>
 	protected Vector3 enterCombatPosition = Vector3.zero;
-	
+	/// <summary>
+	/// What time did we last die?
+	/// </summary>
+	protected float deathTime = 0.0f;
+
+
 	// IDENTIFICATION
 	/// <summary>
 	/// This unit's unique identifier.
@@ -445,8 +465,8 @@ public class Unit : MonoBehaviour
 	/// The team name of our enemy.
 	/// </summary>
 	public string enemyName = "";
-	
-	
+
+
 	// AI
 	/// <summary>
 	/// Our leader.
@@ -528,8 +548,8 @@ public class Unit : MonoBehaviour
 	/// What type of movement do we use?
 	/// </summary>
 	protected MoveType movementType = MoveType.DefendSelf;
-	
-	
+
+
 	// VISUALS
 	/// <summary>
 	/// This unit's shadow, set in the Inspector.
@@ -572,6 +592,10 @@ public class Unit : MonoBehaviour
 	/// </summary>
 	public AudioClip respawnBeep = null;
 	/// <summary>
+	/// The noise we make when we die.
+	/// </summary>
+	public AudioClip deathNoise = null;
+	/// <summary>
 	/// This is whatever piece of geometry makes a Unit "unique."
 	/// For example, Leaders could have crowns which make them stand out to the player.
 	/// </summary>
@@ -581,24 +605,24 @@ public class Unit : MonoBehaviour
 	protected static LayerMask unitLayer = 0;
 	protected static LayerMask hudLayer = 0;
 	protected List<Leader> visibleBy = new List<Leader>();
-	
-	
+
+
 	void Awake()
 	{
-		if(defaultLayer == 0)
+		if (defaultLayer == 0)
 			defaultLayer = LayerMask.NameToLayer("Default");
-		if(leaderLayer == 0)
+		if (leaderLayer == 0)
 			leaderLayer = LayerMask.NameToLayer("Leaders");
-		if(unitLayer == 0)
+		if (unitLayer == 0)
 			unitLayer = LayerMask.NameToLayer("Units");
-		if(hudLayer == 0)
+		if (hudLayer == 0)
 			hudLayer = LayerMask.NameToLayer("HUD Only");
-		if(regenZones == null)
+		if (regenZones == null)
 			regenZones = GameObject.FindGameObjectsWithTag("Regen");
 		UnitSetup();
 		ClassSetup();
 	}
-	
+
 	/// <summary>
 	/// Sets up the Unit. This will only be called once.
 	/// </summary>
@@ -606,22 +630,22 @@ public class Unit : MonoBehaviour
 	{
 		unitType = UnitType.Unit;
 		CreateID();
-		if(weapon != null)
+		if (weapon != null)
 		{
 			_initialWeapon = weapon;
 		}
 		_maxHealth = health;
-		if(renderer != null && outlineColor == Color.clear)
+		if (renderer != null && outlineColor == Color.clear)
 			outlineColor = renderer.material.GetColor("_OutlineColor");
-		if(IsPlayer())
+		if (IsPlayer() || !movable)
 			return;
 		motor = gameObject.GetComponent<UnitMotor>();
-		if(motor == null)
+		if (motor == null)
 			motor = gameObject.AddComponent<UnitMotor>();
 		motor.UpdateUnit(this);
 		spawnPoint = Vector3.zero;
 	}
-	
+
 	/// <summary>
 	/// Sets up whatever class this is. This will only be called once.
 	/// </summary>
@@ -629,14 +653,14 @@ public class Unit : MonoBehaviour
 	{
 		InitPrefabs();
 	}
-	
+
 	void Start()
 	{
 		Spawn();
 		UnitStart();
 		ClassStart();
 	}
-	
+
 	/// <summary>
 	/// Spawns this Unit. This will be called every time the Unit dies and respawns or this script is restarted.
 	/// </summary>
@@ -644,87 +668,87 @@ public class Unit : MonoBehaviour
 	{
 		// Make the GameObject visible.
 		gameObject.SetActive(true);
-		foreach(Transform child in transform)
+		foreach (Transform child in transform)
 		{
 			child.gameObject.SetActive(true);
 		}
-		
-		if(gameObject.GetComponent<RAIN.Ontology.Decoration>() == null)
+
+		if (gameObject.GetComponent<RAIN.Ontology.Decoration>() == null)
 		{
 			gameObject.AddComponent<RAIN.Ontology.Entity>();
 			RAIN.Ontology.Decoration decoration = gameObject.AddComponent<RAIN.Ontology.Decoration>();
-			RAIN.Ontology.Aspect aspect = new RAIN.Ontology.Aspect(gameObject.tag,new RAIN.Ontology.Sensation("sight"));
+			RAIN.Ontology.Aspect aspect = new RAIN.Ontology.Aspect(gameObject.tag, new RAIN.Ontology.Sensation("sight"));
 			decoration.aspect = aspect;
 		}
-		if(shadow != null)
+		if (shadow != null)
 		{
 			shadow.layer = gameObject.layer;
 		}
-		
-		if(leader != null)
+
+		if (leader != null)
 			leader.RegisterUnit(this);
-		if(gameObject.tag == "Red")
+		if (gameObject.tag == "Red")
 			enemyName = "Blue";
 		else
 			enemyName = "Red";
-		
+
 		// Call class-specific spawn code.
 		ClassSpawn();
-		
+
 		// Makes sure the GameObject is the right color.
 		SetTeamColor();
-		
+
 		// Sometimes (especially when we get promoted) we run into a bug where all our variables are reset when they shouldn't be.
-		if(skipSpawn)
+		if (skipSpawn)
 		{
 			skipSpawn = false;
 			return;
 		}
-		
+
 		// Reset all variables to their initial state.
-		Debug.Log ("Resetting variables on "+this);
-		if(!IsPlayer())
+		Debug.Log("Resetting variables on " + this);
+		if (!IsPlayer())
 		{
 			SetOutlineColor(outlineColor);
 		}
 		justPromoted = false;
 		ResetTarget();
 		health = _maxHealth;
-		if(_initialWeapon != null)
+		if (_initialWeapon != null)
 		{
 			CreateWeapon(_initialWeapon);
-			if(weapon != null)
+			if (weapon != null)
 			{
 				weapon.gameObject.layer = gameObject.layer;
 			}
 		}
-		
+
 		Commander commander = GetCommander();
-		if(commander == null)
+		if (commander == null)
 		{
-			Debug.Log (uName+"'s Commander is null!");
+			Debug.Log(uName + "'s Commander is null!");
 		}
 		else
 		{
-			foreach(Unit unit in commander.GetAllUnits())
+			foreach (Unit unit in commander.GetAllUnits())
 			{
-				if(unit == this || !unit.IsAlive())
+				if (unit == this || !unit.IsAlive())
 					continue;
-				Physics.IgnoreCollision(collider,unit.collider,true);
+				Physics.IgnoreCollision(collider, unit.collider, true);
 			}
-			if(!(unitType == UnitType.Commander) && commander.IsAlive())
+			if (!(unitType == UnitType.Commander) && commander.IsAlive())
 			{
-				Physics.IgnoreCollision(collider,commander.collider,true);
+				Physics.IgnoreCollision(collider, commander.collider, true);
 			}
 		}
 		// Move it to the spawn point.
-		if(spawnPoint == Vector3.zero)
+		if (spawnPoint == Vector3.zero)
 		{
-			if(commander != null)
+			if (commander != null)
 			{
 				spawnPoint = commander.GetSpawnPoint();
 				transform.position = spawnPoint;
-				if(commander.attackObjective == null)
+				if (commander.attackObjective == null)
 				{
 					Vector3 ourRot = transform.rotation.eulerAngles;
 					float look = commander.transform.rotation.eulerAngles.y;
@@ -741,19 +765,19 @@ public class Unit : MonoBehaviour
 				}
 			}
 		}
-		
+
 		CancelInvoke();
 		timeToOurRespawn = 0.0f;
-		if(!gameObject.activeInHierarchy && IsPlayer())
+		if (!gameObject.activeInHierarchy && IsPlayer())
 			Camera.main.audio.PlayOneShot(respawnBeep);
-		
+
 		immortal = true;
-		Invoke ("CanTakeDamage",RESPAWN_BLINK_TIME);
+		Invoke("CanTakeDamage", RESPAWN_BLINK_TIME);
 		weapon.ammo = _initialWeapon.ammo;
 		// Force a recheck of any AI functions.
 		HandleAI(true);
 	}
-	
+
 	/// <summary>
 	/// Creates things that should happen when this class spawns. This will be called every time this Unit dies and respawns.
 	/// </summary>
@@ -762,100 +786,104 @@ public class Unit : MonoBehaviour
 		gameObject.layer = unitLayer;
 		transform.localScale = Vector3.one;
 	}
-	
+
 	protected virtual void UnitStart()
-	{}
-	
+	{ }
+
 	protected virtual void ClassStart()
-	{}
-	
+	{ }
+
 	protected void SetTeamColor()
 	{
-		if(renderer != null)
+		if (renderer != null)
 			renderer.material.color = teamColor;
-		if(uniqueGeo != null && uniqueGeo.renderer != null)
+		if (uniqueGeo != null && uniqueGeo.renderer != null)
 		{
 			Material[] mats = uniqueGeo.renderer.materials;
 			mats[1].color = teamColor;
 			uniqueGeo.renderer.materials = mats;
 		}
 	}
-	
+
 	protected void SetOutlineColor(Color color)
 	{
 		Renderer[] renderers = transform.root.GetComponentsInChildren<Renderer>();
-		foreach(Renderer render in renderers)
+		foreach (Renderer render in renderers)
 		{
-			if(render.GetComponent<Weapon>() != null)
+			if (render.GetComponent<Weapon>() != null)
 				continue;
 			Material[] mats = render.materials;
-			foreach(Material mat in mats)
+			foreach (Material mat in mats)
 			{
-				if(mat.HasProperty("_OutlineColor"))
+				if (mat.HasProperty("_OutlineColor"))
 				{
-					mat.SetColor("_OutlineColor",color);
+					mat.SetColor("_OutlineColor", color);
 				}
 			}
 			render.materials = mats;
 		}
 	}
-	
+
 	protected void CanTakeDamage()
 	{
 		immortal = false;
 	}
-	
+
 	protected virtual void CreateWeapon(Weapon weapon)
 	{
-		if(this.weapon != null && weapon.gameObject.activeInHierarchy)
+		if (this.weapon != null && weapon.gameObject.activeInHierarchy)
 		{
 			this.weapon.transform.parent = null;
 		}
 		this.weapon = Instantiate(weapon) as Weapon;
 		this.weapon.Pickup(this);
 	}
-	
+
 	/// <summary>
 	/// Initializes all prefabs.
 	/// </summary>
 	protected void InitPrefabs()
 	{
-		if(movePrefab == null)
+		if (movePrefab == null)
 		{
 			movePrefab = Resources.Load("Prefabs/MoveTarget") as GameObject;
 		}
-		if(defendPrefab == null)
+		if (defendPrefab == null)
 		{
 			defendPrefab = Resources.Load("Prefabs/DefendTarget") as GameObject;
 		}
-		if(attackPrefab == null)
+		if (attackPrefab == null)
 		{
 			attackPrefab = Resources.Load("Prefabs/AttackTarget") as GameObject;
 		}
-		if(selectPrefab == null)
+		if (selectPrefab == null)
 		{
 			selectPrefab = Resources.Load("Prefabs/SelectEffect") as GameObject;
 		}
 	}
-	
+
 	void Update()
 	{
-		if(Input.GetButtonDown("Pause") && IsPlayer())
+		if (Input.GetButtonDown("Pause") && IsPlayer())
 		{
 			PauseMenu.Pause();
 		}
-		if(!IsAlive() || PauseMenu.IsPaused())
+		if (!IsAlive() || PauseMenu.IsPaused())
 			return;
 		UnitUpdate();
 		ClassUpdate();
 	}
-	
+
 	/// <summary>
 	/// Updates values on this unit and every class which inherits from it. Called every frame that we are alive.
 	/// </summary>
 	protected void UnitUpdate()
 	{
 		CheckHealth();
+		if (!IsAlive() && Time.time > deathTime + timeToOurRespawn)
+		{
+			Spawn();
+		}
 		/*if(running || IsOwnedByPlayer())
 			return;
 		Commander commander = GetCommander();
@@ -869,21 +897,21 @@ public class Unit : MonoBehaviour
 		else
 			frameCount++;*/
 	}
-	
+
 	/// <summary>
 	/// Updates values specific to only this class. Called every frame that we are alive.
 	/// </summary>
 	protected virtual void ClassUpdate()
-	{}
-	
+	{ }
+
 	void LateUpdate()
 	{
-		if(!IsAlive())
+		if (!IsAlive())
 			return;
 		UnitLateUpdate();
 		ClassLateUpdate();
 	}
-	
+
 	/// <summary>
 	/// Handles any values which should only happen after everything else has happened this turn for this class and all that inherit from it.
 	/// Called every frame we are alive.
@@ -893,53 +921,53 @@ public class Unit : MonoBehaviour
 		HandleAI();
 		CheckStatus();
 	}
-	
+
 	/// <summary>
 	/// Handles any values which should only happen after everything else has happened this turn for this class only.
 	/// Called every frame we are alive.
 	/// </summary>
 	protected virtual void ClassLateUpdate()
-	{}
-	
+	{ }
+
 	/// <summary>
 	/// Creates/Destroys the selection visuals.
 	/// </summary>
 	public void CreateSelected()
-	{	
-		if(!IsOwnedByPlayer() || IsPlayer())
+	{
+		if (!IsOwnedByPlayer() || IsPlayer() || !isSelectable)
 			return;
-		if(isSelected)
+		if (isSelected)
 		{
-			if(selectEffect == null)
+			if (selectEffect == null)
 			{
 				selectEffect = Instantiate(selectPrefab) as GameObject;
 				selectEffect.transform.parent = transform;
 				selectEffect.transform.localPosition = Vector3.zero;
 			}
-			if(moveEffect == null && orderData != null)
+			if (movable && moveEffect == null && orderData != null)
 			{
 				Order order = orderData.GetOrder();
 				Transform moveTarget = orderData.GetMoveTarget();
-				if(moveTarget == null)
+				if (moveTarget == null)
 				{
 					moveTarget = orderData.GetOrderTarget();
-					if(moveTarget != null)
+					if (moveTarget != null)
 					{
 						moveTarget = motor.MakeMoveTarget(moveTarget);
 						orderData.SetMoveTarget(moveTarget, this);
 					}
 				}
-				if(moveTarget != null)
+				if (moveTarget != null)
 				{
-					if(order == Order.attack)
+					if (order == Order.attack)
 					{
 						moveEffect = Instantiate(attackPrefab) as GameObject;
 					}
-					else if(order == Order.defend)
+					else if (order == Order.defend)
 					{
 						moveEffect = Instantiate(defendPrefab) as GameObject;
 					}
-					else if(order == Order.move)
+					else if (order == Order.move)
 					{
 						moveEffect = Instantiate(movePrefab) as GameObject;
 					}
@@ -947,51 +975,51 @@ public class Unit : MonoBehaviour
 					moveEffect.transform.localPosition = Vector3.zero;
 				}
 			}
-			if(moveEffect != null)
+			if (moveEffect != null)
 				moveEffect.layer = gameObject.layer;
-			if(selectEffect != null)
+			if (selectEffect != null)
 				selectEffect.layer = gameObject.layer;
 		}
-		else if(selectEffect != null || moveEffect != null)
+		else if (selectEffect != null || moveEffect != null)
 		{
 			ResetEffects();
 		}
 	}
-	
+
 	public void Damage(float damageAmount, Unit damager)
 	{
-		if(immortal || health <= 0)
+		if (immortal || health <= 0)
 			return;
 		health -= Mathf.RoundToInt(damageAmount);
-		if(damager == null)
+		if (damager == null)
 			return;
-		if(status != UnitStatus.InCombat && status != UnitStatus.CapturingObjective)
+		if (status != UnitStatus.InCombat && status != UnitStatus.CapturingObjective)
 		{
 			SetStatus(UnitStatus.InCombat);
 		}
 		combatTime = 0.0f;
 		lastDamager = damager;
-		if(bestUnit == null)
+		if (bestUnit == null)
 		{
 			bestUnit = damager;
-			Shoot (bestUnit);
+			Shoot(bestUnit);
 		}
 	}
-	
+
 	protected void CheckHealth()
 	{
-		if(health <= 0)
+		if (health <= 0)
 			OnDie();
 	}
-	
+
 	protected void CheckStatus()
 	{
 		combatTime += Time.deltaTime;
-		if(status == UnitStatus.CapturingObjective)
+		if (status == UnitStatus.CapturingObjective)
 			return;
-		if(status == UnitStatus.InCombat)
+		if (status == UnitStatus.InCombat)
 		{
-			if(combatTime > COMBAT_EXIT_TIME)
+			if (combatTime > COMBAT_EXIT_TIME)
 			{
 				LeaveCombat();
 			}
@@ -1001,8 +1029,8 @@ public class Unit : MonoBehaviour
 			}
 		}
 		Vector3 pos = transform.position;
-		float dist = Vector3.Distance(pos,lastFramePosition);
-		if(dist == 0)
+		float dist = Vector3.Distance(pos, lastFramePosition);
+		if (dist == 0)
 		{
 			SetStatus(UnitStatus.Idle);
 		}
@@ -1011,73 +1039,73 @@ public class Unit : MonoBehaviour
 			SetStatus(UnitStatus.Moving);
 		}
 	}
-	
+
 	public void LeaveCombat()
 	{
-		if(status != UnitStatus.InCombat)
+		if (status != UnitStatus.InCombat)
 			return;
 		status = lastStatus;
 	}
-	
+
 	public void SetStatus(UnitStatus uStatus)
 	{
-		if(uStatus == UnitStatus.InCombat)
+		if (uStatus == UnitStatus.InCombat)
 		{
-			if(movementType == MoveType.Strict || status == UnitStatus.InCombat)
+			if (movementType == MoveType.Strict || status == UnitStatus.InCombat)
 				return;
 			enterCombatPosition = transform.position;
 			lastStatus = status;
 			status = uStatus;
 			return;
 		}
-		if(status == uStatus || status == UnitStatus.InCombat || status == UnitStatus.CapturingObjective)
+		if (status == uStatus || status == UnitStatus.InCombat || status == UnitStatus.CapturingObjective)
 			return;
 		status = uStatus;
 	}
-	
+
 	public UnitStatus GetStatus()
 	{
 		return status;
 	}
-	
+
 	protected virtual void CreateID()
 	{
 		id = currentID;
 		currentID++;
-		if(uName == "")
+		if (uName == "")
 		{
-			uName = firstNames[Mathf.RoundToInt(Random.Range(0,firstNames.Length))]+ " " + lastNames[Mathf.RoundToInt(Random.Range(0,lastNames.Length))];
-			if(label != null)
+			uName = firstNames[Mathf.RoundToInt(Random.Range(0, firstNames.Length))] + " " + lastNames[Mathf.RoundToInt(Random.Range(0, lastNames.Length))];
+			if (label != null)
 				label.SetLabelText(uName);
 		}
 		gameObject.name = uName;
 	}
-	
+
 	public bool IsSelectable()
 	{
 		return isSelectable;
 	}
-	
+
 	public int GetID()
 	{
-		if(id == -1)
+		if (id == -1)
 			CreateID();
 		return id;
 	}
-	
+
 	public virtual int GetTeamID()
 	{
-		if(leader == null)
+		if (leader == null)
 			return -1;
 		return leader.GetCommander().GetTeamID();
 	}
-	
+
 	public virtual void RegisterLeader(Leader newLeader)
 	{
-		if(newLeader == null)
+		if (newLeader == null)
 			return;
 		leader = newLeader;
-		if(!leader.IsOwnedByPlayer())
+		if (!leader.IsOwnedByPlayer())
 			Destroy(label);
 		Deselect();
 		ResetTarget();
@@ -1087,11 +1115,11 @@ public class Unit : MonoBehaviour
 		leader.RegisterUnit(this);
 		renderer.material.color = teamColor;
 		SetOutlineColor(outlineColor);
-		float distanceFromLeader = Vector3.Distance(transform.position,leader.transform.position);
-		if(distanceFromLeader >= MOVE_TO_LEADER_DISTANCE)
+		float distanceFromLeader = Vector3.Distance(transform.position, leader.transform.position);
+		if (leader != (Leader)Commander.player && distanceFromLeader >= MOVE_TO_LEADER_DISTANCE)
 		{
-			OrderData supportLeader = new OrderData(leader,this);
-			supportLeader.SetOrder(Order.move,false);
+			OrderData supportLeader = new OrderData(leader, this);
+			supportLeader.SetOrder(Order.move, false);
 			supportLeader.SetMoveType(MoveType.DefendSelf);
 			supportLeader.SetTarget(leader.transform);
 			RecieveOrder(supportLeader);
@@ -1100,172 +1128,179 @@ public class Unit : MonoBehaviour
 		{
 			leader.UnitRequestOrders(this);
 		}
-		if(IsOwnedByPlayer() && !IsLedByPlayer())
-			MessageList.Instance.AddMessage(uName+", acknowledging "+leader.name+" as my new leader.");
+		if (IsOwnedByPlayer() && !IsLedByPlayer())
+			MessageList.Instance.AddMessage(uName + ", acknowledging " + leader.name + " as my new leader.");
 	}
-	
+
 	public void MoveTo(GameObject target, string targetName, bool parent, bool useRandom, MoveType moveType, string reason, bool debug)
 	{
+		if (!movable)
+			return;
 		timeSinceLastRepath = 0.0f;
-		motor.MoveTo(target,targetName,parent,useRandom,moveType, reason, debug);
+		motor.MoveTo(target, targetName, parent, useRandom, moveType, reason, debug);
 		CreateSelected();
 	}
-	
+
 	public void MoveTo(Transform target, MoveType moveType, string reason, bool debug)
 	{
-		if(orderData == null)
+		if (!movable || orderData == null)
 			return;
-		if(target == orderData.GetOrderTarget())
+		if (target == orderData.GetOrderTarget())
 		{
 			target = motor.MakeMoveTarget(target);
-			orderData.SetMoveTarget(target,this);
+			orderData.SetMoveTarget(target, this);
 		}
 		timeSinceLastRepath = 0.0f;
-		motor.MoveTo(target,moveType, reason, debug);
+		motor.MoveTo(target, moveType, reason, debug);
 		CreateSelected();
 	}
-	
+
 	public virtual void RecieveOrder(OrderData data)
 	{
-		if(motor == null || !motor.enabled || IsPlayer())
+		if (!isSelectable || movable && (motor == null || !motor.enabled) || IsPlayer())
 			return;
 		Order order = data.GetOrder();
-		if(data.MoveTypeWasChanged())
+		if (data.MoveTypeWasChanged())
 		{
 			movementType = data.GetMoveType();
 		}
 		Transform target = data.GetOrderTarget();
-		if(order == Order.stop || target == null)
+		if ((order == Order.stop || target == null) && movable)
 		{
-			motor.StopNavigation(uName+" recieved a stop order from its OrderData.",false);
+			motor.StopNavigation(uName + " recieved a stop order from its OrderData.", false);
 			return;
 		}
-		if(target == transform || orderData != null && order == orderData.GetOrder() && target == orderData.GetOrderTarget())
+		if (target == transform || orderData != null && order == orderData.GetOrder() && target == orderData.GetOrderTarget())
 			return;
 		//Debug.Log (this+" has recieved "+order);
 		ResetTarget();
 		orderData = data;
 		lastOrderer = orderData.GetLeader();
 		Objective objective = target.GetComponent<Objective>();
-		if(objective != null)
+		if (objective != null)
 		{
 			currentObjective = objective;
-			if(order == Order.attack)
+			if (order == Order.attack)
 				attackObjective = objective;
-			else if(order == Order.defend)
+			else if (order == Order.defend)
 				defendObjective = objective;
 		}
-		if(target.GetComponent<Unit>() == null)
+		if (movable)
 		{
-			target = motor.MakeMoveTarget(target);
-		}
-		else
-		{
-			target = motor.MakeMoveTarget(target.gameObject,uName+"'s Attack Target",true,false);
-		}
-		if(Vector3.Distance(target.position,transform.position) < UnitMotor.MOVE_CLOSE_ENOUGH_DISTANCE)
-		{
-			if(order != Order.defend)
+			if (target.GetComponent<Unit>() == null)
 			{
-				orderData.SetTarget(null);
-				orderData.SetOrder(Order.stop,true);
-				orderData.UpdatedByUnit();
-				ResetTarget();
-				motor.OnTargetReached();
+				target = motor.MakeMoveTarget(target);
 			}
-			return;
+			else
+			{
+				target = motor.MakeMoveTarget(target.gameObject, uName + "'s Attack Target", true, false);
+			}
+			if (Vector3.Distance(target.position, transform.position) < UnitMotor.MOVE_CLOSE_ENOUGH_DISTANCE)
+			{
+				if (order != Order.defend)
+				{
+					orderData.SetTarget(null);
+					orderData.SetOrder(Order.stop, true);
+					orderData.UpdatedByUnit();
+					ResetTarget();
+					motor.OnTargetReached();
+				}
+				return;
+			}
+			orderData.SetMoveTarget(target, this);
+			MoveTo(target, movementType, uName + " is moving due to order recieved by " + lastOrderer, false);
 		}
-		orderData.SetMoveTarget(target,this);
-		MoveTo(target,movementType,uName+" is moving due to order recieved by "+lastOrderer,false);
 		// This is a quick-and-dirty way for players to see that the unit has recieved orders correctly.
-		if(lastOrderer == (Leader)Commander.player)
+		if (lastOrderer == (Leader)Commander.player)
 		{
-			Debug.Log (this+" is moving to "+target);
-			MessageList.Instance.AddMessage(uName+", acknowledging "+order.ToString()+" order.");
+			Debug.Log(this + " is moving to " + target);
+			MessageList.Instance.AddMessage(uName + ", acknowledging " + order.ToString() + " order.");
 		}
 	}
-	
+
 	public MoveType GetMoveType()
 	{
 		return movementType;
 	}
-	
+
 	public Order GetOrder()
 	{
-		if(status == UnitStatus.InCombat)
+		if (status == UnitStatus.InCombat)
 			return Order.attack;
-		if(orderData == null)
+		if (orderData == null)
 			return Order.stop;
 		return orderData.GetOrder();
 	}
-	
+
 	public Leader GetLastOrderer()
 	{
 		return lastOrderer;
 	}
-	
+
 	public Leader GetLeader()
 	{
 		return leader;
 	}
-	
+
 	public Transform RequestTarget()
 	{
 		orderData = leader.UnitRequestOrders(this);
-		if(orderData == null)
+		if (orderData == null)
 			return null;
 		Transform moveTarget = orderData.GetOrderTarget();
-		if(moveTarget == null)
+		if (moveTarget == null)
 		{
+			if (!movable)
+				return null;
 			ResetTarget(true);
 			return null;
 		}
-		orderData.SetMoveTarget(motor.MakeMoveTarget(moveTarget),this);
+		orderData.SetMoveTarget(motor.MakeMoveTarget(moveTarget), this);
 		return orderData.GetMoveTarget();
 	}
-	
+
 	public Transform GetMoveTarget()
 	{
-		if(this == null || motor == null || orderData == null)
+		if (this == null || motor == null || orderData == null || !movable)
 			return null;
-		if(status == UnitStatus.InCombat && bestUnit != null)
+		if (status == UnitStatus.InCombat && bestUnit != null)
 			return bestUnit.transform;
 		Transform moveTarget = orderData.GetMoveTarget();
-		if(moveTarget == null)
+		if (moveTarget == null)
 		{
 			moveTarget = orderData.GetOrderTarget();
-			if(moveTarget == null)
+			if (moveTarget == null)
 				return null;
 		}
-		if(Vector3.Distance(moveTarget.position,transform.position) < UnitMotor.MOVE_CLOSE_ENOUGH_DISTANCE)
+		if (Vector3.Distance(moveTarget.position, transform.position) < UnitMotor.MOVE_CLOSE_ENOUGH_DISTANCE)
 		{
-			orderData.SetOrder(Order.stop,true);
+			orderData.SetOrder(Order.stop, true);
 			orderData.UpdatedByUnit();
 			ResetTarget();
 		}
 		return moveTarget;
 	}
-	
+
 	public bool Select(Leader selector)
 	{
-		if(!isSelectable || !IsAlive())
+		if (!isSelectable || !IsAlive())
 		{
 			isSelected = false;
 			return false;
 		}
 		isSelected = true;
-		if(selector != (Leader)Commander.player)
+		if (selector != (Leader)Commander.player)
 			return true;
 		CreateSelected();
 		SetOutlineColor(selectedColor);
 		return true;
 	}
-	
+
 	public virtual void IsSeen(Leader seer, bool seen)
 	{
-		if(seen && seer.IsAlive())
+		if (seen && seer.IsAlive())
 		{
-			if(!visibleBy.Contains(seer))
+			if (!visibleBy.Contains(seer))
 			{
 				visibleBy.Add(seer);
 				ChangeLayer(defaultLayer);
@@ -1273,94 +1308,95 @@ public class Unit : MonoBehaviour
 		}
 		else
 		{
-			if(visibleBy.Contains(seer))
+			if (visibleBy.Contains(seer))
 				visibleBy.Remove(seer);
-			if(visibleBy.Count == 0)
+			if (visibleBy.Count == 0)
 				ChangeLayer(unitLayer);
 		}
 	}
-	
+
 	public virtual void IsLookedAt(bool lookedAt)
 	{
-		if(label == null)
+		if (label == null)
 			return;
-		if(MapView.IsShown())
+		if (MapView.IsShown())
 		{
 			label.isLookedAt = false;
 			return;
 		}
 		label.isLookedAt = lookedAt;
-		if(lookedAt)
+		if (lookedAt)
 			label.SetLabelText(GenerateLabel());
 	}
-	
+
 	public virtual string GenerateLabel()
 	{
-		if(label == null)
+		if (label == null)
 			return "";
-		if(uName != "")
+		if (uName != "")
 			gameObject.name = uName;
-		string labelS = uName+"\n";
-		labelS = labelS + "Health: "+health+" / 100\n";
+		string labelS = uName + "\n";
+		labelS = labelS + "Health: " + health + " / 100\n";
 		labelS = labelS + GetClass();
-		if(IsLedByPlayer())
+		if (IsLedByPlayer())
 		{
-			if(uniqueGeo == null)
+			if (uniqueGeo == null)
 				label.ChangeOffset(label.offset - new Vector3(0, 0.35f, 0));
 		}
 		else
 		{
 			label.ChangeOffset(label.offset);
-			labelS = labelS + "\nLeader: "+leader.name;
+			labelS = labelS + "\nLeader: " + leader.name;
 		}
 		return labelS;
 	}
-	
+
 	protected virtual string GetClass()
 	{
 		return "Grunt";
 	}
-	
+
 	public GameObject GetLabel()
 	{
-		if(label == null)
+		if (label == null)
 			return null;
 		label.SetLabelText(GenerateLabel());
 		return label.GetText();
 	}
-	
+
 	public void Deselect()
 	{
-		if(!isSelectable)
+		if (!isSelectable)
 			return;
 		isSelected = false;
 		SetOutlineColor(outlineColor);
 		CreateSelected();
-		if(!IsLedByPlayer())
+		if (!IsLedByPlayer())
 			return;
 	}
-	
+
 	protected void OnDie()
 	{
-		if(!IsAlive())
+		if (!IsAlive())
 			return;
-		if(heatmapBlock != null)
+		deathTime = Time.time;
+		if (heatmapBlock != null)
 			heatmapBlock.AddDeath();
 		lastDamager.AddKill(this);
-		if(leader != null)
+		if (leader != null)
 			leader.RemoveUnit(id);
-		if(currentObjective != null)
+		if (currentObjective != null)
 			currentObjective.RemovePlayer(this);
-		if(capturingObjective != null)
+		if (capturingObjective != null)
 			capturingObjective.RemovePlayer(this);
 		IsLookedAt(false);
-		if(leader != null)
+		if (leader != null)
 			leader.RemoveUnit(id);
-		if(weapon != null)
+		if (weapon != null)
 			weapon.Drop();
-		if(motor != null)
+		if (movable && motor != null)
 		{
-			motor.StopNavigation(uName+" died.",false);
+			motor.StopNavigation(uName + " died.", false);
 		}
 		Deselect();
 		ResetEffects();
@@ -1368,31 +1404,39 @@ public class Unit : MonoBehaviour
 		findingHealth = false;
 		// Reset spawn point.
 		Commander commander = GetCommander();
-		if(commander != null)
+		if (commander != null)
 		{
-			if(IsLedByPlayer())
+			if (IsLedByPlayer())
 			{
 				string deathMessage = uName;
-				if(IsPlayer())
-					deathMessage = 	deathMessage+" were killed by "+lastDamager.name+". " +
-									"Respawning in "+Mathf.RoundToInt(GetCommander().GetTimeToRespawn())+" seconds.";
+				if (IsPlayer())
+				{
+					deathMessage = deathMessage + " were killed by " + lastDamager.name + ". " +
+									"Respawning in " + Mathf.RoundToInt(GetCommander().GetTimeToRespawn()) + " seconds.";
+					if (deathNoise != null)
+						Camera.main.audio.PlayOneShot(deathNoise);
+				}
 				else
-					deathMessage = deathMessage+" was killed by "+lastDamager.name+".";
+				{
+					deathMessage = deathMessage + " was killed by " + lastDamager.name + ".";
+					if (deathNoise != null)
+						audio.PlayOneShot(deathNoise);
+				}
 				MessageList.Instance.AddMessage(deathMessage);
 			}
 			timeToOurRespawn = commander.GetTimeToRespawn();
-			Debug.Log ("Respawning in: "+timeToOurRespawn.ToString());
-			Invoke("Spawn",timeToOurRespawn);
+			Debug.Log("Respawning in: " + timeToOurRespawn.ToString());
+			Invoke("Spawn", timeToOurRespawn);
 		}
 		OnClassDie();
-		foreach(Transform child in transform)
+		foreach (Transform child in transform)
 		{
-			if(child.GetComponent<Objective>() != null)
+			if (child.GetComponent<Objective>() != null)
 			{
 				child.parent = null;
 				continue;
 			}
-			if(child.GetComponent<AudioListener>() != null)
+			if (child.GetComponent<AudioListener>() != null)
 			{
 				child.parent = null;
 				continue;
@@ -1401,100 +1445,100 @@ public class Unit : MonoBehaviour
 		}
 		gameObject.SetActive(false);
 	}
-	
+
 	protected virtual void OnClassDie()
 	{
 		spawnPoint = Vector3.zero;
 	}
-	
+
 	public static float GetCost(UnitType unitType)
 	{
-		if(unitType == UnitType.Unit)
+		if (unitType == UnitType.Unit)
 		{
 			return UNIT_COST;
 		}
-		else if(unitType == UnitType.Leader)
+		else if (unitType == UnitType.Leader)
 		{
 			return LEADER_COST;
 		}
-		else if(unitType == UnitType.Commander)
+		else if (unitType == UnitType.Commander)
 		{
 			return COMMANDER_COST;
 		}
 		return Mathf.Infinity;
 	}
-	
+
 	public void OnTargetReached()
 	{
 		leader.OnUnitReachedTarget(this);
 		SetStatus(UnitStatus.Idle);
 	}
-	
+
 	public void OnCapturingObjective(Objective objective)
 	{
-		if(objective is Base)
+		if (objective is Base)
 			return;
-		if(status != UnitStatus.InCombat)
+		if (status != UnitStatus.InCombat)
 		{
 			lastStatus = status;
 		}
 		capturingObjective = objective;
 		status = UnitStatus.CapturingObjective;
 	}
-	
+
 	public void OnCapturedObjective()
 	{
 		capturingObjective = null;
-		if(status == UnitStatus.CapturingObjective)
+		if (status == UnitStatus.CapturingObjective)
 			status = lastStatus;
 	}
-	
+
 	public void AddKill(Unit dead)
 	{
 		kills++;
-		if(IsLedByPlayer())
-			MessageList.Instance.AddMessage(uName+" killed "+dead.name+".");
+		if (IsLedByPlayer())
+			MessageList.Instance.AddMessage(uName + " killed " + dead.name + ".");
 	}
-	
+
 	public bool IsAlive()
 	{
 		bool isAlive = this != null && gameObject != null && gameObject.activeInHierarchy;
-		if(isAlive && weapon == null && health <= 0) // Useful for debugging; automatically spawns the GameObject if we re-enable it from the inspector.
+		if (isAlive && weapon == null && health <= 0) // Useful for debugging; automatically spawns the GameObject if we re-enable it from the inspector.
 		{
-			Debug.LogWarning(this+" was re-enabled. Spawning.");
+			Debug.LogWarning(this + " was re-enabled. Spawning.");
 			Spawn();
 		}
 		return isAlive;
 	}
-	
+
 	public float GetHealthPercent()
 	{
 		float _health = 0.00f;
-		if(!IsAlive())
+		if (!IsAlive())
 			return _health;
 		_health = (float)health / (float)_maxHealth;
 		return health;
 	}
-	
+
 	public void ChangeLayer(LayerMask newLayer)
 	{
 		LayerMask gameObjectLayer = gameObject.layer;
-		if(gameObjectLayer == leaderLayer || gameObjectLayer == raycastIgnoreLayers)
+		if (gameObjectLayer == leaderLayer || gameObjectLayer == raycastIgnoreLayers)
 			return;
 		gameObject.layer = newLayer;
-		foreach(Transform child in transform)
+		foreach (Transform child in transform)
 		{
-			if(child.gameObject.layer == 2 || child.gameObject.layer == raycastIgnoreLayers || child.gameObject.layer == leaderLayer)
+			if (child.gameObject.layer == 2 || child.gameObject.layer == raycastIgnoreLayers || child.gameObject.layer == leaderLayer)
 				continue;
 			child.gameObject.layer = newLayer;
 		}
 	}
-	
+
 	public void JustPromoted()
 	{
 		justPromoted = true;
 	}
-	
+
 	public Leader UpgradeUnit(Commander commander)
 	{
 		Leader upgrade = gameObject.AddComponent<Leader>();
@@ -1503,21 +1547,21 @@ public class Unit : MonoBehaviour
 		upgrade.CloneUnit(this);
 		upgrade.RegisterCommander(commander);
 		upgrade.CreateSelected();
-		if(IsOwnedByPlayer())
+		if (IsOwnedByPlayer())
 			upgrade.ChangeLayer(defaultLayer);
-		if(IsOwnedByPlayer())
-			MessageList.Instance.AddMessage(uName+", acknowledging promotion to Leader.");
+		if (IsOwnedByPlayer())
+			MessageList.Instance.AddMessage(uName + ", acknowledging promotion to Leader.");
 		Destroy(this); // This script will not be destroyed until the end of this frame.
 		return upgrade;
 	}
-	
+
 	public virtual Commander GetCommander()
 	{
-		if(leader == null) // Haven't set anything up yet.
+		if (leader == null) // Haven't set anything up yet.
 			return null;
 		return leader.GetCommander();
 	}
-	
+
 	/// <summary>
 	/// Handles AI functions.
 	/// Anything which is handled by a behavior tree is not included.
@@ -1529,92 +1573,95 @@ public class Unit : MonoBehaviour
 	}
 	protected void HandleAI(bool force)
 	{
-		if(IsPlayer() || !IsAlive())
+		if (IsPlayer() || !IsAlive())
 			return;
 		HandleClassAIPreUniversal(force);
 		HandleUniversalAI(force);
 		HandleClassAIPostUniversal(force);
 	}
-	
+
 	/// <summary>
 	/// Handles the AI for every class.
 	/// </summary>
 	protected void HandleUniversalAI(bool force)
 	{
-		if(bestUnit != null && !bestUnit.IsAlive())
+		if (bestUnit != null && !bestUnit.IsAlive())
 		{
 			bestUnit = null;
 			LeaveCombat();
 			force = true;
 		}
-		if(status == UnitStatus.Idle || movementType == MoveType.Loose || status == UnitStatus.InCombat && movementType == MoveType.DefendSelf)
+		if (status == UnitStatus.Idle || movementType == MoveType.Loose || status == UnitStatus.InCombat && movementType == MoveType.DefendSelf)
 			FindShootTargets();
-		if(force || status != UnitStatus.InCombat && timeSinceLastRepath > AI_REPATH_TIME)
+		if (force || status != UnitStatus.InCombat && timeSinceLastRepath > AI_REPATH_TIME)
 		{
-			if(currentObjective != null)
+			if (currentObjective != null)
 				RepathToObjective();
 		}
 		timeSinceLastRepath += Time.deltaTime;
 	}
-	
+
 	/// <summary>
 	/// Handles the AI for this class only. Called before we have handled universal AI.
 	/// </summary>
 	protected virtual void HandleClassAIPreUniversal(bool force)
-	{}
-	
+	{ }
+
 	/// <summary>
 	/// Handles the AI for this class only. Called after we have handled universal AI.
 	/// </summary>
 	protected virtual void HandleClassAIPostUniversal(bool force)
-	{}
-	
+	{ }
+
 	/// <summary>
 	/// Makes the AI find and shoot at a specific target.
 	/// </summary>
 	protected void FindShootTargets()
 	{
 		float chaseRange = MAX_ENEMY_CHASE_RANGE;
-		if(bestUnit != null)
+		if (bestUnit != null)
 		{
-			if(bestUnit.HasObjective())
+			if (bestUnit.HasObjective())
 			{
 				chaseRange *= 1.5f;
 			}
 		}
 		bestUnit = null;
-		if(status == UnitStatus.InCombat && Vector3.Distance(transform.position,enterCombatPosition) > chaseRange)
+		if (status == UnitStatus.InCombat && Vector3.Distance(transform.position, enterCombatPosition) > chaseRange)
 		{
 			LeaveCombat();
-			if(orderData == null)
+			if (movable)
 			{
-				motor.MoveTo(enterCombatPosition,uName+"'s Combat Return Target",MoveType.DefendSelf,"Returning to position where we entered combat.",false);
-			}
-			else
-			{
-				Transform moveTarget = orderData.GetMoveTarget();
-				if(moveTarget == null)
+				if (orderData == null)
 				{
-					Transform orderTarget = orderData.GetOrderTarget();
-					if(orderTarget == null)
-					{
-						motor.MoveTo(enterCombatPosition,uName+"'s Combat Return Target",MoveType.DefendSelf,"Returning to position where we entered combat.",false);
-						return;
-					}
-					else
-					{
-						moveTarget = motor.MakeMoveTarget(orderTarget);
-						orderData.SetMoveTarget(moveTarget,this);
-					}
+					motor.MoveTo(enterCombatPosition, uName + "'s Combat Return Target", MoveType.DefendSelf, "Returning to position where we entered combat.", false);
 				}
-				motor.MoveTo(moveTarget,MoveType.DefendSelf,"Returning to position where we entered combat.",false);
+				else
+				{
+					Transform moveTarget = orderData.GetMoveTarget();
+					if (moveTarget == null)
+					{
+						Transform orderTarget = orderData.GetOrderTarget();
+						if (orderTarget == null)
+						{
+							motor.MoveTo(enterCombatPosition, uName + "'s Combat Return Target", MoveType.DefendSelf, "Returning to position where we entered combat.", false);
+							return;
+						}
+						else
+						{
+							moveTarget = motor.MakeMoveTarget(orderTarget);
+							orderData.SetMoveTarget(moveTarget, this);
+						}
+					}
+					motor.MoveTo(moveTarget, MoveType.DefendSelf, "Returning to position where we entered combat.", false);
+				}
 			}
 			return;
 		}
 		DetectEnemies(enemyName);
-		if(bestUnit == null)
+		if (bestUnit == null)
 		{
-			if(status == UnitStatus.InCombat)
+			if (status == UnitStatus.InCombat)
 			{
 				LeaveCombat();
 			}
@@ -1622,33 +1669,33 @@ public class Unit : MonoBehaviour
 		}
 		Shoot(bestUnit);
 	}
-	
+
 	/// <summary>
 	/// Forces a repath on the next frame, so long as our objective is not null.
 	/// </summary>
 	public void ForceRepath()
 	{
-		if(currentObjective == null)
+		if (currentObjective == null)
 		{
 			Debug.LogWarning("Can't force a repath next frame: our current objective is null!");
 			return;
 		}
 		timeSinceLastRepath = AI_REPATH_TIME + 1;
 	}
-	
+
 	protected void RepathToObjective()
 	{
-		if(currentObjective == null)
+		if (!movable || currentObjective == null)
 			return;
 		ResetTarget();
-		MoveTo(motor.MakeMoveTarget(currentObjective.transform),movementType,uName+" is responding to a repath call.",false);
+		MoveTo(motor.MakeMoveTarget(currentObjective.transform), movementType, uName + " is responding to a repath call.", false);
 	}
-	
+
 	public bool HasObjective()
 	{
-		return capturingObjective != null; 
+		return capturingObjective != null;
 	}
-	
+
 	/// <summary>
 	/// Uses RAIN's detection system to find the best nearby enemy to attack.
 	/// </summary>
@@ -1663,11 +1710,11 @@ public class Unit : MonoBehaviour
 	/// </param>
 	public Unit DetectEnemies(string enemyAspect)
 	{
-		if(bestUnit != null && bestUnit.IsAlive() && Vector3.Distance(bestUnit.transform.position,transform.position) <= weapon.range)
+		if (bestUnit != null && bestUnit.IsAlive() && Vector3.Distance(bestUnit.transform.position, transform.position) <= weapon.range)
 			return bestUnit;
 		lastDetectTime = Time.time;
 		Unit[] units = DetectUnits(enemyAspect);
-		if(units.Length == 0)
+		if (units.Length == 0)
 		{
 			bestUnit = null;
 			return null;
@@ -1675,26 +1722,26 @@ public class Unit : MonoBehaviour
 		bestUnit = null;
 		// Assign a score to each enemy:
 		float score = Mathf.Infinity;
-		foreach(Unit unit in units)
+		foreach (Unit unit in units)
 		{
-			if(unit == null || !unit.IsAlive())
+			if (unit == null || !unit.IsAlive())
 				continue;
-			float uScore = Vector3.Distance(unit.transform.position,transform.position);
+			float uScore = Vector3.Distance(unit.transform.position, transform.position);
 			uScore *= unit.GetHealthPercent();
-			if(bestUnit == null || uScore < score)
+			if (bestUnit == null || uScore < score)
 			{
 				bestUnit = unit;
 				score = uScore;
 			}
 		}
-		if(!bestUnit.IsAlive())
+		if (!bestUnit.IsAlive())
 			bestUnit = null;
 		return bestUnit;
 	}
-	
+
 	public Unit[] DetectUnits(string unitTag)
 	{
-		if(weapon == null)
+		if (weapon == null)
 			return new Unit[0];
 		float maxVerticalFOV = AI_FOV_VERTICAL_RANGE / 2;
 		float currentVerticalFOV = -maxVerticalFOV - raycastIncrementRate;
@@ -1703,79 +1750,91 @@ public class Unit : MonoBehaviour
 		Vector3 fovDirection = transform.forward;
 		RaycastHit hitInfo;
 		List<Unit> detectedUnits = new List<Unit>();
-		for(; currentVerticalFOV <= maxVerticalFOV; currentVerticalFOV += raycastIncrementRate)
+		for (; currentVerticalFOV <= maxVerticalFOV; currentVerticalFOV += raycastIncrementRate)
 		{
 			float maxFOV = AI_FOV_HORIZONTAL_RANGE / 2;
 			float currentFOV = -maxFOV;
-			for(;currentFOV <= maxFOV; currentFOV += raycastIncrementRate)
+			for (; currentFOV <= maxFOV; currentFOV += raycastIncrementRate)
 			{
-				fovDirection = Quaternion.Euler(currentVerticalFOV,currentFOV,0) * transform.forward;
-				if(Physics.Raycast(position,fovDirection,out hitInfo,sightRange,raycastIgnoreLayers))
+				fovDirection = Quaternion.Euler(currentVerticalFOV, currentFOV, 0) * transform.forward;
+				if (Physics.Raycast(position, fovDirection, out hitInfo, sightRange, raycastIgnoreLayers))
 				{
 					Unit unit = hitInfo.transform.GetComponent<Unit>();
-					if(unit == null || detectedUnits.Contains(unit) || unit.tag != unitTag || !unit.IsAlive())
+					if (unit == null || detectedUnits.Contains(unit) || unit.tag != unitTag || !unit.IsAlive())
 						continue;
 					detectedUnits.Add(unit);
 				}
-				Debug.DrawRay(position,fovDirection,Color.magenta);
+				Debug.DrawRay(position, fovDirection, Color.magenta);
 			}
 		}
-		for(float closeDetectAmount = 0; closeDetectAmount < 360; closeDetectAmount += raycastIncrementRate)
+		for (float closeDetectAmount = 0; closeDetectAmount < 360; closeDetectAmount += raycastIncrementRate)
 		{
-			fovDirection = Quaternion.Euler(0,closeDetectAmount,0) * transform.forward;
-			if(Physics.Raycast(position,fovDirection,out hitInfo,CLOSE_ENEMY_DETECT_RANGE,raycastIgnoreLayers))
+			fovDirection = Quaternion.Euler(0, closeDetectAmount, 0) * transform.forward;
+			if (Physics.Raycast(position, fovDirection, out hitInfo, CLOSE_ENEMY_DETECT_RANGE, raycastIgnoreLayers))
 			{
 				Unit unit = hitInfo.transform.GetComponent<Unit>();
-				if(unit == null || detectedUnits.Contains(unit) || unit.tag != unitTag || !unit.IsAlive())
+				if (unit == null || detectedUnits.Contains(unit) || unit.tag != unitTag || !unit.IsAlive())
 					continue;
 				detectedUnits.Add(unit);
 			}
-			Debug.DrawRay(position,fovDirection,Color.cyan);
+			Debug.DrawRay(position, fovDirection, Color.cyan);
 		}
 		return detectedUnits.ToArray();
 	}
-	
+
 	public Unit[] DetectUnits(string unitTag, float maxDistance)
 	{
 		List<Unit> detectedUnits = new List<Unit>();
 		Vector3 position = transform.position;
 		float maxY = AI_FOV_VERTICAL_RANGE / 2;
-		for(float currentYAngle = -maxY; currentYAngle <= maxY; currentYAngle += raycastIncrementRate)
+		for (float currentYAngle = -maxY; currentYAngle <= maxY; currentYAngle += raycastIncrementRate)
 		{
-			for(float i = 0; i < 360; i += raycastIncrementRate)
+			for (float i = 0; i < 360; i += raycastIncrementRate)
 			{
-				Vector3 fovDirection = Quaternion.Euler(currentYAngle,i,0) * transform.forward;
+				Vector3 fovDirection = Quaternion.Euler(currentYAngle, i, 0) * transform.forward;
 				RaycastHit hitInfo;
-				if(Physics.Raycast(position,fovDirection,out hitInfo,maxDistance,raycastIgnoreLayers))
+				if (Physics.Raycast(position, fovDirection, out hitInfo, maxDistance, raycastIgnoreLayers))
 				{
 					Unit unit = hitInfo.transform.GetComponent<Unit>();
-					if(unit == null || detectedUnits.Contains(unit) || unitTag != "" && unit.tag != unitTag || !unit.IsAlive())
+					if (unit == null || detectedUnits.Contains(unit) || unitTag != "" && unit.tag != unitTag || !unit.IsAlive())
 						continue;
 					detectedUnits.Add(unit);
 				}
-				Debug.DrawRay(position,fovDirection,Color.yellow);
+				Debug.DrawRay(position, fovDirection, Color.yellow);
 			}
 		}
 		return detectedUnits.ToArray();
 	}
-	
+
+	public virtual void LookAt(Vector3 target)
+	{
+		if (motor != null)
+		{
+			motor.LookAt(target);
+		}
+		else
+		{
+			Debug.LogWarning("TODO!");
+		}
+	}
+
 	public bool Shoot(Unit enemy)
 	{
-		if(enemy == null || !enemy.IsAlive() || weapon == null || IsPlayer())
+		if (enemy == null || !enemy.IsAlive() || weapon == null || IsPlayer())
 			return false;
-		if(weapon.ammo <= 0)
+		if (weapon.ammo <= 0)
 			return false;
 		float range = weapon.range;
-		if(range < Vector3.Distance(enemy.transform.position,transform.position))
+		if (range < Vector3.Distance(enemy.transform.position, transform.position))
 			return false;
-		motor.LookAt(enemy.transform.position);
+		LookAt(enemy.transform.position);
 		Vector3 weaponForward = weapon.transform.up;
-		Ray shotRay = new Ray(weapon.transform.position,weaponForward);
-		Debug.DrawRay(weapon.transform.position,weaponForward,Color.red);
+		Ray shotRay = new Ray(weapon.transform.position, weaponForward);
+		Debug.DrawRay(weapon.transform.position, weaponForward, Color.red);
 		RaycastHit hitInfo;
-		if(Physics.Raycast(shotRay, out hitInfo, range,raycastIgnoreLayers))
+		if (Physics.Raycast(shotRay, out hitInfo, range, raycastIgnoreLayers))
 		{
-			if(hitInfo.transform.tag == "Ground")
+			if (hitInfo.transform.tag == "Ground")
 			{
 				return false;
 			}
@@ -1791,21 +1850,21 @@ public class Unit : MonoBehaviour
 			}*/
 		}
 		//else
-			//return RAIN.Action.Action.ActionResult.FAILURE;
-		if(status != UnitStatus.InCombat && status != UnitStatus.CapturingObjective)
+		//return RAIN.Action.Action.ActionResult.FAILURE;
+		if (status != UnitStatus.InCombat && status != UnitStatus.CapturingObjective)
 		{
 			SetStatus(UnitStatus.InCombat);
 		}
 		combatTime = 0.0f;
 		weapon.Shoot();
 		float accuracy = weapon.GetAccuracy();
-		if(accuracy > 0.65f || movementType == MoveType.Strict)
+		if (accuracy > 0.65f || movementType == MoveType.Strict)
 		{
 			return true;
 		}
 		else
 		{
-			MoveTo(enemy.gameObject,uName+"'s Attack Target",true,false,movementType,uName+" is moving to shoot at "+enemy,false);
+			MoveTo(enemy.gameObject, uName + "'s Attack Target", true, false, movementType, uName + " is moving to shoot at " + enemy, false);
 			/*if(agent.MoveTo(enemy.transform.position,deltaTime))
 			{
 				return RAIN.Action.Action.ActionResult.SUCCESS;
@@ -1813,73 +1872,73 @@ public class Unit : MonoBehaviour
 		}
 		return true;
 	}
-	
+
 	public Transform FindHealth()
 	{
 		float dist = Mathf.Infinity;
 		Transform regen = null;
-		foreach(GameObject go in regenZones)
+		foreach (GameObject go in regenZones)
 		{
 			Healthpack healthPack = go.GetComponent<Healthpack>();
-			if(healthPack != null)
+			if (healthPack != null)
 			{
-				if(healthPack.IsDisabled())
+				if (healthPack.IsDisabled())
 					continue;
 			}
 			float gDist = Vector3.Distance(transform.position, go.transform.position);
-			if(gDist < dist)
+			if (gDist < dist)
 			{
 				regen = go.transform;
 				dist = gDist;
 			}
 		}
 		float bDist = Vector3.Distance(transform.position, aBase.transform.position);
-		if(bDist < dist)
+		if (bDist < dist)
 		{
 			regen = aBase.transform;
 			dist = bDist;
 		}
-		if(dist < MAX_HEALTH_DISTANCE)
+		if (dist < MAX_HEALTH_DISTANCE)
 		{
-			if(IsLedByPlayer() && !findingHealth && (regen != aBase.transform || dist > MAX_ENEMY_CHASE_RANGE))
+			if (IsLedByPlayer() && !findingHealth && (regen != aBase.transform || dist > MAX_ENEMY_CHASE_RANGE))
 			{
-				Invoke ("CreateHealthPackMessage",1.0f);
+				Invoke("CreateHealthPackMessage", 1.0f);
 			}
 			findingHealth = true;
-			MoveTo(regen.gameObject,uName+"'s Regen Target",true,false,MoveType.DefendSelf,uName+" is trying to restore its health.",false);
+			MoveTo(regen.gameObject, uName + "'s Regen Target", true, false, MoveType.DefendSelf, uName + " is trying to restore its health.", false);
 		}
 		return regen;
 	}
-	
+
 	public void CreateHealthPackMessage()
 	{
-		if(IsAlive())
-			MessageList.Instance.AddMessage(uName+" is low on health ("+health+" HP). Moving to healthpack.");
+		if (IsAlive())
+			MessageList.Instance.AddMessage(uName + " is low on health (" + health + " HP). Moving to healthpack.");
 	}
-	
+
 	public bool RestoreHealth(int amount)
 	{
-		if(!IsAlive() || health >= 100)
+		if (!IsAlive() || health >= 100)
 			return false;
 		health += amount;
 		health = Mathf.Min(health, 100);
-		if(healthRegen != null && amount > 30)
+		if (healthRegen != null && amount > 30)
 			gameObject.GetComponentInChildren<AudioSource>().PlayOneShot(healthRegen);
-		if(orderData != null)
+		if (movable && orderData != null)
 		{
 			Order order = orderData.GetOrder();
-			if(order == Order.stop)
+			if (order == Order.stop)
 			{
-				motor.MoveTo(orderData.GetOrderLocation(),uName+"'s Health Return Target",MoveType.DefendSelf,"Returning to location we recieved an order",false);
+				motor.MoveTo(orderData.GetOrderLocation(), uName + "'s Health Return Target", MoveType.DefendSelf, "Returning to location we recieved an order", false);
 				return true;
 			}
 			Transform moveTarget = orderData.GetMoveTarget();
-			if(moveTarget == null)
+			if (moveTarget == null)
 			{
 				Transform orderTarget = orderData.GetOrderTarget();
-				if(orderTarget == null)
+				if (orderTarget == null)
 				{
-					motor.MoveTo(orderData.GetOrderLocation(),uName+"'s Health Return Target",MoveType.DefendSelf,"Returning to location we recieved an order",false);
+					motor.MoveTo(orderData.GetOrderLocation(), uName + "'s Health Return Target", MoveType.DefendSelf, "Returning to location we recieved an order", false);
 					return true;
 				}
 				else
@@ -1887,90 +1946,90 @@ public class Unit : MonoBehaviour
 					moveTarget = motor.MakeMoveTarget(orderTarget);
 				}
 			}
-			MoveTo(moveTarget,movementType,uName+" is returning from restoring its health.",false);
+			MoveTo(moveTarget, movementType, uName + " is returning from restoring its health.", false);
 		}
 		return true;
 	}
-	
+
 	public void Score()
 	{
 		captures++;
 		GetCommander().OnScore();
 		OnCapturedObjective();
 	}
-	
+
 	public bool IsFriendly(Unit other)
 	{
 		return GetCommander() == other.GetCommander();
 	}
-	
+
 	public virtual bool IsLedByPlayer()
 	{
 		return leader == (Leader)Commander.player;
 	}
-	
+
 	public virtual bool IsOwnedByPlayer()
 	{
 		Commander commander = GetCommander();
-		if(commander == null)
+		if (commander == null)
 			return false;
 		return commander.IsPlayer();
 	}
-	
+
 	public virtual bool IsPlayer()
 	{
 		return false;
 	}
-	
+
 	public float GetTimeUntilRespawn()
 	{
 		return timeToOurRespawn;
 	}
-	
+
 	public UnitType GetUnitType()
 	{
 		return unitType;
 	}
-	
+
 	protected void AllowSpawn()
 	{
 		skipSpawn = false;
 	}
-	
+
 	public void OnPickupFlag()
 	{
 		ResetTarget(false);
 	}
-	
+
 	protected void ResetTarget()
 	{
 		ResetTarget(true);
 	}
-	
+
 	protected void ResetTarget(bool effects)
 	{
-		if(motor != null)
-			motor.StopNavigation(uName+" reset its target.",false);
+		if (movable && motor != null)
+			motor.StopNavigation(uName + " reset its target.", false);
 		//Debug.Log ("Resetting target.");
 		orderData = null;
-		if(effects)
+		if (effects)
 			ResetEffects();
 	}
-	
+
 	protected void ResetEffects()
 	{
-		if(moveEffect != null)
+		if (moveEffect != null)
 		{
 			Destroy(moveEffect);
 			moveEffect = null;
 		}
-		if(!isSelected && selectEffect != null)
+		if (!isSelected && selectEffect != null)
 		{
 			Destroy(selectEffect);
 			selectEffect = null;
 		}
 	}
-	
+
 	public void CloneUnit(Unit oldClone)
 	{
 		isSelectable = oldClone.isSelectable;
@@ -1992,26 +2051,26 @@ public class Unit : MonoBehaviour
 		raycastIgnoreLayers = Commander.player.raycastIgnoreLayers;
 		weapon.Pickup(this);
 		leader.ReplaceUnit(id, this);
-		if(isSelected)
+		if (isSelected)
 			SetOutlineColor(selectedColor);
 		else
 			SetOutlineColor(outlineColor);
 		orderData = oldClone.orderData;
-		if(orderData != null)
+		if (orderData != null)
 			orderData.SetUnit(this);
 		skipSpawn = true;
 		SetTeamColor();
-		Invoke("AllowSpawn",5.0f);
+		Invoke("AllowSpawn", 5.0f);
 	}
-	
+
 	public void EnterHeatmapBlock(HeatmapBlock heatBlock)
 	{
 		heatmapBlock = heatBlock;
 	}
-	
+
 	public void ExitHeatmapBlock(HeatmapBlock heatBlock)
 	{
-		if(heatmapBlock == heatBlock)
+		if (heatmapBlock == heatBlock)
 			heatmapBlock = null;
 	}
 }

@@ -34,6 +34,8 @@ public class Commander : Leader
 	protected const int MAX_LEADER_COUNT = 9;
 	public int teamScore = 0;
 	public AudioClip goalScored = null;
+	public AudioClip gatesOpen = null;
+	public AudioClip jump = null;
 	protected List<Unit> backloggedUnits = new List<Unit>();
 	protected List<int> newlySelectedUnits = new List<int>();
 	protected static GameObject cardBackground = null;
@@ -45,7 +47,7 @@ public class Commander : Leader
 	protected static string[] guiTooltips = new string[]
 	{
 		"Default Controls:",
-		"WASD: Move",
+		"WASD / Arrow Keys: Move",
 		"Mouse1: Shoot",
 		"Mouse2: Give Orders",
 		"Scroll Wheel: Change Orders",
@@ -57,7 +59,8 @@ public class Commander : Leader
 		"Ctrl + E: Assign selected Units to be led by the Leader you're currently looking at",
 		"1-9: Quick-Select Leader",
 		"Ctrl + 1-9: Quick-Assign Units to Leader",
-		"M: Toggle RTS Map View"
+		"M: Toggle RTS Map View",
+		"Press any key to dismiss."
 	};
 	protected static bool isInSetup = false;
 	protected static Rect setupRect;
@@ -128,7 +131,7 @@ public class Commander : Leader
 			}
 			showTutorial = true;
 			guiRect = new Rect(0, 0, 500, Screen.height / guiTooltips.Length + 1);
-			Time.timeScale = 0.0f;
+			//Time.timeScale = 0.0f;
 			float setupHeight = 20.0f;
 			float setupWidth = 150.0f;
 			float setupLeft = Screen.width / 2 - setupWidth / 2;
@@ -272,6 +275,10 @@ public class Commander : Leader
 		{
 			Application.CaptureScreenshot("screenshot.png");
 		}
+		if (Input.GetButtonDown("Jump") && jump != null)
+		{
+			Camera.main.audio.PlayOneShot(jump);
+		}
 	}
 
 	void OnGUI()
@@ -288,15 +295,19 @@ public class Commander : Leader
 					Destroy(go);
 				}
 			}
+			if (gatesOpen != null)
+			{
+				Camera.main.audio.PlayOneShot(gatesOpen);
+			}
 		}
 		GUI.Label(setupRect, setupString);
 		GUI.Label(setupEndRect, setupEnd);
 		if (!showTutorial)
 			return;
-		if (Input.anyKeyDown)
+		if (Input.anyKey && Time.time >= 1.5f)
 		{
 			showTutorial = false;
-			Time.timeScale = 1.0f;
+			//Time.timeScale = 1.0f;
 			return;
 		}
 		for (int i = 0; i < guiTooltips.Length; i++)

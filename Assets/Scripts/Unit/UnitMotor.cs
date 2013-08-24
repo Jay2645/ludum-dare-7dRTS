@@ -115,14 +115,18 @@ public class UnitMotor : MonoBehaviour
 		if (moveTarget != null && !moveTarget.gameObject.activeInHierarchy)
 		{
 			if (tempGameObjects.Contains(moveTarget.gameObject))
+			{
 				tempGameObjects.Remove(moveTarget.gameObject);
-			Destroy(moveTarget.gameObject);
+				Destroy(moveTarget.gameObject);
+			}
 		}
 		if (oldMoveTarget != null && !oldMoveTarget.gameObject.activeInHierarchy)
 		{
 			if (tempGameObjects.Contains(oldMoveTarget.gameObject))
+			{
 				tempGameObjects.Remove(oldMoveTarget.gameObject);
-			Destroy(oldMoveTarget.gameObject);
+				Destroy(oldMoveTarget.gameObject);
+			}
 		}
 		if (moveTarget != null)
 		{
@@ -198,6 +202,7 @@ public class UnitMotor : MonoBehaviour
 			}
 			if (go.name.Contains(targetName))
 			{
+				tempGameObjects.Remove(go);
 				Destroy(go);
 				break;
 			}

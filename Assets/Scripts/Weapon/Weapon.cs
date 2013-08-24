@@ -70,6 +70,8 @@ public class Weapon : MonoBehaviour
 			tracer = Resources.Load("Prefabs/Tracer") as GameObject;
 		}
 		MakeOwner();
+		if (ammo == 0)
+			ammo = Mathf.Max(ammo, clip * 4);
 		_maxClipSize = clip;
 		_maxAmmoCount = ammo;
 	}
@@ -388,7 +390,7 @@ public class Weapon : MonoBehaviour
 	{
 		foreach (Projectile p in projectilePool.ToArray())
 		{
-			if (p.gameObject.activeInHierarchy)
+			if (p == null || p.gameObject.activeInHierarchy)
 				continue;
 			p.gameObject.SetActive(true);
 			return p;
