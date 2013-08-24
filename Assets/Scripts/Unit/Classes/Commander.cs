@@ -275,7 +275,7 @@ public class Commander : Leader
 		{
 			Application.CaptureScreenshot("screenshot.png");
 		}
-		if (Input.GetButtonDown("Jump") && jump != null)
+		if (Input.GetButtonDown("Jump") && jump != null && GetComponent<CharacterController>().isGrounded)
 		{
 			Camera.main.audio.PlayOneShot(jump);
 		}
