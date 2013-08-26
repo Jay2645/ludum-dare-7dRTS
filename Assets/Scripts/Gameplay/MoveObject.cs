@@ -10,8 +10,12 @@ public class MoveObject : MonoBehaviour
 	protected bool startAtCurrentPosition;
 	protected Vector3 currentFauxWaypointPos;
 	protected Quaternion currentFauxWaypointRot;
+	public float speedMultiplier = 1.0f;
 	public bool teleportToBeginningAndLoop = false;
 	public bool reverse = false;
+	public bool reverseAtEnd = false;
+	public bool useConstantTime = false;
+	public float constantTime = 0.0f;
 
 	void Start()
 	{
@@ -33,40 +37,55 @@ public class MoveObject : MonoBehaviour
 	void Update()
 	{
 		if ((waypoints.Length > currentWaypoint || startAtCurrentPosition) && !stopWaypointing)
-		{ //IF we haven't reached the last waypoint yet
-			//Compute the lerpTime, accouting for division by zero
-			float lerpTime = (Time.time - timeAtLastWaypoint) / waypoints[currentWaypoint].time;
+		{
+			Waypoint movingTo = waypoints[currentWaypoint];
+			float moveTime;
+			if (useConstantTime)
+			{
+				moveTime = constantTime;
+			}
+			else
+			{
+				moveTime = movingTo.time / speedMultiplier;
+			}
+			if (moveTime == 0)
+				moveTime = 0.01f;
+			float lerpTime = (Time.time - timeAtLastWaypoint) / moveTime;
 			lerpTime = Mathf.Clamp01(lerpTime); //Clamp lerpTime between 0 and 1;
 
-			//Debug.Log(lerpTime);
 			if (startAtCurrentPosition)
 			{
-				Transform to = waypoints[currentWaypoint].transform;
-
+				Transform to = movingTo.transform;
 				gameObject.transform.position = Vector3.Lerp(currentFauxWaypointPos, to.position, lerpTime);
 				gameObject.transform.rotation = Quaternion.Lerp(currentFauxWaypointRot, to.rotation, lerpTime);
 			}
 			else
 			{
 				Transform from = waypoints[currentWaypoint - 1].transform;
-				Transform to = waypoints[currentWaypoint].transform;
+				Transform to = movingTo.transform;
 
 				gameObject.transform.position = Vector3.Lerp(from.position, to.position, lerpTime);
 				gameObject.transform.rotation = Quaternion.Lerp(from.rotation, to.rotation, lerpTime);
 			}
-			if (lerpTime >= 1)
-			{ //IF we have reached the waypoint
-				Waypoint activeWaypoint = waypoints[currentWaypoint];
-				activeWaypoint.OnPass();
+			if (lerpTime >= 1 || Vector3.Distance(movingTo.transform.position, transform.position) <= 0.5)
+			{
+				// Waypoint has been reached.
+				movingTo.OnPass();
 				if (startAtCurrentPosition)
 					startAtCurrentPosition = false;
 				else
 				{
 					currentWaypoint++; //THEN continue to the next
 				}
-				if (activeWaypoint.terminus)
+				if (movingTo.terminus)
 				{
-					if (teleportToBeginningAndLoop)
+					if (reverseAtEnd)
+					{
+						reverse = !reverse;
+						ReverseWaypoints();
+						currentWaypoint = 1;
+					}
+					else if (teleportToBeginningAndLoop)
 					{
 						currentWaypoint = 1;
 						gameObject.transform.position = waypoints[0].transform.position;
