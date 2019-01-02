@@ -1,6 +1,8 @@
 Mini Ludum Dare #44: 7dRTS
 ================
 
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
 A repository for [Mini Ludum Dare #44: 7 day RTS!][1] 
 
 This is a real-time strategy game created in 7 days, with a focus on experimental gameplay concepts.
